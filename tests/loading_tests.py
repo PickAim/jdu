@@ -5,7 +5,7 @@ from os.path import join
 import numpy as np
 
 from request.loader_utils import get_nearest_keywords, load_niche_info, get_storage_data, load_cost_data_from_file
-from request.request_utils import get_parents, get_object_names
+from request.request_utils import get_parents, get_object_names, get_page_data
 from services import constants
 
 
@@ -16,7 +16,7 @@ class LoadingTest(unittest.TestCase):
         self.assertEqual("готовый кофе", result[0])
 
     def test_load(self):
-        text_to_search = 'молотый кофе'
+        text_to_search = 'Кофе'
         is_update = True
         pages_num = 1
         start_time = time.time()

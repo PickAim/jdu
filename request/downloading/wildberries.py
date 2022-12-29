@@ -8,8 +8,8 @@ from types import TracebackType
 from typing import Optional, Type
 from datetime import datetime
 
-from request.downloading.providers import Provider
-from request.request_utils import get_parents
+from .providers import Provider
+from ..request_utils import get_parents
 
 
 class WildBerriesDataProvider(Provider):
