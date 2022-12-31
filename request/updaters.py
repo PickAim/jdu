@@ -1,8 +1,4 @@
-from abc import ABC
-
-
-class DataBaseUpdater(ABC):
-    pass
+from jarvis_db.fill.updaters import DataBaseUpdater
 
 
 class WildberriesDBUpdater(DataBaseUpdater):

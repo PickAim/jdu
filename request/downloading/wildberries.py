@@ -3,43 +3,20 @@ import asyncio
 import aiohttp
 import json
 
-from abc import abstractmethod
 from types import TracebackType
 from typing import Optional, Type
 from datetime import datetime
 
-from .providers import Provider
+from jarvis_db.fill.providers import WildBerriesDataProvider
 from ..request_utils import get_parents
 
 
-class WildBerriesDataProvider(Provider):
+class SyncWildBerriesDataProvider(WildBerriesDataProvider):
 
     @staticmethod
     def get_categories() -> list[str]:
         # TODO think about unused method declaration in inheritors
         return get_parents()
-
-    @abstractmethod
-    def get_niches(self, categories) -> dict[str, list[str]]:
-        # TODO use get_niches_by_category for it now
-        pass
-
-    @abstractmethod
-    def get_niches_by_category(self, category: str) -> list[str]:
-        # TODO implement request.request_utils.get_object_names for it now
-        pass
-
-    @abstractmethod
-    def get_products_by_niche(self, niche: str, pages: int) -> list[tuple[str, int]]:
-        pass
-
-    @abstractmethod
-    def get_product_price_history(self, product_id: int) -> list[tuple[int, datetime]]:
-        # TODO look at request.request_utils.get_page_data
-        pass
-
-
-class SyncWildBerriesDataProvider(WildBerriesDataProvider):
 
     def __init__(self, api_key: str):
         self.__api_key = api_key
@@ -116,6 +93,11 @@ class AsyncWildberriesDataProvider(WildBerriesDataProvider):
                         exc_tb: Optional[TracebackType], ):
         await self.__session.close()
         self.__session = None
+
+    @staticmethod
+    def get_categories() -> list[str]:
+        # TODO think about unused method declaration in inheritors
+        return get_parents()
 
     # async def get_categories(self) -> list[str]:
     #     async with self.__session.get(
