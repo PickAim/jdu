@@ -4,7 +4,7 @@ from asyncio import AbstractEventLoop
 from os.path import exists, isfile, join
 from os import mkdir, listdir
 
-from services.sorters import score_object_names, sort_by_len_alphabet
+from .sorters import score_object_names, sort_by_len_alphabet
 from .request_utils import get_object_names, get_storage_dict, load_all_product_niche
 
 
