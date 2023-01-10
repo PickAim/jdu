@@ -4,9 +4,9 @@ from os.path import join
 
 import numpy as np
 
-from request.loader_utils import get_nearest_keywords, load_niche_info, get_storage_data, load_cost_data_from_file
-from request.request_utils import get_parents, get_object_names, get_page_data
-from services import constants
+from jdu.request.loader_utils import get_nearest_keywords, load_niche_info, get_storage_data, load_cost_data_from_file
+from jdu.request.request_utils import get_parents, get_object_names, get_page_data
+from jdu.services import constants
 
 
 class LoadingTest(unittest.TestCase):
