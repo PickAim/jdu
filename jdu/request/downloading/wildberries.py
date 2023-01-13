@@ -19,16 +19,12 @@ class SyncWildBerriesDataProvider(WildBerriesDataProvider):
     def __init__(self, api_key: str):
         self.__api_key = api_key
         self.__session = requests.Session()
+        self.adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100)
+        self.__session.mount('http://', self.adapter)
 
-    # def get_categories(self) -> list[str]:
-    #     response = self.__session.get('https://suppliers-api.wildberries.ru/api/v1/config/get/object/parent/list',
-    #                                   headers={'Authorization': self.__api_key})
-    #     response.raise_for_status()
-    #     categories = []
-    #     data = response.json()['data']
-    #     for item in data:
-    #         categories.append(item)
-    #     return categories
+    def __del__(self):
+        self.__session.close()
+        self.__session = None
 
     def get_niches(self, categories : list[str]) -> dict[str, list[str]]:
         result = {}
@@ -48,19 +44,17 @@ class SyncWildBerriesDataProvider(WildBerriesDataProvider):
         niches.sort()
         return niches
 
-    def get_product_card_info(self, product_id: int)->dict[str: any]:
-        session = requests.Session()
-        adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100)
-        session.mount('http://', adapter)
+    def get_product_card_info(self, product_id: int) -> dict[str: any]:
+
         url = f'https://card.wb.ru/cards/detail?spp=27&regions=64,58,83,4,38,80,33,70,82,86,30,69,22,66,31,40,1,48' \
               f'&pricemarginCoeff=1.0&reg=1&appType=1&emp=0&locale=ru&lang=ru&curr=rub' \
               f'&dest=-1221148,-140294,-1701956,123585768&nm={product_id}'
-        request = session.get(url)
+        request = self.__session.get(url)
         json_code = request.json()
-        product_cost: int = json_code['data']['products'][0]['priceU']
-        product_name: str = json_code['data']['products'][0]['name']
-        card_info_dict = {"article": product_id, "cost": product_cost, "name": product_name}
-        session.close()
+        data_card_json:  dict[str: any] = json_code['data']['products'][0]
+        product_cost: int = data_card_json['priceU']
+        product_name: str = data_card_json['name']
+        card_info_dict = {"cost": product_cost, "name": product_name}
         return card_info_dict
 
     def get_products_by_niche(self, niche: str, pages: int) -> list[tuple[str, int]]:
