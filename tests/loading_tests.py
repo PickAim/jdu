@@ -5,11 +5,20 @@ from os.path import join
 import numpy as np
 from jdu.request.request_utils import get_parents, get_object_names
 from jdu.request.loader_utils import get_nearest_keywords, load_niche_info, load_cost_data_from_file, get_storage_data
-
+from jdu.request.downloading.wildberries import SyncWildBerriesDataProvider
 from jdu.services import constants
 
 
 class LoadingTest(unittest.TestCase):
+    def test_get_product_card_info(self):
+        object : SyncWildBerriesDataProvider = SyncWildBerriesDataProvider('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.'
+                                                                           'eyJhY2Nlc3NJRCI6IjZkNDVmMmRjLTQ5OD'
+                                                                           'EtNDFlOS1hMzRkLTlhNDA5YmY2MGZiMSJ9'
+                                                                           '.1VoUp9Od9dzSWSNVSQjQnRujUvqOUY4oxO-'
+                                                                           'pZXAqI1Q')
+        self.assertNotEqual(0, len(object.get_product_card_info(6170053)))
+
+
     def test_sorting(self):
         word = "Кофе"
         result = get_nearest_keywords(word)
