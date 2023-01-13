@@ -47,6 +47,7 @@ class SyncWildBerriesDataProvider(WildBerriesDataProvider):
             niches.append(niche['name'])
         niches.sort()
         return niches
+
     def get_product_card_info(self, product_id: int)->dict[str: any]:
         session = requests.Session()
         adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100)
@@ -61,6 +62,7 @@ class SyncWildBerriesDataProvider(WildBerriesDataProvider):
         card_info_dict = {"article": product_id, "cost": product_cost, "name": product_name}
         session.close()
         return card_info_dict
+
     def get_products_by_niche(self, niche: str, pages: int) -> list[tuple[str, int]]:
         result = []
         for i in range(1, pages + 1):
