@@ -55,8 +55,9 @@ class SyncWildBerriesDataProvider(WildBerriesDataProvider):
         json_code = request.json()
         data_card_json:  dict[str: any] = json_code['data']['products'][0]
         product_cost: int = data_card_json['priceU']
+        brand_name: str = data_card_json['brand']
         product_name: str = data_card_json['name']
-        card_info_dict = {"cost": product_cost, "name": product_name}
+        card_info_dict = {"cost": product_cost, "name": product_name,"brand": brand_name}
         return card_info_dict
 
     def get_products_by_niche(self, niche: str, pages: int) -> list[tuple[str, int]]:

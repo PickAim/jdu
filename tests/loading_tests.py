@@ -18,7 +18,6 @@ class LoadingTest(unittest.TestCase):
                                                                            'pZXAqI1Q')
         self.assertNotEqual(0, len(object.get_product_card_info(6170053)))
 
-
     def test_sorting(self):
         word = "Кофе"
         result = get_nearest_keywords(word)
