@@ -7,7 +7,7 @@ from types import TracebackType
 from typing import Optional, Type
 from datetime import datetime
 
-from jarvis_db.fill.providers import WildBerriesDataProvider
+from jdu.providers.common import WildBerriesDataProvider
 from ..request_utils import get_parents
 
 
