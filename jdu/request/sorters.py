@@ -1,7 +1,7 @@
 
 
 def sort_by_len_alphabet(names: list[str]) -> list[str]:
-    length_dict: [int, list[str]] = {}
+    length_dict: list[int, list[str]] = {}
     for name in names:
         if not length_dict.__contains__(len(name)):
             length_dict[len(name)] = [name]

@@ -17,7 +17,7 @@ def get_nearest_keywords(word: str) -> list[str]:
     return result
 
 
-def get_storage_data(product_ids: [int]) -> dict[int, dict[int, int]]:
+def get_storage_data(product_ids: list[int]) -> dict[int, dict[int, int]]:
     # TODO needs to delete it after Database implements
     # TODO implements it in Provider classes
     main_dict: dict[int, dict[int, int]] = {}
