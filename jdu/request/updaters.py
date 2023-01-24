@@ -1,6 +1,11 @@
-from jarvis_db.fill.updaters import DataBaseUpdater
+from jarvis_db.repositores.market.infrastructure import NicheRepository
+from jdu.request.downloading.wildberries import SyncWildBerriesDataProvider
 
 
-class WildberriesDBUpdater(DataBaseUpdater):
+class WildberriesDBUpdater():
     # maybe it can use wildberries providers
-    pass
+    def __init__(self, api_key: str):
+        self.api_key = api_key
+        self.object_provider = SyncWildBerriesDataProvider(self.api_key)
+
+

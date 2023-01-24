@@ -4,14 +4,30 @@ from os.path import join
 
 import numpy as np
 
-
 from jdu.request.request_utils import get_parents, get_object_names
 from jdu.request.loader_utils import get_nearest_keywords, load_niche_info, load_cost_data_from_file, get_storage_data
 
 from jdu.services import constants
+from jdu.request.downloading.wildberries import SyncWildBerriesDataProvider
 
 
 class LoadingTest(unittest.TestCase):
+
+    def test_get_product_price_history(self):
+        object_provider: SyncWildBerriesDataProvider = SyncWildBerriesDataProvider('123')
+        self.assertEqual(49805, object_provider.get_product_price_history(6337365).history[0].cost)
+
+    def test_get_products_by_niche(self):
+        object_provider: SyncWildBerriesDataProvider = SyncWildBerriesDataProvider('123')
+        self.assertNotEqual(0, len(object_provider.get_products_by_niche("Аварийное оборудование")))
+
+    def test_get_niche_by_category(self):
+        object_provider: SyncWildBerriesDataProvider = SyncWildBerriesDataProvider('123')
+        self.assertNotEqual(0, len(object_provider.get_niches_by_category("Автомобильные товары")))
+
+    def test_get_categories(self):
+        object_provider: SyncWildBerriesDataProvider = SyncWildBerriesDataProvider('123')
+        self.assertNotEqual(0, len(object_provider.get_categories()))
 
     def test_sorting(self):
         word = "Кофе"
