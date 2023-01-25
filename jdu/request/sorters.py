@@ -1,9 +1,9 @@
 
 
 def sort_by_len_alphabet(names: list[str]) -> list[str]:
-    length_dict: list[int, list[str]] = {}
+    length_dict: dict[int, list[str]] = {}
     for name in names:
-        if not length_dict.__contains__(len(name)):
+        if len(name) not in length_dict:
             length_dict[len(name)] = [name]
             continue
         length_dict[len(name)].append(name)
@@ -29,8 +29,8 @@ def score_object_names(searched_object: str, object_names: list[str]) -> dict[fl
     result: dict[float, list[str]] = {good_match: [], intermediate_match: [], poor_match: []}
     for name in lower_names:
         words: list[str] = [word + " " for word in name.split(" ")]
-        if words[: len(words) // 2].__contains__(searched_object + " ") \
-                or words.__contains__(searched_object + " ") and len(words) < 3:
+        if searched_object + " " in words[: len(words) // 2] \
+                or searched_object + " " in words and len(words) < 3:
             result[good_match].append(name)
             continue
         flag: bool = False
@@ -48,7 +48,6 @@ def score_object_names(searched_object: str, object_names: list[str]) -> dict[fl
 def any_contains(text_to_search: str, words: list[str]) -> bool:
     sentence: str = "".join(words)
     for word in words:
-        if word.__contains__(text_to_search) and sentence.index(text_to_search) < len(sentence) // 2:
+        if text_to_search in word and sentence.index(text_to_search) < len(sentence) // 2:
             return True
     return False
-
