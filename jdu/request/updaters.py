@@ -1,6 +1,4 @@
-from jarvis_db.fill.updaters import DataBaseUpdater
 
-
-class WildberriesDBUpdater(DataBaseUpdater):
+class WildberriesDBUpdater:
     # maybe it can use wildberries providers
     pass
