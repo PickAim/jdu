@@ -5,8 +5,8 @@ from requests.adapters import HTTPAdapter
 from datetime import datetime
 
 from jdu.providers.common import WildBerriesDataProvider
-from ..request_utils import get_parents
-from jorm.market.infrastructure import Category, Niche, Product
+from jdu.request.request_utils import get_parents
+from jorm.market.infrastructure import Category, Niche, Product, HandlerType
 from jorm.market.items import ProductHistoryUnit, ProductHistory
 
 
@@ -25,8 +25,8 @@ class SyncWildBerriesDataProvider(WildBerriesDataProvider):
     def get_categories(self) -> list[Category]:
         category_list: list[str] = get_parents()
         result: list[Category] = []
-        for data in category_list:
-            result.append(Category(data, {data: self.get_niches_by_category(data)}))
+        for category in category_list:
+            result.append(Category(category, {category: self.get_niches_by_category(category)}))
         return result
 
     def get_niches_by_category(self, name_category: str) -> list[Niche]:
@@ -38,7 +38,12 @@ class SyncWildBerriesDataProvider(WildBerriesDataProvider):
         for data in json_data:
             if data['name'] == name_category:
                 for niche in data['childs']:
-                    niche_list.append(Niche(niche['name'], {"Temp": 0.0}, 0, self.get_products_by_niche(niche['name'])))
+                    niche_list.append(Niche(niche['name'], {
+                                                            HandlerType.MARKETPLACE: 0,
+                                                            HandlerType.PARTIAL_CLIENT: 0,
+                                                            HandlerType.CLIENT: 0},
+                                                            0, self.get_products_by_niche(niche['name'])))
+                break
         return niche_list
 
     def get_products_by_niche(self, niche: str) -> list[Product]:

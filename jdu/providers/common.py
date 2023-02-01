@@ -9,6 +9,9 @@ class Provider(ABC):
 
 
 class WildBerriesDataProvider(Provider):
+    @abstractmethod
+    def __init__(self, api_key: str):
+        pass
 
     @staticmethod
     @abstractmethod
