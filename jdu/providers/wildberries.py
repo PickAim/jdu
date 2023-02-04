@@ -1,14 +1,14 @@
-import requests
 import asyncio
-import aiohttp
 import json
-
+from datetime import datetime
 from types import TracebackType
 from typing import Optional, Type
-from datetime import datetime
+
+import aiohttp
+import requests
 
 from jdu.providers.common import WildBerriesDataProvider
-from ..request_utils import get_parents
+from jdu.request.request_utils import get_parents
 
 
 class SyncWildBerriesDataProvider(WildBerriesDataProvider):
