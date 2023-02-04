@@ -1,5 +1,5 @@
-import unittest
 import time
+import unittest
 from os.path import join
 
 import numpy as np

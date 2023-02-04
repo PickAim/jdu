@@ -1,10 +1,9 @@
 import asyncio
-
 from asyncio import AbstractEventLoop
-from os.path import exists, isfile, join
 from os import mkdir, listdir
+from os.path import exists, isfile, join
 
-from .sorters import score_object_names, sort_by_len_alphabet
+from jdu.services.sorters import score_object_names, sort_by_len_alphabet
 from .request_utils import get_object_names, get_storage_dict, load_all_product_niche
 
 
