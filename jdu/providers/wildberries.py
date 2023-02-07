@@ -1,170 +1,90 @@
-import asyncio
-import json
 from datetime import datetime
-from types import TracebackType
-from typing import Optional, Type
 
-import aiohttp
-import requests
+from jorm.market.infrastructure import Niche, Product, HandlerType, Category
+from jorm.market.items import ProductHistoryUnit, ProductHistory
 
-from jdu.providers.common import WildBerriesDataProvider
-from jdu.request.request_utils import get_parents
+from jdu.providers.common import WildBerriesDataProviderWithoutKey, WildBerriesDataProviderWithKey
 
 
-class SyncWildBerriesDataProvider(WildBerriesDataProvider):
-
-    @staticmethod
-    def get_categories() -> list[str]:
-        # TODO think about unused method declaration in inheritors
-        return get_parents()
+class WildBerriesDataProviderStandard(WildBerriesDataProviderWithKey):
 
     def __init__(self, api_key: str):
-        self.__api_key = api_key
-        self.__session = requests.Session()
+        super().__init__(api_key)
 
-    # def get_categories(self) -> list[str]:
-    #     response = self.__session.get('https://suppliers-api.wildberries.ru/api/v1/config/get/object/parent/list',
-    #                                   headers={'Authorization': self.__api_key})
-    #     response.raise_for_status()
-    #     categories = []
-    #     data = response.json()['data']
-    #     for item in data:
-    #         categories.append(item)
-    #     return categories
 
-    def get_niches(self, categories) -> dict[str, list[str]]:
-        result = {}
-        for category in categories:
-            result[category] = self.get_niches_by_category(category)
-        return result
+class WildBerriesDataProviderStatistics(WildBerriesDataProviderWithKey):
 
-    def get_niches_by_category(self, category: str):
-        response = self.__session.get(
-            f'https://suppliers-api.wildberries.ru/api/v1/config/object/byparent?parent={category}',
-            headers={'Authorization': self.__api_key}
-        )
+    def __init__(self, api_key: str):
+        super().__init__(api_key)
+
+
+class WildBerriesDataProviderAds(WildBerriesDataProviderWithKey):
+
+    def __init__(self, api_key: str):
+        super().__init__(api_key)
+
+
+class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
+
+    def __init__(self):
+        super().__init__()
+
+    def get_categories(self) -> list[Category]:
+        categories_list: list[Category] = []
+        url = f'https://static-basket-01.wb.ru/vol0/data/subject-base.json'
+        response = self._session.get(url)
         response.raise_for_status()
-        niches = []
-        for niche in response.json()['data']:
-            niches.append(niche['name'])
-        niches.sort()
-        return niches
+        json_data = response.json()
+        for data in json_data:
+            for category_name in data['name']:
+                categories_list.append(Category(category_name, {niche.name: niche for niche
+                                                                in self.get_niches_by_category(category_name)}))
+        return categories_list
 
-    def get_products_by_niche(self, niche: str, pages: int) -> list[tuple[str, int]]:
-        result = []
-        for i in range(1, pages + 1):
+    def get_niches_by_category(self, name_category: str, pages_num: int = -1) -> list[Niche]:
+        niche_list: list[Niche] = []
+        url = f'https://static-basket-01.wb.ru/vol0/data/subject-base.json'
+        response = self._session.get(url)
+        response.raise_for_status()
+        json_data = response.json()
+        for data in json_data:
+            if data['name'] == name_category:
+                for niche in data['childs']:
+                    niche_list.append(Niche(niche['name'], {
+                        HandlerType.MARKETPLACE: 0,
+                        HandlerType.PARTIAL_CLIENT: 0,
+                        HandlerType.CLIENT: 0},
+                                            0, self.get_products_by_niche(niche['name'], pages_num)))
+                break
+        return niche_list
+
+    def get_products_by_niche(self, niche: str, pages_num: int = -1) -> list[Product]:
+        result: list[Product] = []
+        iterator_pages: int = 1
+        while True:
             uri = 'https://search.wb.ru/exactmatch/ru/common/v4/search?appType=1&couponsGeo=2,12,7,3,6,21,16' \
                   '&curr=rub&dest=-1221148,-140294,-1751445,-364763&emp=0&lang=ru&locale=ru&pricemarginCoeff=1.0' \
-                  f'&query={niche}&resultset=catalog&sort=popular&spp=0&suppressSpellcheck=false&page={i}'
-            response = self.__session.get(uri)
+                  f'&query={niche}&resultset=catalog&sort=popular&spp=0&suppressSpellcheck=false&page={iterator_pages}'
+            response = self._session.get(uri)
             response.raise_for_status()
             json_data = response.json()
-            if 'data' not in json_data:
+            if 'data' in json_data and 'products' in json_data['data']:
+                for product in json_data['data']['products']:
+                    result.append(Product((product['name']), product['priceU'], product['priceU'], product['id']))
+                    if len(json_data['data']['products']) == 1:
+                        break
+            iterator_pages += 1
+            if pages_num != -1 and iterator_pages > pages_num:
                 break
-            for product in json_data['data']['products']:
-                result.append((product['name'], product['id']))
         return result
 
-    def get_product_price_history(self, product_id: int) -> list[tuple[int, datetime]]:
-        result = []
+    def get_product_price_history(self, product_id: int) -> ProductHistory:
+        result: list[ProductHistoryUnit] = []
         uri = f'https://wbx-content-v2.wbstatic.net/price-history/{product_id}.json?'
-        response = self.__session.get(uri)
+        response = self._session.get(uri)
         response.raise_for_status()
         if response.status_code != 200:
-            return result
+            return ProductHistory(result)
         for item in response.json():
-            result.append(
-                (item['price']['RUB'], datetime.fromtimestamp(item['dt'])))
-        return result
-
-
-class AsyncWildberriesDataProvider(WildBerriesDataProvider):
-
-    def __init__(self, api_key: str) -> None:
-        self.__api_key = api_key
-
-    async def __aenter__(self):
-        self.__session = aiohttp.ClientSession()
-        return self
-
-    async def __aexit__(self,
-                        exc_type: Optional[Type[BaseException]],
-                        exc_val: Optional[BaseException],
-                        exc_tb: Optional[TracebackType], ):
-        await self.__session.close()
-        self.__session = None
-
-    @staticmethod
-    def get_categories() -> list[str]:
-        # TODO think about unused method declaration in inheritors
-        return get_parents()
-
-    # async def get_categories(self) -> list[str]:
-    #     async with self.__session.get(
-    #             'https://suppliers-api.wildberries.ru/api/v1/config/get/object/parent/list',
-    #             headers={'Authorization': self.__api_key}) as response:
-    #         response.raise_for_status()
-    #         categories = []
-    #         data = await response.json()
-    #         for item in data['data']:
-    #             categories.append(item)
-    #         return categories
-
-    async def get_niches(self, categories: list[str]) -> dict[str, dict[str, list[str]]]:
-        tasks = []
-        for category in categories:
-            tasks.append(asyncio.create_task(
-                self.get_niches_by_category(category)))
-        niche_sets = await asyncio.gather(*tasks)
-        return dict(zip(categories, niche_sets))
-
-    async def get_niches_by_category(self, category: str):
-        url = f'https://suppliers-api.wildberries.ru/api/v1/config/object/byparent?parent={category}'
-        async with self.__session.get(url, headers={'Authorization': self.__api_key}) as response:
-            response.raise_for_status()
-            niches = []
-            data = await response.json()
-            for niche in data['data']:
-                niches.append(niche['name'])
-            niches.sort()
-            return niches
-
-    async def get_products_by_niche(self, niche: str, pages: int) -> list[tuple[str, int]]:
-        # TODO look at request.request_utils.load_all_product_niche
-        tasks = []
-        for i in range(1, pages + 1):
-            tasks.append(asyncio.create_task(
-                self.__search_products_by_page(niche, i)))
-        result = []
-        product_sets = await asyncio.gather(*tasks)
-        for product_set in product_sets:
-            result.extend(product_set)
-        return result
-
-    async def __search_products_by_page(self, niche: str, page: int) -> list[tuple[str, int]]:
-        uri = 'https://search.wb.ru/exactmatch/ru/common/v4/search?appType=1&couponsGeo=2,12,7,3,6,21,16' \
-              '&curr=rub&dest=-1221148,-140294,-1751445,-364763&emp=0&lang=ru&locale=ru&pricemarginCoeff=1.0' \
-              f'&query={niche}&resultset=catalog&sort=popular&spp=0&suppressSpellcheck=false&page={page}'
-        result = []
-        async with self.__session.get(uri) as response:
-            response.raise_for_status()
-            data = await response.read()
-            json_data = json.loads(data)
-            if 'data' not in json_data:
-                return result
-            for product in json_data['data']['products']:
-                result.append((product['name'], product['id']))
-            return result
-
-    async def get_product_price_history(self, product_id: int) -> list[tuple[int, datetime]]:
-        uri = f'https://wbx-content-v2.wbstatic.net/price-history/{product_id}.json?'
-        result = []
-        async with self.__session.get(uri) as response:
-            response.raise_for_status()
-            if response.status != 200:
-                return result
-            data = await response.json()
-            for item in data:
-                result.append(
-                    (item['price']['RUB'], datetime.fromtimestamp(item['dt'])))
-            return result
+            result.append(ProductHistoryUnit(item['price']['RUB'], 0, datetime.fromtimestamp(item['dt'])))
+        return ProductHistory(result)
