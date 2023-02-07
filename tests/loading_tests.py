@@ -4,29 +4,29 @@ from os.path import join
 
 import numpy as np
 
-from jdu.request.request_utils import get_parents, get_object_names
+from jdu import constants
+from jdu.providers.common import WildBerriesDataProviderWithoutKey
+from jdu.providers.wildberries import WildBerriesDataProviderWithoutKeyImpl
 from jdu.request.loader_utils import get_nearest_keywords, load_niche_info, load_cost_data_from_file, get_storage_data
-
-from jdu.services import constants
-from jdu.providers.wildberries import SyncWildBerriesDataProvider
+from jdu.request.request_utils import get_object_names
 
 
 class LoadingTest(unittest.TestCase):
 
     def test_get_product_price_history(self):
-        object_provider: SyncWildBerriesDataProvider = SyncWildBerriesDataProvider('123')
+        object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
         self.assertEqual(49805, object_provider.get_product_price_history(6337365).history[0].cost)
 
     def test_get_products_by_niche(self):
-        object_provider: SyncWildBerriesDataProvider = SyncWildBerriesDataProvider('123')
-        self.assertNotEqual(0, len(object_provider.get_products_by_niche("Аварийное оборудование")))
+        object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
+        self.assertNotEqual(0, len(object_provider.get_products_by_niche("Аварийное оборудование", 1)))
 
     def test_get_niche_by_category(self):
-        object_provider: SyncWildBerriesDataProvider = SyncWildBerriesDataProvider('123')
-        self.assertNotEqual(0, len(object_provider.get_niches_by_category("Автомобильные товары")))
+        object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
+        self.assertNotEqual(0, len(object_provider.get_niches_by_category("Автомобильные товары", 1)))
 
     def test_get_categories(self):
-        object_provider: SyncWildBerriesDataProvider = SyncWildBerriesDataProvider('123')
+        object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
         self.assertNotEqual(0, len(object_provider.get_categories()))
 
     def test_sorting(self):
@@ -50,10 +50,6 @@ class LoadingTest(unittest.TestCase):
         storage_data: dict[int, dict[int, int]] = get_storage_data(product_ids)
         self.assertIsNotNone(storage_data)
         self.assertEqual(2, len(storage_data.keys()))
-
-    def test_get_parents(self):
-        parent_categories = get_parents()
-        self.assertNotEqual(len(parent_categories), 0)
 
     def test_get_objects_name(self):
         text_object = "Кофе"

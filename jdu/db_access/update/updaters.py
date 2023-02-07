@@ -1,4 +1,4 @@
-from jarvis_calc.database_interactors.db_access import DBUpdater
+from jarvis_calc.database_interactors.db_access import DBUpdateProvider
 from jorm.market.infrastructure import Niche
 from jorm.market.person import User, Account
 from jorm.market.service import Request
@@ -9,7 +9,7 @@ class WildberriesDBUpdater:
     pass
 
 
-class CalcDBUpdater(DBUpdater):
+class CalcDBUpdater(DBUpdateProvider):
     # TODO create me
     def save_request(self, request: Request, user: User) -> None:
         pass

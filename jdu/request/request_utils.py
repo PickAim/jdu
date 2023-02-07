@@ -1,31 +1,13 @@
-import requests
-import aiohttp
 import asyncio
-
-from requests.adapters import HTTPAdapter
 from asyncio import Task
-from aiohttp import ClientSession
-from requests import Response, Session
 from datetime import datetime, timedelta
 from os.path import join
 
-
-def get_parents() -> list[str]:
-    parent_categories: list[str] = []
-    session = Session()
-    adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100)
-    session.mount('http://', adapter)
-    response = session.get('https://suppliers-api.wildberries.ru/content/v1/object/parent/all',
-                           headers={
-                               'Authorization': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9'
-                                                '.eyJhY2Nlc3NJRCI6IjZkNDVmMmRjLTQ5ODEtNDFlOS1hMzRkLTlhNDA5YmY2MGZiMSJ9.'
-                                                '1VoUp9Od9dzSWSNVSQjQnRujUvqOUY4oxO-pZXAqI1Q'})
-
-    json_code = response.json()
-    for data in json_code['data']:
-        parent_categories.append(data['name'])
-    session.close()
-    return parent_categories
+import aiohttp
+import requests
+from aiohttp import ClientSession
+from requests import Response, Session
+from requests.adapters import HTTPAdapter
 
 
 def get_object_names(text: str) -> list[str]:
