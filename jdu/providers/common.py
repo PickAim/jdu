@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
-import aiohttp
 import requests
+from aiohttp import ClientSession
 from jorm.market.infrastructure import Category, Niche, Product
 from jorm.market.items import ProductHistory
 from requests.adapters import HTTPAdapter
@@ -9,14 +9,12 @@ from requests.adapters import HTTPAdapter
 
 class DataProvider(ABC):
     def __init__(self):
-        self._session_async = aiohttp.ClientSession()
         self._session = requests.Session()
-        adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100)
-        self._session.mount('http://', adapter)
+        __adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100)
+        self._session.mount('http://', __adapter)
 
     def __del__(self):
         self._session.close()
-        self._session_async.close()
 
 
 class DataProviderWithoutKey(DataProvider):
@@ -42,12 +40,16 @@ class WildBerriesDataProviderWithoutKey(DataProviderWithoutKey):
         pass
 
     @abstractmethod
-    def get_product_price_history(self, product_id: int) -> ProductHistory:
+    def get_product_price_history(self, session: ClientSession, product_id: int) -> ProductHistory:
         # TODO look at request.request_utils.get_page_data
         pass
 
     @abstractmethod
     def get_categories(self) -> list[Category]:
+        pass
+
+    @abstractmethod
+    def get_storage_data(self, product_ids: list[int]) -> dict[int, dict[int, int]]:
         pass
 
 

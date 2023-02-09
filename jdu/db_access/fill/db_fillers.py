@@ -1,9 +1,11 @@
 from abc import ABC
 from abc import abstractmethod
-from sqlalchemy.orm import Session
-from jdu.providers.common import WildBerriesDataProvider
-from jorm.market.infrastructure import Category
+
 from jarvis_db.repositores.market.infrastructure import CategoryRepository
+from jorm.market.infrastructure import Category
+from sqlalchemy.orm import Session
+
+from jdu.providers.common import WildBerriesDataProvider
 
 
 class DBFiller(ABC):
@@ -28,7 +30,7 @@ class WildberriesDbFiller(DBFiller):
         pass
 
 
-class SyncWildberriesDBFiller(WildberriesDbFiller):
+class WildberriesDBFillerImpl(WildberriesDbFiller):
 
     def __init__(self, provider: WildBerriesDataProvider, session: Session):
         self.__provider = provider
