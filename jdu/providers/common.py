@@ -25,7 +25,7 @@ class DataProviderWithoutKey(DataProvider):
 class DataProviderWithKey(DataProvider):
     def __init__(self, api_key: str):
         super().__init__()
-        self.__api_key: str = api_key
+        self._api_key: str = api_key
 
 
 class WildBerriesDataProviderWithoutKey(DataProviderWithoutKey):
@@ -45,15 +45,11 @@ class WildBerriesDataProviderWithoutKey(DataProviderWithoutKey):
         pass
 
     @abstractmethod
-    def get_categories(self, category_num: int = -1) -> list[Category]:
+    def get_categories(self, category_num: int = -1, niche_num: int = -1, product_num: int = -1) -> list[Category]:
         pass
 
     @abstractmethod
     def get_storage_dict(self, product_id: int) -> dict[int: dict[int, dict[str: int]]]:
-        pass
-
-    @abstractmethod
-    def get_categories_name(self) -> list[str]:
         pass
 
 

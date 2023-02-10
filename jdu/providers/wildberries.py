@@ -22,7 +22,7 @@ class WildBerriesDataProviderStandard(WildBerriesDataProviderWithKey):
         response: Response = self._session.get('https://suppliers-api.wildberries.ru/content/v1/object/all?name=' + text
                                                + '&top=100',
                                                headers={
-                                                   'Authorization': self.__api_key})
+                                                   'Authorization': self._api_key})
         json_code: any = response.json()
         for data in json_code['data']:
             object_name_list.append(data['objectName'])
@@ -54,7 +54,7 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
     def __init__(self):
         super().__init__()
 
-    def get_categories(self, category_num=-1) -> list[Category]:
+    def get_categories(self, category_num=-1, niche_num=-1, product_num=-1) -> list[Category]:
         categories_list: list[Category] = []
         url: str = f'https://static-basket-01.wb.ru/vol0/data/subject-base.json'
         response: Response = self._session.get(url)
@@ -63,13 +63,15 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
         iterator_category: int = 1
         for data in json_data:
             categories_list.append(Category(data['name'], {niche.name: niche for niche
-                                                           in self.get_niches_by_category(data['name'])}))
+                                                           in self.get_niches_by_category(data['name'],
+                                                                                          niche_num, product_num)}))
             iterator_category += 1
-            if iterator_category != -1 and iterator_category > category_num:
+            if category_num != -1 and iterator_category > category_num:
                 break
         return categories_list
 
-    def get_niches_by_category(self, name_category: str, niche_num: int = -1, pages_num: int = -1, ) -> list[Niche]:
+    def get_niches_by_category(self, name_category: str, niche_num: int = -1,
+                               pages_num: int = -1, ) -> list[Niche]:
         niche_list: list[Niche] = []
         iterator_niche = 1
         url: str = f'https://static-basket-01.wb.ru/vol0/data/subject-base.json'
@@ -85,7 +87,7 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
                         HandlerType.CLIENT: 0},
                                             0, self.get_products_by_niche(niche['name'], pages_num)))
                     iterator_niche += 1
-                    if iterator_niche != -1 and iterator_niche > niche_num:
+                    if niche_num != -1 and iterator_niche > niche_num:
                         break
                 break
         return niche_list
