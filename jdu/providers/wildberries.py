@@ -66,9 +66,9 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
                                                                 in self.get_niches_by_category(category_name)}))
         return categories_list
 
-    def get_niches_by_category(self, name_category: str, niche_num: int = 1, pages_num: int = -1, ) -> list[Niche]:
+    def get_niches_by_category(self, name_category: str, niche_num: int = -1, pages_num: int = -1, ) -> list[Niche]:
         niche_list: list[Niche] = []
-        iterator_niche = 0
+        iterator_niche = 1
         url: str = f'https://static-basket-01.wb.ru/vol0/data/subject-base.json'
         response: Response = self._session.get(url)
         response.raise_for_status()
@@ -76,14 +76,14 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
         for data in json_data:
             if data['name'] == name_category:
                 for niche in data['childs']:
-                    if niche_num <= iterator_niche:
-                        break
                     niche_list.append(Niche(niche['name'], {
                         HandlerType.MARKETPLACE: 0,
                         HandlerType.PARTIAL_CLIENT: 0,
                         HandlerType.CLIENT: 0},
                                             0, self.get_products_by_niche(niche['name'], pages_num)))
                     iterator_niche += 1
+                    if iterator_niche != -1 and iterator_niche > niche_num:
+                        break
                 break
         return niche_list
 
