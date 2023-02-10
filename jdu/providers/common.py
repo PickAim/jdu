@@ -31,7 +31,7 @@ class DataProviderWithKey(DataProvider):
 class WildBerriesDataProviderWithoutKey(DataProviderWithoutKey):
 
     @abstractmethod
-    def get_niches_by_category(self, category: str, pages_num: int = -1) -> list[Niche]:
+    def get_niches_by_category(self, category: str, niche_num: int = 1, pages_num: int = -1) -> list[Niche]:
         # TODO implement request.request_utils.get_object_names for it now
         pass
 

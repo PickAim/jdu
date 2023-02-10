@@ -1,16 +1,14 @@
-from jarvis_calc.database_interactors.db_access import DBUpdateProvider
+from jarvis_calc.database_interactors.db_access import DBUpdater
 from jorm.market.infrastructure import Niche
 from jorm.market.person import User, Account
 from jorm.market.service import Request
 
 
 class WildberriesDBUpdater:
-    # maybe it can use wildberries providers
     pass
 
 
-class CalcDBUpdater(DBUpdateProvider):
-    # TODO create me
+class CalcDBUpdater(DBUpdater):
     def save_request(self, request: Request, user: User) -> None:
         pass
 

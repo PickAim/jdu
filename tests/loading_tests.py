@@ -12,7 +12,7 @@ class LoadingTest(unittest.TestCase):
 
     def test_get_niche_by_category(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
-        self.assertNotEqual(0, len(object_provider.get_niches_by_category("Аксессуары для малышей", 1)))
+        self.assertNotEqual(0, len(object_provider.get_niches_by_category("Аксессуары для малышей", 1, 1)))
 
     def test_get_categories(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()

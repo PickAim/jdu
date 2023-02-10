@@ -22,9 +22,7 @@ class WildBerriesDataProviderStandard(WildBerriesDataProviderWithKey):
         response: Response = self._session.get('https://suppliers-api.wildberries.ru/content/v1/object/all?name=' + text
                                                + '&top=100',
                                                headers={
-                                                   'Authorization': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9'
-                                                                    '.eyJhY2Nlc3NJRCI6IjZkNDVmMmRjLTQ5ODEtNDFlOS1hMzRkLTlhNDA5YmY2MGZiMSJ9.'
-                                                                    '1VoUp9Od9dzSWSNVSQjQnRujUvqOUY4oxO-pZXAqI1Q'})
+                                                   'Authorization': self.__api_key})
         json_code: any = response.json()
         for data in json_code['data']:
             object_name_list.append(data['objectName'])
@@ -68,8 +66,9 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
                                                                 in self.get_niches_by_category(category_name)}))
         return categories_list
 
-    def get_niches_by_category(self, name_category: str, pages_num: int = -1) -> list[Niche]:
+    def get_niches_by_category(self, name_category: str, niche_num: int = 1, pages_num: int = -1, ) -> list[Niche]:
         niche_list: list[Niche] = []
+        iterator_niche = 0
         url: str = f'https://static-basket-01.wb.ru/vol0/data/subject-base.json'
         response: Response = self._session.get(url)
         response.raise_for_status()
@@ -77,19 +76,21 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
         for data in json_data:
             if data['name'] == name_category:
                 for niche in data['childs']:
+                    if niche_num <= iterator_niche:
+                        break
                     niche_list.append(Niche(niche['name'], {
                         HandlerType.MARKETPLACE: 0,
                         HandlerType.PARTIAL_CLIENT: 0,
                         HandlerType.CLIENT: 0},
                                             0, self.get_products_by_niche(niche['name'], pages_num)))
+                    iterator_niche += 1
                 break
         return niche_list
 
     async def load_all_product_niche(self, niche: str, pages_num: int) -> list[Product]:
         result: list[Product] = []
         iterator_page: int = 1
-        temp_mass: list[str] = []
-        name_and_id_and_cost_list: list[tuple[str, int, int]] = []
+        name_id_cost_list: list[tuple[str, int, int]] = []
         while True:
             url: str = f'https://search.wb.ru/exactmatch/ru/common/v4/search?appType=1&couponsGeo=2,12,7,3,6,21,16' \
                        f'&curr=rub&dest=-1221148,-140294,-1751445,-364763&emp=0' \
@@ -100,25 +101,25 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
                 url
             )
             json_code: any = request.json()
-            temp_mass.append(str(json_code))
             if 'data' not in json_code:
                 break
             for product in json_code['data']['products']:
-                name_and_id_and_cost_list.append(
+                name_id_cost_list.append(
                     (product['name'], product['id'], product['priceU']))
             iterator_page += 1
             if pages_num != -1 and iterator_page > pages_num:
                 break
         async with aiohttp.ClientSession() as clientSession:
             tasks: list[Task] = []
-            for name_and_id_and_cost in name_and_id_and_cost_list:
-                task = asyncio.create_task(self.get_product_price_history(clientSession, name_and_id_and_cost[1]))
+            for name_id_cost in name_id_cost_list:
+                task = asyncio.create_task(self.get_product_price_history(clientSession, name_id_cost[1]))
                 tasks.append(task)
             product_price_history_list: any = await asyncio.gather(*tasks)
-            for name_and_id_and_cost in name_and_id_and_cost_list:
-                for product_price_history in product_price_history_list:
-                    result.append(Product(name_and_id_and_cost[0], name_and_id_and_cost[2], name_and_id_and_cost[1],
-                                          product_price_history, width=0, height=0, depth=0))
+            for index in range(len(name_id_cost_list)):
+                result.append(Product(name_id_cost_list[index][0],
+                                      name_id_cost_list[index][2],
+                                      name_id_cost_list[index][1],
+                                      product_price_history_list[index], width=0, height=0, depth=0))
         await clientSession.close()
         return result
 
@@ -136,7 +137,7 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
         async with session.get(url=url) as request:
             response_status: int = request.status
             if response_status != 200:
-                return ProductHistory(result)
+                return ProductHistory()
             else:
                 json_code = await request.json()
                 for item in json_code:
@@ -149,7 +150,6 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
               f'&dest=-1221148,-140294,-1701956,123585768&nm={product_id}'
         request = self._session.get(url)
         json_code = request.json()
-        self._session.close()
         product_sizes = json_code['data']['products'][0]['sizes']
         stocks: list[any] = []
         for data in product_sizes:
@@ -159,9 +159,9 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
             warehouse_leftover_dict[data_storage['wh']] = data_storage['qty']
         return warehouse_leftover_dict
 
-    def get_storage_data(self, products_id: list[int]) -> dict[int, dict[int, int]]:
+    def get_storage_data(self, product_ids: list[int]) -> dict[int, dict[int, int]]:
         main_dict: dict[int, dict[int, int]] = {}
-        for product_id in products_id:
+        for product_id in product_ids:
             dicts = self.get_storage_dict(product_id)
             main_dict[product_id] = dicts
         return main_dict
