@@ -53,8 +53,4 @@ class ProductTest(unittest.TestCase):
                 session, ProductTableToJormMapper(), ProductJormToTableMapper())
             db_products = repository.fetch_all_in_niche(self.__niche_name, self.__category_name,
                                                         self.__marketplace_name)
-            # for product, db_product in zip(products, db_products, strict=True):
-            #     self.assertEqual(db_product.name, product.name)
-            #     self.assertEqual(db_product.cost, product.cost)
-            #     self.assertEqual(db_product.article, product.article)
-            print(db_products)
+            self.assertEqual(len(db_products), 21)
