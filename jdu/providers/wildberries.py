@@ -84,8 +84,9 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
                         HandlerType.PARTIAL_CLIENT: 0,
                         HandlerType.CLIENT: 0},
                                             0, self.get_products_by_niche(niche['name'], pages_num)))
+                    print(f"ITERATOR_NICHE: {iterator_niche}")
                     iterator_niche += 1
-                    if iterator_niche != -1 and iterator_niche > niche_num:
+                    if niche_num != -1 and iterator_niche > niche_num:
                         break
                 break
         return niche_list
@@ -103,6 +104,8 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
             request: Response = self._session.get(
                 url
             )
+            if request.status_code != 200:
+                break
             json_code: any = request.json()
             if 'data' not in json_code:
                 break
@@ -110,7 +113,7 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
                 name_id_cost_list.append(
                     (product['name'], product['id'], product['priceU']))
             iterator_page += 1
-            if pages_num != -1 and iterator_page > pages_num:
+            if pages_num != -1 and iterator_page > pages_num or iterator_page > 5:
                 break
         async with aiohttp.ClientSession() as clientSession:
             tasks: list[Task] = []
