@@ -5,12 +5,10 @@ from jorm.market.service import Request
 
 
 class WildberriesDBUpdater:
-    # maybe it can use wildberries providers
     pass
 
 
 class CalcDBUpdater(DBUpdater):
-    # TODO create me
     def save_request(self, request: Request, user: User) -> None:
         pass
 
