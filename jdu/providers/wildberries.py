@@ -54,16 +54,19 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
     def __init__(self):
         super().__init__()
 
-    def get_categories(self) -> list[Category]:
+    def get_categories(self, category_num=-1) -> list[Category]:
         categories_list: list[Category] = []
         url: str = f'https://static-basket-01.wb.ru/vol0/data/subject-base.json'
         response: Response = self._session.get(url)
         response.raise_for_status()
         json_data: any = response.json()
+        iterator_category: int = 1
         for data in json_data:
-            for category_name in data['name']:
-                categories_list.append(Category(category_name, {niche.name: niche for niche
-                                                                in self.get_niches_by_category(category_name)}))
+            categories_list.append(Category(data['name'], {niche.name: niche for niche
+                                                           in self.get_niches_by_category(data['name'])}))
+            iterator_category += 1
+            if iterator_category != -1 and iterator_category > category_num:
+                break
         return categories_list
 
     def get_niches_by_category(self, name_category: str, niche_num: int = -1, pages_num: int = -1, ) -> list[Niche]:
@@ -144,24 +147,22 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
                     result.append(ProductHistoryUnit(item['price']['RUB'], 0, datetime.fromtimestamp(item['dt'])))
             return ProductHistory(result)
 
-    def get_storage_dict(self, product_id: int) -> dict[int, int]:
-        url = f'https://card.wb.ru/cards/detail?spp=27&regions=64,58,83,4,38,80,33,70,82,86,30,69,22,66,31,40,1,48' \
-              f'&pricemarginCoeff=1.0&reg=1&appType=1&emp=0&locale=ru&lang=ru&curr=rub' \
-              f'&dest=-1221148,-140294,-1701956,123585768&nm={product_id}'
-        request = self._session.get(url)
-        json_code = request.json()
-        product_sizes = json_code['data']['products'][0]['sizes']
-        stocks: list[any] = []
-        for data in product_sizes:
-            stocks.extend(data['stocks'])
-        warehouse_leftover_dict = {}
-        for data_storage in stocks:
-            warehouse_leftover_dict[data_storage['wh']] = data_storage['qty']
-        return warehouse_leftover_dict
-
-    def get_storage_data(self, product_ids: list[int]) -> dict[int, dict[int, int]]:
-        main_dict: dict[int, dict[int, int]] = {}
-        for product_id in product_ids:
-            dicts = self.get_storage_dict(product_id)
-            main_dict[product_id] = dicts
-        return main_dict
+    def get_storage_dict(self, product_id: int) -> dict[int: dict[int, dict[str: int]]]:
+        result: dict[int: dict[int, dict[str: int]]] = {}
+        url: str = f'https://card.wb.ru/cards/detail?spp=0' \
+                   f'&regions=80,64,83,4,38,33,70,69,86,30,40,48,1,22,66,31,114&pricemarginCoeff=1.0' \
+                   f'&reg=0&appType=1&emp=0&locale=ru&lang=ru&curr=rub' \
+                   f'&couponsGeo=2,12,7,3,6,21,16&dest=-1221148,-140294,-1751445,-364763&nm={product_id}'
+        response: Response = self._session.get(url)
+        response.raise_for_status()
+        json_data: any = response.json()
+        for data in json_data['data']['products']:
+            if data['id'] not in result:
+                result[data['id']] = {}
+            for stock in data['sizes']:
+                for size in stock['stocks']:
+                    wh_id = size['wh']
+                    if wh_id not in result[product_id]:
+                        result[product_id][wh_id] = {}
+                    result[product_id][wh_id][stock['name']] = size['qty']
+        return result
