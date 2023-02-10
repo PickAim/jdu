@@ -45,11 +45,15 @@ class WildBerriesDataProviderWithoutKey(DataProviderWithoutKey):
         pass
 
     @abstractmethod
-    def get_categories(self) -> list[Category]:
+    def get_categories(self, category_num: int = -1) -> list[Category]:
         pass
 
     @abstractmethod
-    def get_storage_data(self, product_ids: list[int]) -> dict[int, dict[int, int]]:
+    def get_storage_dict(self, product_id: int) -> dict[int: dict[int, dict[str: int]]]:
+        pass
+
+    @abstractmethod
+    def get_categories_name(self) -> list[str]:
         pass
 
 
