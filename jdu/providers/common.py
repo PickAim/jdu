@@ -58,7 +58,7 @@ class WildBerriesDataProviderWithKey(DataProviderWithKey):
         parent_categories: list[str] = []
         response = self._session.get('https://suppliers-api.wildberries.ru/content/v1/object/parent/all',
                                      headers={
-                                         'Authorization': self.__api_key})
+                                         'Authorization': self._api_key})
 
         json_code = response.json()
         for data in json_code['data']:

@@ -10,6 +10,9 @@ from jdu.providers.common import WildBerriesDataProviderWithoutKey
 
 
 class CalcDBUpdater(DBUpdater):
+    def delete_tokens_for_user(self, user_id: int, imprint_token: str):
+        pass
+
     def __init__(self, provider: WildBerriesDataProviderWithoutKey, session: Session):
         super().__init__()
         self.marketplace_name = 'wildberries'
