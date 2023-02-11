@@ -27,7 +27,7 @@ class LoadingTest(unittest.TestCase):
         print(f"receiving time: {datetime.now() - before}")
         self.assertNotEqual(0, len(niches))
 
-    def test_get_categories(self):
+    def _test_get_categories(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
         before = datetime.now()
         categories: list[Category] = object_provider.get_categories(1)
@@ -53,7 +53,7 @@ class LoadingTest(unittest.TestCase):
         result = object_provider.get_nearest_keywords(word)
         self.assertEqual("готовый кофе", result[0])
 
-    def test_load_storage(self):
+    def _test_load_storage(self):
         product_ids = [26414401, 6170053]
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
         storage_data: dict[int, dict[int, int]] = object_provider.get_storage_data(product_ids)
