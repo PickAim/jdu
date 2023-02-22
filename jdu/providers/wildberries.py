@@ -170,3 +170,9 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
                         result[product_id][wh_id] = {}
                     result[product_id][wh_id][stock['name']] = size['qty']
         return result
+
+    def get_storage_data(self, product_ids: list[int]) -> list[dict[int: dict[int, dict[str: int]]]]:
+        result: list[dict[int: dict[int, dict[str: int]]]] = []
+        for product_id in product_ids:
+            result.append(self.get_storage_dict(product_id))
+        return result
