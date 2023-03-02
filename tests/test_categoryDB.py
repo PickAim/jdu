@@ -2,6 +2,10 @@ import unittest
 
 from jarvis_db import tables
 from jarvis_db.db_config import Base
+from jarvis_db.repositores.mappers.market.infrastructure import CategoryTableToJormMapper, NicheJormToTableMapper, \
+    NicheTableToJormMapper, CategoryJormToTableMapper
+from jarvis_db.repositores.market.infrastructure import CategoryRepository
+from jorm.market.infrastructure import Category
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -27,9 +31,12 @@ class CategoryTest(unittest.TestCase):
         categories = object_provider.get_categories(1, 1, 1)
         with self.__session() as session, session.begin():
             object: WildberriesDbFiller = WildberriesDBFillerImpl(object_provider, session)
-            object.fill_categories()
+            object.fill_categories(1, 1, 1)
         with self.__session() as session:
-            db_categories: list[tables.Category] = session.query(
-                tables.Category).all()
+            category_repository = CategoryRepository(
+                session, CategoryTableToJormMapper(NicheTableToJormMapper()),
+                CategoryJormToTableMapper(NicheJormToTableMapper()))
+            db_categories: list[Category] = category_repository.fetch_marketplace_categories(self.__marketplace_name)
+            print(db_categories)
             for jorm_category, db_category in zip(categories, db_categories, strict=True):
-                self.assertEqual(jorm_category.name, db_category.name)
+                self.assertEqual(jorm_category, db_category)

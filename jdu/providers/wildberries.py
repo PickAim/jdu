@@ -62,9 +62,7 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
         json_data: any = response.json()
         iterator_category: int = 1
         for data in json_data:
-            categories_list.append(Category(data['name'], {niche.name: niche for niche
-                                                           in self.get_niches_by_category(data['name'],
-                                                                                          niche_num, product_num)}))
+            categories_list.append(Category(data['name']))
             iterator_category += 1
             if category_num != -1 and iterator_category > category_num:
                 break
@@ -84,8 +82,7 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
                     niche_list.append(Niche(niche['name'], {
                         HandlerType.MARKETPLACE: 0,
                         HandlerType.PARTIAL_CLIENT: 0,
-                        HandlerType.CLIENT: 0},
-                                            0, self.get_products_by_niche(niche['name'], pages_num)))
+                        HandlerType.CLIENT: 0}, 0))
                     iterator_niche += 1
                     if niche_num != -1 and iterator_niche > niche_num:
                         break
@@ -171,8 +168,8 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
                     result[product_id][wh_id][stock['name']] = size['qty']
         return result
 
-    def get_storage_data(self, product_ids: list[int]) -> list[dict[int: dict[int, dict[str: int]]]]:
+    def get_storage_data(self, product_ids: list[int]) -> dict[int: dict[int, dict[str: int]]]:
         result: list[dict[int: dict[int, dict[str: int]]]] = []
         for product_id in product_ids:
-            result.append(self.get_storage_dict(product_id))
+            result[product_id] = self.get_storage_dict(product_id)
         return result

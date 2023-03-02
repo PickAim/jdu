@@ -16,21 +16,21 @@ class LoadingTest(unittest.TestCase):
     def test_get_products_by_niche(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
         before = datetime.now()
-        products: list[Product] = object_provider.get_products_by_niche("Аварийное оборудование")
+        products: list[Product] = object_provider.get_products_by_niche("Кофе зерновой", 1)
         print(f"receiving time: {datetime.now() - before}")
         self.assertNotEqual(0, len(products))
 
     def test_get_niche_by_category(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
         before = datetime.now()
-        niches: list[Niche] = object_provider.get_niches_by_category("Аксессуары для малышей", 5, 5)
+        niches: list[Niche] = object_provider.get_niches_by_category("Аксессуары для малышей", 1, 1)
         print(f"receiving time: {datetime.now() - before}")
         self.assertNotEqual(0, len(niches))
 
-    def _test_get_categories(self):
+    def test_get_categories(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
         before = datetime.now()
-        categories: list[Category] = object_provider.get_categories(1)
+        categories: list[Category] = object_provider.get_categories(1, 1, 1)
         print(f"receiving time: {datetime.now() - before}")
         print(f'category size: {len(categories)}\n')
         summary = 0

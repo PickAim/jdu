@@ -21,19 +21,19 @@ class DBFiller(ABC):
 class WildberriesDbFiller(DBFiller):
 
     @abstractmethod
-    def fill_categories(self):
+    def fill_categories(self, category_num: int = -1, niche_num: int = -1, product_num: int = -1) -> None:
         pass
 
     @abstractmethod
-    def fill_niches(self):
+    def fill_niches(self, niche_num: int = -1, product_num: int = -1) -> None:
         pass
 
     @abstractmethod
-    def fill_niche_products(self):
+    def fill_niche_products(self, product_num: int = -1) -> None:
         pass
 
     @abstractmethod
-    def fill_niche_price_history(self, niche: str):
+    def fill_niche_price_history(self, niche: str) -> None:
         pass
 
 
@@ -41,34 +41,35 @@ class WildberriesDBFillerImpl(WildberriesDbFiller):
 
     def __init__(self, provider: WildBerriesDataProviderWithoutKey, session: Session):
         super().__init__()
-        self.marketplace_name = 'wildberries'
+        self.marketplace_name: str = 'wildberries'
         self.__provider = provider
         self.__session = session
-
-    def fill_categories(self):
-        categories: list[Category] = self.__provider.get_categories(1, 1, 1)
-        repository = CategoryRepository(
+        self.__category_repository: CategoryRepository = CategoryRepository(
             self.__session, CategoryTableToJormMapper(NicheTableToJormMapper()),
             CategoryJormToTableMapper(NicheJormToTableMapper()))
-        repository.add_all_categories_to_marketplace(categories, self.marketplace_name)
-
-    def fill_niches(self):
-        categories: list[Category] = self.__provider.get_categories(1, 1, 1)
-        repository = NicheRepository(
+        self.__niche_repository: NicheRepository = NicheRepository(
             self.__session, NicheTableToJormMapper(), NicheJormToTableMapper())
-        for category in categories:
-            niches = self.__provider.get_niches_by_category(category.name, 1, 1)
-            repository.add_all_by_category_name(niches, category.name, self.marketplace_name)
-
-    def fill_niche_products(self):
-        repository = ProductCardRepository(
+        self.__product_repository: ProductCardRepository = ProductCardRepository(
             self.__session, ProductTableToJormMapper(), ProductJormToTableMapper())
-        categories: list[Category] = self.__provider.get_categories(1, 1, 1)
+
+    def fill_categories(self, category_num: int = -1, niche_num: int = -1, product_num: int = -1):
+        categories: list[Category] = self.__provider.get_categories(category_num, niche_num, product_num)
+        self.__category_repository.add_all_categories_to_marketplace(categories, self.marketplace_name)
+
+    def fill_niches(self, niche_num: int = -1, product_num: int = -1):
+        categories: list[Category] = self.__category_repository.fetch_marketplace_categories(self.marketplace_name)
         for category in categories:
-            niches: list[Niche] = self.__provider.get_niches_by_category(category.name, 1, 1)
+            niches = self.__provider.get_niches_by_category(category.name, niche_num, product_num)
+            self.__niche_repository.add_all_by_category_name(niches, category.name, self.marketplace_name)
+
+    def fill_niche_products(self, product_num: int = -1):
+        categories: list[Category] = self.__category_repository.fetch_marketplace_categories(self.marketplace_name)
+        for category in categories:
+            niches: list[Niche] = self.__niche_repository.fetch_niches_by_category(category.name, self.marketplace_name)
             for niche in niches:
-                products: list[Product] = self.__provider.get_products_by_niche(niche.name, 1)
-                repository.add_products_to_niche(products, niche.name, category.name, self.marketplace_name)
+                products: list[Product] = self.__provider.get_products_by_niche(niche.name)
+                self.__product_repository.add_products_to_niche(products, niche.name, category.name,
+                                                                self.marketplace_name)
 
     def fill_niche_price_history(self, niche: str):
         # TODO Not implemented

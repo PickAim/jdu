@@ -1,9 +1,12 @@
 import unittest
+import warnings
 
 from jarvis_db import tables as db
 from jarvis_db.db_config import Base
-from jarvis_db.repositores.mappers.market.infrastructure import NicheTableToJormMapper, NicheJormToTableMapper
-from jarvis_db.repositores.market.infrastructure import NicheRepository
+from jarvis_db.repositores.mappers.market.infrastructure import NicheTableToJormMapper, NicheJormToTableMapper, \
+    CategoryTableToJormMapper, CategoryJormToTableMapper
+from jarvis_db.repositores.market.infrastructure import NicheRepository, CategoryRepository
+from jorm.market.infrastructure import Category
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -11,6 +14,8 @@ from jdu.db_access.fill.db_fillers import WildberriesDbFiller, WildberriesDBFill
 from jdu.db_access.update.updaters import CalcDBUpdater
 from jdu.providers.common import WildBerriesDataProviderWithoutKey
 from jdu.providers.wildberries import WildBerriesDataProviderWithoutKeyImpl
+
+warnings.filterwarnings(action="ignore", message="ResourceWarning: unclosed")
 
 
 class NicheTest(unittest.TestCase):
@@ -32,15 +37,18 @@ class NicheTest(unittest.TestCase):
         self.__session = session
 
     def test_fill_niches(self):
+        niche_name = 'AKF системы'
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
         with self.__session() as session, session.begin():
             object: WildberriesDbFiller = WildberriesDBFillerImpl(object_provider, session)
-            object.fill_niches()
+            object.fill_niches(1, 1)
         with self.__session() as session:
-            repository = NicheRepository(
-                session, NicheTableToJormMapper(), NicheJormToTableMapper())
-            db_niche = repository.fetch_niches_by_category(self.__category_name, self.__marketplace_name)
-            self.assertEqual(len(db_niche), 1)
+            category_repository = CategoryRepository(
+                session, CategoryTableToJormMapper(NicheTableToJormMapper()),
+                CategoryJormToTableMapper(NicheJormToTableMapper()))
+            categories: list[Category] = category_repository.fetch_marketplace_categories(self.__marketplace_name)
+            db_niche = list(categories[0].niches.keys())[0].__str__()
+            self.assertEqual(db_niche, niche_name)
 
     def test_add_niche_by_category_name(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()

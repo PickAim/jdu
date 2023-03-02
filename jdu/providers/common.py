@@ -29,10 +29,12 @@ class DataProviderWithKey(DataProvider):
 
 
 class WildBerriesDataProviderWithoutKey(DataProviderWithoutKey):
+    def __init__(self):
+        super().__init__()
+        self.marketplace_name = 'wildberries'
 
     @abstractmethod
     def get_niches_by_category(self, category: str, niche_num: int = -1, pages_num: int = -1) -> list[Niche]:
-        # TODO implement request.request_utils.get_object_names for it now
         pass
 
     @abstractmethod
@@ -41,7 +43,6 @@ class WildBerriesDataProviderWithoutKey(DataProviderWithoutKey):
 
     @abstractmethod
     def get_product_price_history(self, session: ClientSession, product_id: int) -> ProductHistory:
-        # TODO look at request.request_utils.get_page_data
         pass
 
     @abstractmethod
@@ -53,7 +54,7 @@ class WildBerriesDataProviderWithoutKey(DataProviderWithoutKey):
         pass
 
     @abstractmethod
-    def get_storage_data(self, product_ids: list[int]) -> list[dict[int: dict[int, dict[str: int]]]]:
+    def get_storage_data(self, product_ids: list[int]) -> dict[int: dict[int, dict[str: int]]]:
         pass
 
 
