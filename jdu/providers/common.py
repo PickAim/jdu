@@ -50,7 +50,7 @@ class WildBerriesDataProviderWithoutKey(DataProviderWithoutKey):
         pass
 
     @abstractmethod
-    def get_storage_dict(self, product_id: int) -> dict[int: dict[int, dict[str: int]]]:
+    def get_storage_dict(self, product_id: int) -> dict[int, dict[str: int]]:
         pass
 
     @abstractmethod

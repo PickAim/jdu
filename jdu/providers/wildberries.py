@@ -148,8 +148,9 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
                     result.append(ProductHistoryUnit(item['price']['RUB'], 0, datetime.fromtimestamp(item['dt'])))
             return ProductHistory(result)
 
-    def get_storage_dict(self, product_id: int) -> dict[int: dict[int, dict[str: int]]]:
-        result: dict[int: dict[int, dict[str: int]]] = {}
+    def get_storage_dict(self, product_id: int) -> dict[int, dict[str: int]]:
+        result: dict[int, dict[str: int]] = {}
+        temp_dict: dict[str: int] = {}
         url: str = f'https://card.wb.ru/cards/detail?spp=0' \
                    f'&regions=80,64,83,4,38,33,70,69,86,30,40,48,1,22,66,31,114&pricemarginCoeff=1.0' \
                    f'&reg=0&appType=1&emp=0&locale=ru&lang=ru&curr=rub' \
@@ -158,18 +159,16 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
         response.raise_for_status()
         json_data: any = response.json()
         for data in json_data['data']['products']:
-            if data['id'] not in result:
-                result[data['id']] = {}
             for stock in data['sizes']:
+                temp_dict[stock['name']] = {}
                 for size in stock['stocks']:
-                    wh_id = size['wh']
-                    if wh_id not in result[product_id]:
-                        result[product_id][wh_id] = {}
-                    result[product_id][wh_id][stock['name']] = size['qty']
+                    wh_id: int = size['wh']
+                    temp_dict[stock['name']] = size['qty']
+                    result[wh_id] = temp_dict
         return result
 
     def get_storage_data(self, product_ids: list[int]) -> dict[int: dict[int, dict[str: int]]]:
-        result: list[dict[int: dict[int, dict[str: int]]]] = []
+        result: dict[int: dict[int, dict[str: int]]] = {}
         for product_id in product_ids:
             result[product_id] = self.get_storage_dict(product_id)
         return result

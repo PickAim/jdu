@@ -53,8 +53,8 @@ class LoadingTest(unittest.TestCase):
         result = object_provider.get_nearest_keywords(word)
         self.assertEqual("готовый кофе", result[0])
 
-    def _test_load_storage(self):
-        product_ids = [26414401, 6170053]
+    def test_load_storage(self):
+        product_ids = [26414401, 18681408]
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
         storage_data: dict[int, dict[int, int]] = object_provider.get_storage_data(product_ids)
         self.assertIsNotNone(storage_data)
