@@ -56,7 +56,7 @@ class LoadingTest(unittest.TestCase):
     def test_load_storage(self):
         product_ids = [26414401, 18681408]
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
-        storage_data: dict[int, dict[int, int]] = object_provider.get_storage_data(product_ids)
+        storage_data: dict[int: dict[int, dict[str: int]]] = object_provider.get_storage_data(product_ids)
         self.assertIsNotNone(storage_data)
         self.assertEqual(2, len(storage_data.keys()))
 
