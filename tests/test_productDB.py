@@ -17,40 +17,34 @@ class ProductTest(unittest.TestCase):
         engine = create_engine('sqlite://')
         session = sessionmaker(bind=engine, autoflush=False)
         Base.metadata.create_all(engine)
-        marketplace_name = 'wildberries'
-        category_name = 'Автомобильные товары'
-        niche_name = 'AKF системы'
+        niche_id = 1
         with session() as s, s.begin():
-            marketplace = tables.Marketplace(name=marketplace_name)
-            category = tables.Category(name=category_name)
+            marketplace = tables.Marketplace(name='wildberries')
+            category = tables.Category(
+                name='Автомобильные товары', marketplace=marketplace)
             niche = tables.Niche(
-                name=niche_name,
+                id=niche_id,
+                name='niche_1',
                 marketplace_commission=10,
                 partial_client_commission=20,
                 client_commission=30,
-                return_percent=15
+                return_percent=15,
+                category=category
             )
-            niche.category = category
-            object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
-            products = object_provider.get_products_by_niche("Аварийное оборудование", 1)
             niche.products = [tables.ProductCard(
-                name=products[0].name, article=products[0].article, cost=products[0].cost)]
-
+                name=f'product#{i}', article=i, cost=i * 10, ) for i in range(100, 111)]
             category.marketplace = marketplace
             s.add(marketplace)
         self.__session = session
-        self.__marketplace_name = marketplace_name
-        self.__category_name = category_name
-        self.__niche_name = niche_name
+        self.__niche_id = niche_id
 
     def test_add_products(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
         with self.__session() as session, session.begin():
-            object: WildberriesDbFiller = WildberriesDBFillerImpl(object_provider, session)
-            object.fill_niche_products()
+            object_filler: WildberriesDbFiller = WildberriesDBFillerImpl(object_provider, session)
+            object_filler.fill_niche_products(1, 1)
         with self.__session() as session:
             repository = ProductCardRepository(
                 session, ProductTableToJormMapper(), ProductJormToTableMapper())
-            db_products = repository.fetch_all_in_niche(self.__niche_name, self.__category_name,
-                                                        self.__marketplace_name)
-            self.assertEqual(len(db_products), 20)
+            db_products = repository.fetch_all_in_niche(1)
+            self.assertEqual(len(db_products), 13)
