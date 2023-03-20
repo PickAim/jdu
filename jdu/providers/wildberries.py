@@ -6,6 +6,7 @@ import aiohttp
 from aiohttp import ClientSession
 from jorm.market.infrastructure import Niche, Product, HandlerType, Category
 from jorm.market.items import ProductHistoryUnit, ProductHistory
+from jorm.support.types import ProductSpecifyDict, StorageDict
 from requests import Response
 
 from jdu.providers.common import WildBerriesDataProviderWithoutKey, WildBerriesDataProviderWithKey
@@ -54,7 +55,7 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
     def __init__(self):
         super().__init__()
 
-    def get_categories(self, category_num=-1, niche_num=-1, product_num=-1) -> list[Category]:
+    def get_categories(self, category_num=-1) -> list[Category]:
         categories_list: list[Category] = []
         url: str = f'https://static-basket-01.wb.ru/vol0/data/subject-base.json'
         response: Response = self._session.get(url)
@@ -68,8 +69,7 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
                 break
         return categories_list
 
-    def get_niches_by_category(self, name_category: str, niche_num: int = -1,
-                               pages_num: int = -1, ) -> list[Niche]:
+    def get_niches_by_category(self, name_category: str, niche_num: int = -1) -> list[Niche]:
         niche_list: list[Niche] = []
         iterator_niche = 1
         url: str = f'https://static-basket-01.wb.ru/vol0/data/subject-base.json'
@@ -89,7 +89,7 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
                 break
         return niche_list
 
-    async def load_all_product_niche(self, niche: str, pages_num: int) -> list[Product]:
+    async def load_all_product_niche(self, niche: str, pages_num: int, count_products: int) -> list[Product]:
         result: list[Product] = []
         iterator_page: int = 1
         name_id_cost_list: list[tuple[str, int, int]] = []
@@ -107,13 +107,18 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
             json_code: any = request.json()
             if 'data' not in json_code:
                 break
+            iterator_product: int = 0
             for product in json_code['data']['products']:
+                if count_products != -1 and iterator_product > count_products:
+                    break
                 name_id_cost_list.append(
                     (product['name'], product['id'], product['priceU']))
+                iterator_product += 1
             iterator_page += 1
             if pages_num != -1 and iterator_page > pages_num:
                 break
-        async with aiohttp.ClientSession() as clientSession:
+        connector = aiohttp.TCPConnector(limit=10)
+        async with aiohttp.ClientSession(connector=connector) as clientSession:
             tasks: list[Task] = []
             for name_id_cost in name_id_cost_list:
                 task = asyncio.create_task(self.get_product_price_history(clientSession, name_id_cost[1]))
@@ -127,11 +132,11 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
         await clientSession.close()
         return result
 
-    def get_products_by_niche(self, niche: str, pages_num: int = -1) -> list[Product]:
+    def get_products_by_niche(self, niche: str, pages_num: int = -1, count_products: int = -1) -> list[Product]:
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
         loop: AbstractEventLoop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        result: list[Product] = loop.run_until_complete(self.load_all_product_niche(niche, pages_num))
+        result: list[Product] = loop.run_until_complete(self.load_all_product_niche(niche, pages_num, count_products))
         loop.close()
         return result
 
@@ -145,12 +150,12 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
             else:
                 json_code = await request.json()
                 for item in json_code:
-                    result.append(ProductHistoryUnit(item['price']['RUB'], 0, datetime.fromtimestamp(item['dt'])))
-            return ProductHistory(result)
+                    result.append(ProductHistoryUnit(item['price']['RUB'],
+                                                     datetime.fromtimestamp(item['dt']),
+                                                     self.get_storage_dict(product_id)))
+        return ProductHistory(result)
 
-    def get_storage_dict(self, product_id: int) -> dict[int, dict[str: int]]:
-        result: dict[int, dict[str: int]] = {}
-        temp_dict: dict[str: int] = {}
+    def get_storage_dict(self, product_id: int) -> StorageDict:
         url: str = f'https://card.wb.ru/cards/detail?spp=0' \
                    f'&regions=80,64,83,4,38,33,70,69,86,30,40,48,1,22,66,31,114&pricemarginCoeff=1.0' \
                    f'&reg=0&appType=1&emp=0&locale=ru&lang=ru&curr=rub' \
@@ -158,17 +163,20 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
         response: Response = self._session.get(url)
         response.raise_for_status()
         json_data: any = response.json()
+        product_specify_dict = ProductSpecifyDict()
+        storage_dict = StorageDict()
         for data in json_data['data']['products']:
             for stock in data['sizes']:
-                temp_dict[stock['name']] = {}
                 for size in stock['stocks']:
                     wh_id: int = size['wh']
-                    temp_dict[stock['name']] = size['qty']
-                    result[wh_id] = temp_dict
-        return result
+                    if stock['name'] == '':
+                        stock['name'] = 'default'
+                    product_specify_dict[stock['name']] = size['qty']
+                    storage_dict[wh_id] = product_specify_dict
+        return storage_dict
 
-    def get_storage_data(self, product_ids: list[int]) -> dict[int: dict[int, dict[str: int]]]:
-        result: dict[int: dict[int, dict[str: int]]] = {}
+    def get_storage_data(self, product_ids: list[int]) -> dict[int: StorageDict]:
+        list_storage_info: dict[int: StorageDict] = {}
         for product_id in product_ids:
-            result[product_id] = self.get_storage_dict(product_id)
-        return result
+            list_storage_info[product_id] = self.get_storage_dict(product_id)
+        return list_storage_info

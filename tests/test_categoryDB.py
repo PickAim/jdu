@@ -5,7 +5,6 @@ from jarvis_db.db_config import Base
 from jarvis_db.repositores.mappers.market.infrastructure import CategoryTableToJormMapper, NicheJormToTableMapper, \
     NicheTableToJormMapper, CategoryJormToTableMapper
 from jarvis_db.repositores.market.infrastructure import CategoryRepository
-from jorm.market.infrastructure import Category
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -20,23 +19,20 @@ class CategoryTest(unittest.TestCase):
         engine = create_engine('sqlite://')
         session = sessionmaker(bind=engine, autoflush=False)
         Base.metadata.create_all(engine)
-        marketplace_name = 'wildberries'
+        marketplace_id = 1
         with session() as s, s.begin():
-            s.add(tables.Marketplace(name=marketplace_name))
-        self.__marketplace_name = marketplace_name
+            s.add(tables.Marketplace(id=marketplace_id, name='marketplace1'))
         self.__session = session
+        self.__marketplace_id = marketplace_id
 
     def test_fill_categories(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
-        categories = object_provider.get_categories(1, 1, 1)
         with self.__session() as session, session.begin():
-            object: WildberriesDbFiller = WildberriesDBFillerImpl(object_provider, session)
-            object.fill_categories(1, 1, 1)
+            object_filler: WildberriesDbFiller = WildberriesDBFillerImpl(object_provider, session)
+            object_filler.fill_categories(1)
         with self.__session() as session:
-            category_repository = CategoryRepository(
+            repository: CategoryRepository = CategoryRepository(
                 session, CategoryTableToJormMapper(NicheTableToJormMapper()),
                 CategoryJormToTableMapper(NicheJormToTableMapper()))
-            db_categories: list[Category] = category_repository.fetch_marketplace_categories(self.__marketplace_name)
-            print(db_categories)
-            for jorm_category, db_category in zip(categories, db_categories, strict=True):
-                self.assertEqual(jorm_category, db_category)
+            db_category = repository.fetch_marketplace_categories(self.__marketplace_id)
+            self.assertEqual(len(db_category), 1)

@@ -4,6 +4,7 @@ import requests
 from aiohttp import ClientSession
 from jorm.market.infrastructure import Category, Niche, Product
 from jorm.market.items import ProductHistory
+from jorm.support.types import StorageDict
 from requests.adapters import HTTPAdapter
 
 
@@ -34,11 +35,11 @@ class WildBerriesDataProviderWithoutKey(DataProviderWithoutKey):
         self.marketplace_name = 'wildberries'
 
     @abstractmethod
-    def get_niches_by_category(self, category: str, niche_num: int = -1, pages_num: int = -1) -> list[Niche]:
+    def get_niches_by_category(self, category: str, niche_num: int = -1) -> list[Niche]:
         pass
 
     @abstractmethod
-    def get_products_by_niche(self, niche: str, pages_num: int = -1) -> list[Product]:
+    def get_products_by_niche(self, niche: str, pages_num: int = -1, count_products: int = -1) -> list[Product]:
         pass
 
     @abstractmethod
@@ -46,15 +47,15 @@ class WildBerriesDataProviderWithoutKey(DataProviderWithoutKey):
         pass
 
     @abstractmethod
-    def get_categories(self, category_num: int = -1, niche_num: int = -1, product_num: int = -1) -> list[Category]:
+    def get_categories(self, category_num: int = -1) -> list[Category]:
         pass
 
     @abstractmethod
-    def get_storage_dict(self, product_id: int) -> dict[int, dict[str: int]]:
+    def get_storage_dict(self, product_id: int) -> StorageDict:
         pass
 
     @abstractmethod
-    def get_storage_data(self, product_ids: list[int]) -> dict[int: dict[int, dict[str: int]]]:
+    def get_storage_data(self, product_ids: list[int]) -> dict[int: StorageDict]:
         pass
 
 
