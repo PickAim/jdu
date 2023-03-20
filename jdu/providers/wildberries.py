@@ -150,9 +150,14 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
             else:
                 json_code = await request.json()
                 for item in json_code:
+                    if 'price' not in item or 'RUB' not in item['price'] or 'dt' not in item:
+                        continue
                     result.append(ProductHistoryUnit(item['price']['RUB'],
                                                      datetime.fromtimestamp(item['dt']),
-                                                     self.get_storage_dict(product_id)))
+                                                     StorageDict()))
+                if len(result) > 0:
+                    last_item = result[len(result) - 1]
+                    last_item.leftover = self.get_storage_dict(product_id)
         return ProductHistory(result)
 
     def get_storage_dict(self, product_id: int) -> StorageDict:
@@ -163,16 +168,31 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
         response: Response = self._session.get(url)
         response.raise_for_status()
         json_data: any = response.json()
-        product_specify_dict = ProductSpecifyDict()
+        if 'data' not in json_data \
+                or 'products' not in json_data['data'] or len(json_data['data']['products']) < 1:
+            return StorageDict()
+        product_data = json_data['data']['products'][0]
+
+        if 'sizes' not in product_data and 'colors' not in product_data:
+            return StorageDict()
+        sizes = product_data['sizes']
         storage_dict = StorageDict()
-        for data in json_data['data']['products']:
-            for stock in data['sizes']:
-                for size in stock['stocks']:
-                    wh_id: int = size['wh']
-                    if stock['name'] == '':
-                        stock['name'] = 'default'
-                    product_specify_dict[stock['name']] = size['qty']
-                    storage_dict[wh_id] = product_specify_dict
+        for size in sizes:
+            if 'stocks' not in size or 'name' not in size:
+                continue
+            specify_name = size['name']
+            if specify_name == '':
+                specify_name = 'default'
+            for stock in size['stocks']:
+                if 'qty' not in stock:
+                    continue
+                wh_id: int = stock['wh']
+                if wh_id not in storage_dict:
+                    storage_dict[wh_id] = ProductSpecifyDict()
+                if specify_name in storage_dict[wh_id]:
+                    storage_dict[wh_id][specify_name] += int(stock['qty'])
+                else:
+                    storage_dict[wh_id][specify_name] = int(stock['qty'])
         return storage_dict
 
     def get_storage_data(self, product_ids: list[int]) -> dict[int: StorageDict]:
