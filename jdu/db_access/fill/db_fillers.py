@@ -20,6 +20,9 @@ class DBFiller(ABC):
 
 
 class WildberriesDbFiller(DBFiller):
+    @abstractmethod
+    def fill_marketplace(self) -> None:
+        pass
 
     @abstractmethod
     def fill_categories(self, category_num: int = -1) -> None:
@@ -57,7 +60,7 @@ class WildberriesDBFillerImpl(WildberriesDbFiller):
                 WarehouseTableToJormMapper()),
             MarketplaceJormToTableMapper(WarehouseJormToTableMapper()))
 
-    def fill_marketplaces(self):
+    def fill_marketplace(self):
         marketplace: Marketplace = Marketplace(self.marketplace_name)
         self.__marketplace_repository.add(marketplace)
 
@@ -72,21 +75,21 @@ class WildberriesDBFillerImpl(WildberriesDbFiller):
         categories: dict[int: Category] = {}
         for id_marketplace in dict_marketplaces:
             categories = self.__category_repository.fetch_marketplace_categories(id_marketplace)
-        for category in categories:
-            niches = self.__provider.get_niches_by_category(categories[category].name, niche_num)
-            self.__niche_repository.add_all(niches, category)
+        for id_category in categories:
+            niches = self.__provider.get_niches_by_category(categories[id_category].name, niche_num)
+            self.__niche_repository.add_all(niches, id_category)
 
     def fill_niche_products(self, pages_num: int = -1, count_products: int = -1):
         dict_marketplaces = self.__marketplace_repository.fetch_all()
         categories: dict[int: Category] = {}
         for id_marketplace in dict_marketplaces:
             categories = self.__category_repository.fetch_marketplace_categories(id_marketplace)
-        for category in categories:
-            niches: dict[int: Niche] = self.__niche_repository.fetch_niches_by_category(category)
-            for niche in niches:
-                products: list[Product] = self.__provider.get_products_by_niche(niches[niche].name, pages_num,
+        for id_category in categories:
+            niches: dict[int: Niche] = self.__niche_repository.fetch_niches_by_category(id_category)
+            for id_niche in niches:
+                products: list[Product] = self.__provider.get_products_by_niche(niches[id_niche].name, pages_num,
                                                                                 count_products)
-                self.__product_repository.add_products_to_niche(products, niche)
+                self.__product_repository.add_products_to_niche(products, id_niche)
 
     def fill_niche_price_history(self, niche: str):
         # TODO Not implemented
