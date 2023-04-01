@@ -54,10 +54,6 @@ class WildBerriesDataProviderWithoutKey(DataProviderWithoutKey):
     def get_storage_dict(self, product_id: int) -> StorageDict:
         pass
 
-    @abstractmethod
-    def get_storage_data(self, product_ids: list[int]) -> dict[int: StorageDict]:
-        pass
-
 
 class WildBerriesDataProviderWithKey(DataProviderWithKey):
     def get_parents(self) -> list[str]:

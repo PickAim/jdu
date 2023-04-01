@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker
 
 from jdu.db_access.fill.db_fillers import WildberriesDbFiller, WildberriesDBFillerImpl
 from jdu.providers.common import WildBerriesDataProviderWithoutKey
-from jdu.providers.wildberries import WildBerriesDataProviderWithoutKeyImpl
+from tests.provider_for_test.test_provider import WildBerriesDataProviderWithoutKeyImplTest
 
 
 class CategoryTest(unittest.TestCase):
@@ -26,7 +26,7 @@ class CategoryTest(unittest.TestCase):
         self.__marketplace_id = marketplace_id
 
     def test_fill_categories(self):
-        object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
+        object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImplTest()
         with self.__session() as session, session.begin():
             object_filler: WildberriesDbFiller = WildberriesDBFillerImpl(object_provider, session)
             object_filler.fill_categories(1)
@@ -34,5 +34,5 @@ class CategoryTest(unittest.TestCase):
             repository: CategoryRepository = CategoryRepository(
                 session, CategoryTableToJormMapper(NicheTableToJormMapper()),
                 CategoryJormToTableMapper(NicheJormToTableMapper()))
-            db_category = repository.fetch_marketplace_categories(self.__marketplace_id)
-            self.assertEqual(len(db_category), 1)
+            db_category = repository.find_all(self.__marketplace_id)
+            self.assertEqual(len(db_category), 10)

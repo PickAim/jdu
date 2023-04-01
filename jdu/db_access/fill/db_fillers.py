@@ -4,9 +4,11 @@ from abc import abstractmethod
 from jarvis_db.repositores.mappers.market.infrastructure import CategoryTableToJormMapper, NicheTableToJormMapper, \
     NicheJormToTableMapper, CategoryJormToTableMapper, MarketplaceTableToJormMapper, WarehouseTableToJormMapper, \
     MarketplaceJormToTableMapper, WarehouseJormToTableMapper
-from jarvis_db.repositores.mappers.market.items import ProductTableToJormMapper, ProductJormToTableMapper
+from jarvis_db.repositores.mappers.market.items import ProductTableToJormMapper, ProductJormToTableMapper, \
+    ProductHistoryTableToJormMapper
+from jarvis_db.repositores.mappers.market.items.product_history_mappers import ProductHistoryJormToTableMapper
 from jarvis_db.repositores.market.infrastructure import CategoryRepository, NicheRepository, MarketplaceRepository
-from jarvis_db.repositores.market.items import ProductCardRepository
+from jarvis_db.repositores.market.items import ProductCardRepository, ProductHistoryRepository
 from jorm.market.infrastructure import Category, Niche, Marketplace
 from jorm.market.items import Product
 from sqlalchemy.orm import Session
@@ -59,6 +61,8 @@ class WildberriesDBFillerImpl(WildberriesDbFiller):
             self.__session, MarketplaceTableToJormMapper(
                 WarehouseTableToJormMapper()),
             MarketplaceJormToTableMapper(WarehouseJormToTableMapper()))
+        self.__history_repository = ProductHistoryRepository(
+            self.__session, ProductHistoryTableToJormMapper(), ProductHistoryJormToTableMapper())
 
     def fill_marketplace(self):
         marketplace: Marketplace = Marketplace(self.marketplace_name)
@@ -68,13 +72,13 @@ class WildberriesDBFillerImpl(WildberriesDbFiller):
         dict_marketplaces = self.__marketplace_repository.fetch_all()
         categories: list[Category] = self.__provider.get_categories(category_num)
         for id_marketplace in dict_marketplaces:
-            self.__category_repository.add_all_categories_to_marketplace(categories, id_marketplace)
+            self.__category_repository.add_all(categories, id_marketplace)
 
     def fill_niches(self, niche_num: int = -1):
         dict_marketplaces = self.__marketplace_repository.fetch_all()
         categories: dict[int: Category] = {}
         for id_marketplace in dict_marketplaces:
-            categories = self.__category_repository.fetch_marketplace_categories(id_marketplace)
+            categories = self.__category_repository.find_all(id_marketplace)
         for id_category in categories:
             niches = self.__provider.get_niches_by_category(categories[id_category].name, niche_num)
             self.__niche_repository.add_all(niches, id_category)
@@ -83,7 +87,7 @@ class WildberriesDBFillerImpl(WildberriesDbFiller):
         dict_marketplaces = self.__marketplace_repository.fetch_all()
         categories: dict[int: Category] = {}
         for id_marketplace in dict_marketplaces:
-            categories = self.__category_repository.fetch_marketplace_categories(id_marketplace)
+            categories = self.__category_repository.find_all(id_marketplace)
         for id_category in categories:
             niches: dict[int: Niche] = self.__niche_repository.fetch_niches_by_category(id_category)
             for id_niche in niches:
@@ -92,5 +96,14 @@ class WildberriesDBFillerImpl(WildberriesDbFiller):
                 self.__product_repository.add_products_to_niche(products, id_niche)
 
     def fill_niche_price_history(self, niche: str):
-        # TODO Not implemented
-        pass
+        dict_marketplaces = self.__marketplace_repository.fetch_all()
+        categories: dict[int: Category] = {}
+        for id_marketplace in dict_marketplaces:
+            categories = self.__category_repository.find_all(id_marketplace)
+        for id_category in categories:
+            niches: dict[int: Niche] = self.__niche_repository.fetch_niches_by_category(id_category)
+            for id_niche in niches:
+                products: dict[int, Product] = self.__product_repository.fetch_all_in_niche(id_niche)
+                for id_product in products:
+                    self.__history_repository.add_all_product_histories(products[id_product].history.history,
+                                                                        id_product)

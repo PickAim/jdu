@@ -54,12 +54,10 @@ class LoadingTest(unittest.TestCase):
         self.assertEqual("готовый кофе", result[0])
 
     def test_load_storage(self):
-        product_ids = [26414401, 18681408]
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
-        storage_data = object_provider.get_storage_data(product_ids)
+        storage_data = object_provider.get_storage_dict(18681408)
         self.assertIsNotNone(storage_data)
-        self.assertEqual(2, len(storage_data))
-        print(storage_data)
+        self.assertEqual(9, len(storage_data))
 
 
 if __name__ == '__main__':

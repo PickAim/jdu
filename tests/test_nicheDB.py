@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker
 
 from jdu.db_access.fill.db_fillers import WildberriesDbFiller, WildberriesDBFillerImpl
 from jdu.providers.common import WildBerriesDataProviderWithoutKey
-from jdu.providers.wildberries import WildBerriesDataProviderWithoutKeyImpl
+from tests.provider_for_test.test_provider import WildBerriesDataProviderWithoutKeyImplTest
 
 warnings.filterwarnings(action="ignore", message="ResourceWarning: unclosed")
 
@@ -30,7 +30,7 @@ class NicheTest(unittest.TestCase):
         self.__session = session
 
     def test_fill_niches(self):
-        object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
+        object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImplTest()
         with self.__session() as session, session.begin():
             object_filler: WildberriesDbFiller = WildberriesDBFillerImpl(object_provider, session)
             object_filler.fill_niches(1)
@@ -38,4 +38,4 @@ class NicheTest(unittest.TestCase):
             repository = NicheRepository(
                 session, NicheTableToJormMapper(), NicheJormToTableMapper())
             db_niche = repository.fetch_niches_by_category(1)
-            self.assertEqual(len(db_niche), 1)
+            self.assertEqual(len(db_niche), 10)

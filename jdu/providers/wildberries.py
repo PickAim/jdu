@@ -6,7 +6,7 @@ import aiohttp
 from aiohttp import ClientSession
 from jorm.market.infrastructure import Niche, Product, HandlerType, Category
 from jorm.market.items import ProductHistoryUnit, ProductHistory
-from jorm.support.types import ProductSpecifyDict, StorageDict
+from jorm.support.types import StorageDict, SpecifiedLeftover
 from requests import Response
 
 from jdu.providers.common import WildBerriesDataProviderWithoutKey, WildBerriesDataProviderWithKey
@@ -172,11 +172,10 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
                 or 'products' not in json_data['data'] or len(json_data['data']['products']) < 1:
             return StorageDict()
         product_data = json_data['data']['products'][0]
-
         if 'sizes' not in product_data and 'colors' not in product_data:
             return StorageDict()
         sizes = product_data['sizes']
-        storage_dict = StorageDict()
+        storage_dict: StorageDict = StorageDict()
         for size in sizes:
             if 'stocks' not in size or 'name' not in size:
                 continue
@@ -184,19 +183,15 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
             if specify_name == '':
                 specify_name = 'default'
             for stock in size['stocks']:
+                specified_leftover_list: list[SpecifiedLeftover] = []
                 if 'qty' not in stock:
                     continue
                 wh_id: int = stock['wh']
                 if wh_id not in storage_dict:
-                    storage_dict[wh_id] = ProductSpecifyDict()
-                if specify_name in storage_dict[wh_id]:
-                    storage_dict[wh_id][specify_name] += int(stock['qty'])
+                    specified_leftover_list.append(SpecifiedLeftover(specify_name, int(stock['qty'])))
+                    storage_dict[wh_id] = specified_leftover_list
                 else:
-                    storage_dict[wh_id][specify_name] = int(stock['qty'])
+                    specified_leftover_list = storage_dict[wh_id]
+                    specified_leftover_list.append(SpecifiedLeftover(specify_name, int(stock['qty'])))
+                    storage_dict[wh_id] = specified_leftover_list
         return storage_dict
-
-    def get_storage_data(self, product_ids: list[int]) -> dict[int: StorageDict]:
-        list_storage_info: dict[int: StorageDict] = {}
-        for product_id in product_ids:
-            list_storage_info[product_id] = self.get_storage_dict(product_id)
-        return list_storage_info
