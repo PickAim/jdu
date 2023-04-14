@@ -1,41 +1,36 @@
 import unittest
 import warnings
 
-from jarvis_db import tables
-from jarvis_db.db_config import Base
-from jarvis_db.repositores.mappers.market.infrastructure import NicheTableToJormMapper, NicheJormToTableMapper
+from jarvis_db.repositores.mappers.market.infrastructure import NicheTableToJormMapper
 from jarvis_db.repositores.market.infrastructure import NicheRepository
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from jarvis_db.services.market.infrastructure.niche_service import NicheService
+from jarvis_db.tables import Marketplace, Category
 
 from jdu.db_access.fill.db_fillers import WildberriesDbFiller, WildberriesDBFillerImpl
 from jdu.providers.common import WildBerriesDataProviderWithoutKey
+from tests.db_context import DbContext
 from tests.provider_for_test.test_provider import WildBerriesDataProviderWithoutKeyImplTest
 
 warnings.filterwarnings(action="ignore", message="ResourceWarning: unclosed")
 
 
 class NicheTest(unittest.TestCase):
-    def setUp(self):
-        engine = create_engine('sqlite://')
-        session = sessionmaker(bind=engine, autoflush=False)
-        Base.metadata.create_all(engine)
-        category_id = 1
-        db_marketplace = tables.Marketplace(name='wildberries')
-        db_category = tables.Category(
-            id=category_id, name='Автомобильные товары', marketplace=db_marketplace)
-        with session() as s, s.begin():
-            s.add(db_category)
-        self.__category_id = category_id
-        self.__session = session
+    def setUp(self) -> None:
+        self.__db_context = DbContext()
+        with self.__db_context.session() as session, session.begin():
+            marketplace = Marketplace(name='wildberries')
+            category = Category(name='Category_1', marketplace=marketplace)
+            session.add(category)
+            session.flush()
+            self.__category_id = category.id
+            self.__marketplace_id = marketplace.id
 
     def test_fill_niches(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImplTest()
-        with self.__session() as session, session.begin():
+        with self.__db_context.session() as session, session.begin():
             object_filler: WildberriesDbFiller = WildberriesDBFillerImpl(object_provider, session)
-            object_filler.fill_niches(1)
-        with self.__session() as session:
-            repository = NicheRepository(
-                session, NicheTableToJormMapper(), NicheJormToTableMapper())
-            db_niche = repository.fetch_niches_by_category(1)
+            object_filler.fill_niches(10)
+        with self.__db_context.session() as session, session.begin():
+            service_niche = NicheService(NicheRepository(session), NicheTableToJormMapper())
+            db_niche = service_niche.find_all_in_marketplace(1)
             self.assertEqual(len(db_niche), 10)

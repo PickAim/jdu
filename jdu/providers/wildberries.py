@@ -1,3 +1,4 @@
+"""Методы провайдеров"""
 import asyncio
 from asyncio import Task, AbstractEventLoop
 from datetime import datetime
@@ -14,11 +15,14 @@ from jdu.services.sorters import score_object_names, sort_by_len_alphabet
 
 
 class WildBerriesDataProviderStandard(WildBerriesDataProviderWithKey):
+    """Класс провайдеров осуществляющих взаимодействие со стандартными методами по Api key"""
 
     def __init__(self, api_key: str):
+        """Конструктор класса с Api-key(Standart)"""
         super().__init__(api_key)
 
     def get_nearest_names(self, text: str) -> list[str]:
+        """Поиск схожих названий"""
         object_name_list: list[str] = []
         response: Response = self._session.get('https://suppliers-api.wildberries.ru/content/v1/object/all?name=' + text
                                                + '&top=100',
@@ -30,6 +34,7 @@ class WildBerriesDataProviderStandard(WildBerriesDataProviderWithKey):
         return object_name_list
 
     def get_nearest_keywords(self, word: str) -> list[str]:
+        """Получение схожих ключевиков"""
         names: list[str] = self.get_nearest_names(word)
         scored_dict: dict[float, list[str]] = score_object_names(word, names)
         result: list[str] = []
@@ -39,23 +44,30 @@ class WildBerriesDataProviderStandard(WildBerriesDataProviderWithKey):
 
 
 class WildBerriesDataProviderStatistics(WildBerriesDataProviderWithKey):
+    """Класс провайдеров осуществляющих взаимодействие со статистикой"""
 
     def __init__(self, api_key: str):
+        """Конструктор класса с api-key(Statistics)"""
         super().__init__(api_key)
 
 
 class WildBerriesDataProviderAds(WildBerriesDataProviderWithKey):
+    """Класс провайдеров осуществляющих взаимодействие с рекламой"""
 
     def __init__(self, api_key: str):
+        """Конструктор класса с api-key(Ads)"""
         super().__init__(api_key)
 
 
 class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
+    """Класс провайдеров осуществляющий запросы без Api-key"""
 
     def __init__(self):
+        """Конструктор класса"""
         super().__init__()
 
     def get_categories(self, category_num=-1) -> list[Category]:
+        """Получение  списка категорий"""
         categories_list: list[Category] = []
         url: str = f'https://static-basket-01.wb.ru/vol0/data/subject-base.json'
         response: Response = self._session.get(url)
@@ -70,6 +82,7 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
         return categories_list
 
     def get_niches_by_category(self, name_category: str, niche_num: int = -1) -> list[Niche]:
+        """Получение списка ниш категории"""
         niche_list: list[Niche] = []
         iterator_niche = 1
         url: str = f'https://static-basket-01.wb.ru/vol0/data/subject-base.json'
@@ -90,6 +103,7 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
         return niche_list
 
     async def load_all_product_niche(self, niche: str, pages_num: int, count_products: int) -> list[Product]:
+        """Асинхронный метод получения списка продуктов"""
         result: list[Product] = []
         iterator_page: int = 1
         name_id_cost_list: list[tuple[str, int, int]] = []
@@ -133,6 +147,7 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
         return result
 
     def get_products_by_niche(self, niche: str, pages_num: int = -1, count_products: int = -1) -> list[Product]:
+        """Сборщик coroutine списка проудктов"""
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
         loop: AbstractEventLoop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -141,6 +156,7 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
         return result
 
     async def get_product_price_history(self, session: ClientSession, product_id: int) -> ProductHistory:
+        """Получение истории уены определённого продукта"""
         result: list[ProductHistoryUnit] = []
         url: str = f'https://wbx-content-v2.wbstatic.net/price-history/{product_id}.json?'
         async with session.get(url=url) as request:
@@ -161,6 +177,7 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
         return ProductHistory(result)
 
     def get_storage_dict(self, product_id: int) -> StorageDict:
+        """Получение информации по складам"""
         url: str = f'https://card.wb.ru/cards/detail?spp=0' \
                    f'&regions=80,64,83,4,38,33,70,69,86,30,40,48,1,22,66,31,114&pricemarginCoeff=1.0' \
                    f'&reg=0&appType=1&emp=0&locale=ru&lang=ru&curr=rub' \

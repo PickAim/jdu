@@ -57,7 +57,7 @@ class LoadingTest(unittest.TestCase):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
         storage_data = object_provider.get_storage_dict(18681408)
         self.assertIsNotNone(storage_data)
-        self.assertEqual(9, len(storage_data))
+        self.assertEqual(10, len(storage_data))
 
 
 if __name__ == '__main__':

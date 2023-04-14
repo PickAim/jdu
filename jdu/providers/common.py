@@ -1,3 +1,4 @@
+"""Абастрактные методы провайдеров"""
 from abc import ABC, abstractmethod
 
 import requests

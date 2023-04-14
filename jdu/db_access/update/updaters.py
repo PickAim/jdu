@@ -1,3 +1,4 @@
+"""Методы осуществляющие обновление данных в БД"""
 from jorm.jarvis.db_update import UserInfoChanger, JORMChanger
 
 from jorm.market.infrastructure import Niche
