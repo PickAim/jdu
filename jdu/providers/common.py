@@ -1,4 +1,3 @@
-"""Абастрактные методы провайдеров"""
 from abc import ABC, abstractmethod
 
 import requests
@@ -36,11 +35,12 @@ class WildBerriesDataProviderWithoutKey(DataProviderWithoutKey):
         self.marketplace_name = 'wildberries'
 
     @abstractmethod
-    def get_niches_by_category(self, category: str, niche_num: int = -1) -> list[Niche]:
+    def get_product_name_id_cost_list(self, niche: str, pages_num: int, products_count: int) -> list[
+        tuple[str, int, int]]:
         pass
 
     @abstractmethod
-    def get_products_by_niche(self, niche: str, pages_num: int = -1, count_products: int = -1) -> list[Product]:
+    def get_products(self, niche: str, pages_num: int = -1, products_count: int = -1) -> list[Product]:
         pass
 
     @abstractmethod
@@ -48,7 +48,19 @@ class WildBerriesDataProviderWithoutKey(DataProviderWithoutKey):
         pass
 
     @abstractmethod
-    def get_categories(self, category_num: int = -1) -> list[Category]:
+    def get_niches_names(self, category: str, niche_num: int = -1) -> list[str]:
+        pass
+
+    @abstractmethod
+    def get_niches(self, niche_names_list: list[str]) -> list[Niche]:
+        pass
+
+    @abstractmethod
+    def get_categories_names(self, category_num: int = -1) -> list[str]:
+        pass
+
+    @abstractmethod
+    def get_categories(self, category_names_list: list[str]) -> list[Category]:
         pass
 
     @abstractmethod

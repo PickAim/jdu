@@ -6,10 +6,11 @@ from jarvis_db.repositores.market.infrastructure import NicheRepository
 from jarvis_db.services.market.infrastructure.niche_service import NicheService
 from jarvis_db.tables import Marketplace, Category
 
-from jdu.db_access.fill.db_fillers import WildberriesDbFiller, WildberriesDBFillerImpl
-from jdu.providers.common import WildBerriesDataProviderWithoutKey
-from tests.db_context import DbContext
-from tests.provider_for_test.test_provider import WildBerriesDataProviderWithoutKeyImplTest
+from jdu import WildberriesDBFillerImpl, \
+    WildberriesDBFiller, \
+    WildBerriesDataProviderWithoutKey
+from .db_context import DbContext
+from .provider_for_test.test_provider import WildBerriesDataProviderWithoutKeyImplTest
 
 warnings.filterwarnings(action="ignore", message="ResourceWarning: unclosed")
 
@@ -28,7 +29,7 @@ class NicheTest(unittest.TestCase):
     def test_fill_niches(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImplTest()
         with self.__db_context.session() as session, session.begin():
-            object_filler: WildberriesDbFiller = WildberriesDBFillerImpl(object_provider, session)
+            object_filler: WildberriesDBFiller = WildberriesDBFillerImpl(object_provider, session)
             object_filler.fill_niches(10)
         with self.__db_context.session() as session, session.begin():
             service_niche = NicheService(NicheRepository(session), NicheTableToJormMapper())
