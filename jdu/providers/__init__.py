@@ -1,6 +1,6 @@
-from .common import WildBerriesDataProviderWithoutKey, \
+from jdu.providers.common import WildBerriesDataProviderWithoutKey, \
     WildBerriesDataProviderWithKey
-from .wildberries import WildBerriesDataProviderStandardImpl, \
+from jdu.providers.wildberries import WildBerriesDataProviderStandardImpl, \
     WildBerriesDataProviderWithoutKeyImpl, \
     WildBerriesDataProviderAdsImpl, \
     WildBerriesDataProviderStatisticsImpl

@@ -1,6 +1,7 @@
 from abc import ABC
 from abc import abstractmethod
 
+import aiohttp
 from jarvis_db.repositores.mappers.market.infrastructure import NicheTableToJormMapper, \
     MarketplaceTableToJormMapper, WarehouseTableToJormMapper, CategoryTableToJormMapper
 from jarvis_db.repositores.mappers.market.items import ProductTableToJormMapper, ProductHistoryTableToJormMapper
@@ -18,7 +19,7 @@ from jarvis_db.services.market.items.product_history_service import ProductHisto
 from jarvis_db.services.market.items.product_history_unit_service import ProductHistoryUnitService
 from jarvis_db.tables import Marketplace
 from jorm.market.infrastructure import Marketplace, Category, Niche
-from jorm.market.items import Product
+from jorm.market.items import Product, ProductHistory
 from sqlalchemy.orm import Session
 
 from jdu.providers.common import WildBerriesDataProviderWithoutKey
@@ -26,7 +27,7 @@ from jdu.providers.common import WildBerriesDataProviderWithoutKey
 
 class DBFiller(ABC):
     def __init__(self):
-        self.marketplace_name: str = 'default'
+        self.__marketplace_name: str = 'default'
 
 
 class WildberriesDBFiller(DBFiller):
@@ -52,7 +53,6 @@ class WildberriesDBFillerImpl(WildberriesDBFiller):
 
     def __init__(self, provider: WildBerriesDataProviderWithoutKey, session: Session):
         super().__init__()
-        self.marketplace_name: str = 'wildberries'
         self.__provider = provider
         self.__marketplace_service = MarketplaceService(MarketplaceRepository(
             session),
@@ -67,23 +67,23 @@ class WildberriesDBFillerImpl(WildberriesDBFiller):
                                                              ProductHistoryRepository(session),
                                                              ProductHistoryTableToJormMapper(
                                                                  LeftoverTableToJormMapper()))
-        if not self.__marketplace_service.exists_with_name(self.marketplace_name):
-            self.__marketplace_service.create(Marketplace(self.marketplace_name))
-        self.__marketplace_id = self.__marketplace_service.find_by_name(self.marketplace_name)[1]
+        if not self.__marketplace_service.exists_with_name('wildberries'):
+            self.__marketplace_service.create(Marketplace('wildberries'))
+        self.__marketplace_id = self.__marketplace_service.find_by_name('wildberries')[1]
 
     def fill_categories(self, category_num: int = -1):
-        categories_name: list[str] = self.__provider.get_categories_names(category_num)
-        filtered_categories_name: list[str] = \
-            self.__category_service.filter_existing_names(categories_name, self.__marketplace_id)
-        categories: list[Category] = self.__provider.get_categories(filtered_categories_name)
+        categories_names: list[str] = self.__provider.get_categories_names(category_num)
+        filtered_categories_names: list[str] = \
+            self.__category_service.filter_existing_names(categories_names, self.__marketplace_id)
+        categories: list[Category] = self.__provider.get_categories(filtered_categories_names)
         self.__category_service.create_all(categories, self.__marketplace_id)
 
     def fill_niches(self, niche_num: int = -1):
         categories: dict[int, Category] = self.__category_service.find_all_in_marketplace(self.__marketplace_id)
         for category_id in categories:
-            niches_name: list[str] = self.__provider.get_niches_names(categories[category_id].name, niche_num)
-            filtered_niches_name: list[str] = self.__niche_service.filter_existing_names(niches_name, category_id)
-            niches: list[Niche] = self.__provider.get_niches(filtered_niches_name)
+            niches_names: list[str] = self.__provider.get_niches_names(categories[category_id].name, niche_num)
+            filtered_niches_names: list[str] = self.__niche_service.filter_existing_names(niches_names, category_id)
+            niches: list[Niche] = self.__provider.get_niches(filtered_niches_names)
             self.__niche_service.create_all(niches, category_id)
 
     def fill_products(self, pages_num: int = -1, products_count: int = -1):
@@ -95,12 +95,13 @@ class WildberriesDBFillerImpl(WildberriesDBFiller):
             self.__product_service.create_products(products, niche_id)
 
     def fill_price_history(self, niche: str):
-        # marketplace, id_marketplace = self.__service_marketplace.find_by_name(self.marketplace_name)
-        # niches = self.__service_niche.find_all_in_marketplace(id_marketplace)
-        # for id_niche in niches:
-        #     products = self.__service_product.find_all_in_niche(id_niche)
-        #     for id_product in products:
-        #         self.__service_price_history.create(products[id_product].history, id_product)
-        #         for price_history_unit in products[id_product].history.history:
-        #             self.__service_history_unit.create(price_history_unit, id_product)
-        pass
+        niches = self.__niche_service.find_all_in_marketplace(self.__marketplace_id)
+        for niche_id in niches:
+            products = self.__product_service.find_all_in_niche(niche_id)
+            for product_id in products:
+                connector = aiohttp.TCPConnector(limit=10)
+                async with aiohttp.ClientSession(connector=connector) as clientSession:
+                    price_history: ProductHistory = self.__provider.get_product_price_history(clientSession, product_id)
+                    self.__price_history_service.create(price_history, product_id)
+
+

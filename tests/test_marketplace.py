@@ -9,10 +9,10 @@ from jarvis_db.repositores.market.infrastructure.marketplace_repository import \
 from jarvis_db.services.market.infrastructure.marketplace_service import \
     MarketplaceService
 
-from jdu import WildberriesDBFillerImpl, \
-    WildBerriesDataProviderWithoutKey
-from .db_context import DbContext
-from .provider_for_test.test_provider import WildBerriesDataProviderWithoutKeyImplTest
+from jdu.db_tools import WildberriesDBFillerImpl
+from jdu.providers import WildBerriesDataProviderWithoutKey
+from tests.db_context import DbContext
+from tests.provider_for_test import WildBerriesDataProviderWithoutKeyImplTest
 
 
 class MarketplaceServiceTest(unittest.TestCase):

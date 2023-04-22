@@ -10,7 +10,7 @@ from jorm.support.types import StorageDict, SpecifiedLeftover
 from requests import Response
 
 from jdu.providers import WildBerriesDataProviderWithoutKey, WildBerriesDataProviderWithKey
-from jdu.services.sorters import score_object_names, sort_by_len_alphabet
+from jdu.utils.sorters import score_object_names, sort_by_len_alphabet
 
 
 class WildBerriesDataProviderStandardImpl(WildBerriesDataProviderWithKey):

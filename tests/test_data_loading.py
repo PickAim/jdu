@@ -5,7 +5,7 @@ from datetime import datetime
 from jorm.market.infrastructure import Niche, Category
 from jorm.market.items import Product
 
-from jdu import WildBerriesDataProviderWithoutKey, \
+from jdu.providers import WildBerriesDataProviderWithoutKey, \
     WildBerriesDataProviderWithoutKeyImpl, \
     WildBerriesDataProviderStandardImpl
 
@@ -17,7 +17,7 @@ class LoadingTest(unittest.TestCase):
     def test_get_products_by_niche(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
         before = datetime.now()
-        products: list[Product] = object_provider.get_products_by_niche("Кофе зерновой", 1, 100)
+        products: list[Product] = object_provider.get_products("Кофе зерновой", 1, 100)
         print(f"receiving time: {datetime.now() - before}")
         self.assertNotEqual(0, len(products))
 

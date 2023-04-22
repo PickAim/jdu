@@ -6,11 +6,11 @@ from jarvis_db.repositores.market.infrastructure import NicheRepository
 from jarvis_db.services.market.infrastructure.niche_service import NicheService
 from jarvis_db.tables import Marketplace, Category
 
-from jdu import WildberriesDBFillerImpl, \
-    WildberriesDBFiller, \
-    WildBerriesDataProviderWithoutKey
-from .db_context import DbContext
-from .provider_for_test.test_provider import WildBerriesDataProviderWithoutKeyImplTest
+from jdu.db_tools import WildberriesDBFillerImpl, \
+    WildberriesDBFiller
+from jdu.providers import WildBerriesDataProviderWithoutKey
+from tests.db_context import DbContext
+from tests.provider_for_test import WildBerriesDataProviderWithoutKeyImplTest
 
 warnings.filterwarnings(action="ignore", message="ResourceWarning: unclosed")
 
