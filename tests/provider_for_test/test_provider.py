@@ -1,6 +1,5 @@
 from datetime import datetime
 
-from aiohttp import ClientSession
 from jorm.market.infrastructure import Niche, Product, HandlerType, Category
 from jorm.market.items import ProductHistoryUnit, ProductHistory
 from jorm.support.types import StorageDict, SpecifiedLeftover
@@ -53,7 +52,7 @@ class WildBerriesDataProviderWithoutKeyImplTest(WildBerriesDataProviderWithoutKe
             products_list.append(Product('Product_' + i.__str__(), i, i, i, ProductHistory()))
         return products_list
 
-    async def get_product_price_history(self, session: ClientSession, product_id: int) -> ProductHistory:
+    def get_price_history(self, product_id: int) -> ProductHistory:
         units = [ProductHistoryUnit(
             i * 10, datetime.utcnow(), StorageDict()) for i in range(1, 11)]
         return ProductHistory(units)

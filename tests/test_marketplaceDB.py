@@ -15,7 +15,7 @@ from tests.db_context import DbContext
 from tests.provider_for_test import WildBerriesDataProviderWithoutKeyImplTest
 
 
-class MarketplaceServiceTest(unittest.TestCase):
+class MarketplaceFillerTest(unittest.TestCase):
     def setUp(self):
         self.__db_context = DbContext()
 

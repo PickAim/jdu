@@ -1,11 +1,10 @@
 from abc import ABC, abstractmethod
 
 import requests
-from aiohttp import ClientSession
 from jorm.market.infrastructure import Category, Niche, Product
 from jorm.market.items import ProductHistory
 from jorm.support.types import StorageDict
-from requests.adapters import HTTPAdapter
+from requests.adapters import HTTPAdapter, Response
 
 
 class DataProvider(ABC):
@@ -13,6 +12,13 @@ class DataProvider(ABC):
         self._session = requests.Session()
         __adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100)
         self._session.mount('http://', __adapter)
+
+    def get_exchange_rate(self, currency: str):
+        url: str = 'https://www.cbr-xml-daily.ru/daily_json.js'
+        response: Response = self._session.get(url)
+        response.raise_for_status()
+        json_data = response.json()
+        return json_data['Valute'][currency]
 
     def __del__(self):
         self._session.close()
@@ -44,7 +50,7 @@ class WildBerriesDataProviderWithoutKey(DataProviderWithoutKey):
         pass
 
     @abstractmethod
-    def get_product_price_history(self, session: ClientSession, product_id: int) -> ProductHistory:
+    def get_price_history(self, product_id: int) -> ProductHistory:
         pass
 
     @abstractmethod

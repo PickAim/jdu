@@ -1,7 +1,6 @@
 from abc import ABC
 from abc import abstractmethod
 
-import aiohttp
 from jarvis_db.repositores.mappers.market.infrastructure import NicheTableToJormMapper, \
     MarketplaceTableToJormMapper, WarehouseTableToJormMapper, CategoryTableToJormMapper
 from jarvis_db.repositores.mappers.market.items import ProductTableToJormMapper, ProductHistoryTableToJormMapper
@@ -99,9 +98,7 @@ class WildberriesDBFillerImpl(WildberriesDBFiller):
         for niche_id in niches:
             products = self.__product_service.find_all_in_niche(niche_id)
             for product_id in products:
-                connector = aiohttp.TCPConnector(limit=10)
-                async with aiohttp.ClientSession(connector=connector) as clientSession:
-                    price_history: ProductHistory = self.__provider.get_product_price_history(clientSession, product_id)
-                    self.__price_history_service.create(price_history, product_id)
-
-
+                price_history: ProductHistory = self.__provider.get_price_history(product_id)
+                self.__price_history_service.create(price_history, product_id)
+                for price_history_unit in price_history.get_history():
+                    self.__history_unit_service.create(price_history_unit, product_id)

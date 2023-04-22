@@ -1,5 +1,5 @@
 import asyncio
-from asyncio import Task, AbstractEventLoop
+from asyncio import AbstractEventLoop, Task
 from datetime import datetime
 
 import aiohttp
@@ -137,21 +137,20 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
                 break
         return name_id_cost_list
 
-    async def load_all_product_niche(self, name_id_cost_list) -> list[Product]:
+    async def __load_all_product_niche(self, name_id_cost_list) -> list[Product]:
         products: list[Product] = []
-        connector = aiohttp.TCPConnector(limit=10)
-        async with aiohttp.ClientSession(connector=connector) as clientSession:
+        async with aiohttp.ClientSession() as session:
             tasks: list[Task] = []
             for name_id_cost in name_id_cost_list:
-                task = asyncio.create_task(self.get_product_price_history(clientSession, name_id_cost[1]))
+                task = asyncio.create_task(self.__get_product_price_history(session, name_id_cost[1]))
                 tasks.append(task)
             product_price_history_list: any = await asyncio.gather(*tasks)
             for index in range(len(name_id_cost_list)):
                 products.append(Product(name_id_cost_list[index][0],
                                         name_id_cost_list[index][2],
-                                        name_id_cost_list[index][1],
+                                        name_id_cost_list[index][1], 0,
                                         product_price_history_list[index], width=0, height=0, depth=0))
-        await clientSession.close()
+        await session.close()
         return products
 
     def get_products(self, niche: str, pages_num: int = -1, products_count: int = -1) -> list[Product]:
@@ -160,14 +159,28 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
         asyncio.set_event_loop(loop)
         name_id_cost_list: list[tuple[str, int, int]] = self.get_product_name_id_cost_list(niche, pages_num,
                                                                                            products_count)
-        products: list[Product] = loop.run_until_complete(self.load_all_product_niche(name_id_cost_list))
+        products: list[Product] = loop.run_until_complete(self.__load_all_product_niche(name_id_cost_list))
         loop.close()
         return products
 
-    async def get_product_price_history(self, session: ClientSession, product_id: int) -> ProductHistory:
-        result: list[ProductHistoryUnit] = []
+    def get_price_history(self, product_id: int) -> ProductHistory:
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+        loop: AbstractEventLoop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        product_history: ProductHistory = loop.run_until_complete(self.__get_price_history_with_loop(loop, product_id))
+        loop.close()
+        return product_history
+
+    async def __get_price_history_with_loop(self, loop, product_id: int) -> ProductHistory:
+        connector = aiohttp.TCPConnector(limit=10)
+        async with aiohttp.ClientSession(connector=connector, loop=loop) as session:
+            product_history: ProductHistory = await self.__get_product_price_history(session, product_id)
+            return product_history
+
+    async def __get_product_price_history(self, client_session: ClientSession, product_id: int) -> ProductHistory:
         url: str = f'https://wbx-content-v2.wbstatic.net/price-history/{product_id}.json?'
-        async with session.get(url=url) as request:
+        result: list[ProductHistoryUnit] = []
+        async with client_session.get(url=url) as request:
             response_status: int = request.status
             if response_status != 200:
                 return ProductHistory()
@@ -214,4 +227,5 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
                 specified_leftover_list = storage_dict[wh_id]
                 specified_leftover_list.append(SpecifiedLeftover(specify_name, int(stock['qty'])))
                 storage_dict[wh_id] = specified_leftover_list
+
         return storage_dict

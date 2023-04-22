@@ -12,7 +12,7 @@ from tests.db_context import DbContext
 from tests.provider_for_test import WildBerriesDataProviderWithoutKeyImplTest
 
 
-class ProductTest(unittest.TestCase):
+class ProductFillerTest(unittest.TestCase):
     def setUp(self):
         self.__db_context = DbContext()
         with self.__db_context.session() as session, session.begin():

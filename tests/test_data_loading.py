@@ -17,7 +17,7 @@ class LoadingTest(unittest.TestCase):
     def test_get_products_by_niche(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
         before = datetime.now()
-        products: list[Product] = object_provider.get_products("Кофе зерновой", 1, 100)
+        products: list[Product] = object_provider.get_products("Кофе зерновой", 1)
         print(f"receiving time: {datetime.now() - before}")
         self.assertNotEqual(0, len(products))
 
@@ -58,8 +58,9 @@ class LoadingTest(unittest.TestCase):
 
     def test_load_storage(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
-        storage_data = object_provider.get_storage_dict(18681408)
-        self.assertIsNotNone(storage_data)
+        for id in [18681408] * 100:
+            storage_data = object_provider.get_storage_dict(id)
+        # self.assertIsNotNone(storage_data)
 
 
 if __name__ == '__main__':

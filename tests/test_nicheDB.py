@@ -15,7 +15,7 @@ from tests.provider_for_test import WildBerriesDataProviderWithoutKeyImplTest
 warnings.filterwarnings(action="ignore", message="ResourceWarning: unclosed")
 
 
-class NicheTest(unittest.TestCase):
+class NicheFillerTest(unittest.TestCase):
     def setUp(self) -> None:
         self.__db_context = DbContext()
         with self.__db_context.session() as session, session.begin():
