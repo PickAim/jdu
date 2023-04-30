@@ -1,3 +1,4 @@
+jorm@ git+https://PickAim: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@github.com/PickAim/jorm.git
 jarvis_db@ git+https://PickAim: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@github.com/PickAim/jarvis_db.git
 SQLAlchemy~=2.0.0
 requests==2.28.1
