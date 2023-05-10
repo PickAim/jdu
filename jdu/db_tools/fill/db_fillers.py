@@ -18,7 +18,7 @@ from jarvis_db.services.market.items.product_history_service import ProductHisto
 from jarvis_db.services.market.items.product_history_unit_service import ProductHistoryUnitService
 from jarvis_db.tables import Marketplace
 from jorm.market.infrastructure import Marketplace, Category, Niche
-from jorm.market.items import Product, ProductHistory
+from jorm.market.items import ProductHistory, Product
 from sqlalchemy.orm import Session
 
 from jdu.providers.common import WildBerriesDataProviderWithoutKey
@@ -86,17 +86,21 @@ class WildberriesDBFillerImpl(WildberriesDBFiller):
             self.__niche_service.create_all(niches, category_id)
 
     def fill_products(self, pages_num: int = -1, products_count: int = -1):
-
         niches = self.__niche_service.find_all_in_marketplace(self.__marketplace_id)
         for niche_id in niches:
-            products: list[Product] = self.__provider.get_products(niches[niche_id].name, pages_num,
-                                                                   products_count)
+            products_global_ids = self.__provider.get_products_id_to_name_cost_dict(niches[niche_id].name, pages_num,
+                                                                                    products_count)
+            filtered_products_global_ids: list[int] = self.__product_service.filter_existing_global_ids(
+                products_global_ids.keys(), niche_id)
+            products = self.__provider.get_products(niches[niche_id].name, products_global_ids,
+                                                    filtered_products_global_ids, pages_num,
+                                                    products_count)
             self.__product_service.create_products(products, niche_id)
 
     def fill_price_history(self, niche: str):
         niches = self.__niche_service.find_all_in_marketplace(self.__marketplace_id)
         for niche_id in niches:
-            products = self.__product_service.find_all_in_niche(niche_id)
+            products: dict[int, Product] = self.__product_service.find_all_in_niche(niche_id)
             for product_id in products:
                 price_history: ProductHistory = self.__provider.get_price_history(product_id)
                 self.__price_history_service.create(price_history, product_id)

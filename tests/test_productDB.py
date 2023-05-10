@@ -5,11 +5,11 @@ from jarvis_db.repositores.market.items import ProductCardRepository
 from jarvis_db.services.market.items.product_card_service import ProductCardService
 from jarvis_db.tables import Marketplace, Category, Niche
 
+from db_context import DbContext
 from jdu.db_tools import WildberriesDBFillerImpl, \
     WildberriesDBFiller
 from jdu.providers import WildBerriesDataProviderWithoutKey
-from tests.db_context import DbContext
-from tests.provider_for_test import WildBerriesDataProviderWithoutKeyImplTest
+from tests.provider_for_test.test_provider import WildBerriesDataProviderWithoutKeyImplTest
 
 
 class ProductFillerTest(unittest.TestCase):
@@ -17,9 +17,9 @@ class ProductFillerTest(unittest.TestCase):
         self.__db_context = DbContext()
         with self.__db_context.session() as session, session.begin():
             marketplace = Marketplace(name='wildberries')
-            category = Category(name='Category_1', marketplace=marketplace)
+            category = Category(name='Автомобильные товары', marketplace=marketplace)
             niche = Niche(
-                name='Niche_1',
+                name='Аварийное оборудование',
                 marketplace_commission=1,
                 partial_client_commission=1,
                 client_commission=1,

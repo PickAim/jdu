@@ -8,8 +8,8 @@ from jarvis_db.tables import Marketplace
 from jdu.db_tools import WildberriesDBFillerImpl, \
     WildberriesDBFiller
 from jdu.providers import WildBerriesDataProviderWithoutKey
+from provider_for_test.test_provider import WildBerriesDataProviderWithoutKeyImplTest
 from tests.db_context import DbContext
-from tests.provider_for_test import WildBerriesDataProviderWithoutKeyImplTest
 
 
 class CategoryFillerTest(unittest.TestCase):

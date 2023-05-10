@@ -17,14 +17,17 @@ class LoadingTest(unittest.TestCase):
     def test_get_products_by_niche(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
         before = datetime.now()
-        products: list[Product] = object_provider.get_products("Кофе зерновой", 1)
+        products_global_ids: dict[int, tuple[str, int]] = object_provider.get_products_id_to_name_cost_dict(
+            'Кофе зерновой', 1, 100)
+        products: list[Product] = object_provider.get_products("Кофе зерновой", products_global_ids,
+                                                               list(products_global_ids.keys()), 1, 100)
         print(f"receiving time: {datetime.now() - before}")
         self.assertNotEqual(0, len(products))
 
     def test_get_niches(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
         before = datetime.now()
-        niche_names: list[str] = object_provider.get_niches_names("Аксессуары для малышей", 10)
+        niche_names: list[str] = object_provider.get_niches_names("Автомобильные товары", 10)
         niches: list[Niche] = object_provider.get_niches(niche_names)
         print(f"receiving time: {datetime.now() - before}")
         self.assertNotEqual(0, len(niches))
@@ -34,6 +37,7 @@ class LoadingTest(unittest.TestCase):
         before = datetime.now()
         category_names: list[str] = object_provider.get_categories_names(10)
         categories: list[Category] = object_provider.get_categories(category_names)
+        print(category_names)
         print(f"receiving time: {datetime.now() - before}")
         print(f'category size: {len(categories)}\n')
         summary = 0
@@ -60,6 +64,7 @@ class LoadingTest(unittest.TestCase):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
         for id in [18681408] * 100:
             storage_data = object_provider.get_storage_dict(id)
+            storage_data = None
         # self.assertIsNotNone(storage_data)
 
 

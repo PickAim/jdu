@@ -41,12 +41,16 @@ class WildBerriesDataProviderWithoutKey(DataProviderWithoutKey):
         self.marketplace_name = 'wildberries'
 
     @abstractmethod
-    def get_product_name_id_cost_list(self, niche: str, pages_num: int, products_count: int) -> list[
-        tuple[str, int, int]]:
+    def get_products_id_to_name_cost_dict(self, niche: str,
+                                          pages_num: int = -1,
+                                          products_count: int = -1) -> dict[int, tuple[str, int]]:
         pass
 
     @abstractmethod
-    def get_products(self, niche: str, pages_num: int = -1, products_count: int = -1) -> list[Product]:
+    def get_products(self, niche: str, id_to_name_cost_dict: dict[int, tuple[str, int]],
+                     filtered_products_global_ids: list[int], pages_num: int = -1,
+                     products_count: int = -1) -> \
+            list[Product]:
         pass
 
     @abstractmethod

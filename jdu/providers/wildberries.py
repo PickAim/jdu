@@ -94,8 +94,6 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
         return niche_names_list
 
     def get_niches(self, niche_names_list):
-        # TODO Получая ниши из частотного анализа запросов, мы не контролируем Category(Всё улетит в OtherCategory)
-        # TODO Предложение: с помощью nearest_names получать близкие имена ниш. находя близкое имя ниши определяем Категорию
         niche_list: list[Niche] = []
         for niche_name in niche_names_list:
             niche_list.append(Niche(niche_name, {
@@ -104,10 +102,10 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
                 HandlerType.CLIENT: 0}, 0))
         return niche_list
 
-    def get_product_name_id_cost_list(self, niche: str, pages_num: int, products_count: int) -> list[
-        tuple[str, int, int]]:
+    def get_products_id_to_name_cost_dict(self, niche: str, pages_num: int, products_count: int) -> \
+            dict[int, tuple[str, int]]:
         page_iterator: int = 1
-        name_id_cost_list: list[tuple[str, int, int]] = []
+        id_to_name_cost_dict: dict[int, tuple[str, int]] = {}
         while True:
             url: str = f'https://search.wb.ru/exactmatch/ru/common/v4/search?' \
                        f'appType=1' \
@@ -127,39 +125,42 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
                 break
             product_iterator: int = 0
             for product in json_code['data']['products']:
-                if products_count != -1 and product_iterator > products_count:
+                if products_count != -1 and product_iterator >= products_count:
                     break
-                name_id_cost_list.append(
-                    (product['name'], product['id'], product['priceU']))
+                id_to_name_cost_dict[product['id']] = (product['name'], product['priceU'])
                 product_iterator += 1
             page_iterator += 1
             if pages_num != -1 and page_iterator > pages_num:
                 break
-        return name_id_cost_list
+        return id_to_name_cost_dict
 
-    async def __load_all_product_niche(self, name_id_cost_list) -> list[Product]:
+    async def __load_all_product_niche(self, id_to_name_cost_dict, filtered_products_global_ids) -> list[Product]:
         products: list[Product] = []
+        iterator: int = 0
         async with aiohttp.ClientSession() as session:
             tasks: list[Task] = []
-            for name_id_cost in name_id_cost_list:
-                task = asyncio.create_task(self.__get_product_price_history(session, name_id_cost[1]))
+            for global_id in id_to_name_cost_dict.keys():
+                task = asyncio.create_task(self.__get_product_price_history(session, global_id))
                 tasks.append(task)
             product_price_history_list: any = await asyncio.gather(*tasks)
-            for index in range(len(name_id_cost_list)):
-                products.append(Product(name_id_cost_list[index][0],
-                                        name_id_cost_list[index][2],
-                                        name_id_cost_list[index][1], 0,
-                                        product_price_history_list[index], width=0, height=0, depth=0))
+            for index in filtered_products_global_ids:
+                products.append(Product(id_to_name_cost_dict[index][0],
+                                        index,
+                                        id_to_name_cost_dict[index][1], 0,
+                                        product_price_history_list[iterator], width=0, height=0, depth=0))
+                iterator += 1
         await session.close()
         return products
 
-    def get_products(self, niche: str, pages_num: int = -1, products_count: int = -1) -> list[Product]:
+    def get_products(self, niche: str, id_to_name_cost_dict: dict[int, tuple[str, int]],
+                     filtered_products_global_ids: list[int],
+                     pages_num: int = -1,
+                     products_count: int = -1) -> list[Product]:
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
         loop: AbstractEventLoop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        name_id_cost_list: list[tuple[str, int, int]] = self.get_product_name_id_cost_list(niche, pages_num,
-                                                                                           products_count)
-        products: list[Product] = loop.run_until_complete(self.__load_all_product_niche(name_id_cost_list))
+        products: list[Product] = loop.run_until_complete(self.__load_all_product_niche(id_to_name_cost_dict,
+                                                                                        filtered_products_global_ids))
         loop.close()
         return products
 
@@ -194,38 +195,51 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
                                                      StorageDict()))
                 if len(result) > 0:
                     last_item = result[len(result) - 1]
-                    last_item.leftover = self.get_storage_dict(product_id)
+                    last_item.leftover = await self.__get_product_storage_dict(client_session, product_id)
         return ProductHistory(result)
 
     def get_storage_dict(self, product_id: int) -> StorageDict:
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+        loop: AbstractEventLoop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        storage_dict: StorageDict = loop.run_until_complete(self.__get_storage_dict_with_loop(loop, product_id))
+        loop.close()
+        return storage_dict
+
+    async def __get_storage_dict_with_loop(self, loop, product_id: int) -> StorageDict:
+        connector = aiohttp.TCPConnector(limit=10)
+        async with aiohttp.ClientSession(connector=connector, loop=loop) as session:
+            storage_dict: StorageDict = await self.__get_product_storage_dict(session, product_id)
+            return storage_dict
+
+    async def __get_product_storage_dict(self, client_session: ClientSession, product_id: int):
         url: str = f'https://card.wb.ru/cards/detail?' \
                    f'dest=-1221148,-140294,-1751445,-364763' \
                    f'&nm={product_id}'
-        response: Response = self._session.get(url)
-        response.raise_for_status()
-        json_data: any = response.json()
-        if 'data' not in json_data \
-                or 'products' not in json_data['data'] or len(json_data['data']['products']) < 1:
-            return StorageDict()
-        product_data = json_data['data']['products'][0]
-        if 'sizes' not in product_data and 'colors' not in product_data:
-            return StorageDict()
-        sizes = product_data['sizes']
-        storage_dict: StorageDict = StorageDict()
-        for size in sizes:
-            if 'stocks' not in size or 'name' not in size:
-                continue
-            specify_name = size['name']
-            if specify_name == '':
-                specify_name = 'default'
-            for stock in size['stocks']:
-                if 'qty' not in stock:
+        async with client_session.get(url=url) as request:
+            request.raise_for_status()
+            json_code = await request.json()
+            if 'data' not in json_code \
+                    or 'products' not in json_code['data'] or len(json_code['data']['products']) < 1:
+                return StorageDict()
+            product_data = json_code['data']['products'][0]
+            if 'sizes' not in product_data and 'colors' not in product_data:
+                return StorageDict()
+            sizes = product_data['sizes']
+            storage_dict: StorageDict = StorageDict()
+            for size in sizes:
+                if 'stocks' not in size or 'name' not in size:
                     continue
-                wh_id: int = stock['wh']
-                if wh_id not in storage_dict:
-                    storage_dict[wh_id] = []
-                specified_leftover_list = storage_dict[wh_id]
-                specified_leftover_list.append(SpecifiedLeftover(specify_name, int(stock['qty'])))
-                storage_dict[wh_id] = specified_leftover_list
-
+                specify_name = size['name']
+                if specify_name == '':
+                    specify_name = 'default'
+                for stock in size['stocks']:
+                    if 'qty' not in stock:
+                        continue
+                    wh_id: int = stock['wh']
+                    if wh_id not in storage_dict:
+                        storage_dict[wh_id] = []
+                    specified_leftover_list = storage_dict[wh_id]
+                    specified_leftover_list.append(SpecifiedLeftover(specify_name, int(stock['qty'])))
+                    storage_dict[wh_id] = specified_leftover_list
         return storage_dict

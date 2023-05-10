@@ -11,8 +11,8 @@ from jarvis_db.services.market.infrastructure.marketplace_service import \
 
 from jdu.db_tools import WildberriesDBFillerImpl
 from jdu.providers import WildBerriesDataProviderWithoutKey
+from provider_for_test.test_provider import WildBerriesDataProviderWithoutKeyImplTest
 from tests.db_context import DbContext
-from tests.provider_for_test import WildBerriesDataProviderWithoutKeyImplTest
 
 
 class MarketplaceFillerTest(unittest.TestCase):
