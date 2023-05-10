@@ -3,7 +3,6 @@ from asyncio import AbstractEventLoop, Task
 from datetime import datetime
 
 import aiohttp
-from aiohttp import ClientSession
 from jorm.market.infrastructure import Product, Category, Niche, HandlerType
 from jorm.market.items import ProductHistoryUnit, ProductHistory
 from jorm.support.types import StorageDict, SpecifiedLeftover
@@ -11,6 +10,7 @@ from requests import Response
 
 from jdu.providers import WildBerriesDataProviderWithoutKey, WildBerriesDataProviderWithKey
 from jdu.utils.sorters import score_object_names, sort_by_len_alphabet
+from jdu.utils.utils import get_async_request_json, get_request_json
 
 
 class WildBerriesDataProviderStandardImpl(WildBerriesDataProviderWithKey):
@@ -69,7 +69,8 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
                 break
         return category_names_list
 
-    def get_categories(self, category_names_list: [str]) -> list[Category]:
+    @staticmethod
+    def get_categories(category_names_list: list[str]) -> list[Category]:
         categories_list: list[Category] = []
         for category_name in category_names_list:
             categories_list.append(Category(category_name))
@@ -102,8 +103,9 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
                 HandlerType.CLIENT: 0}, 0))
         return niche_list
 
-    def get_products_id_to_name_cost_dict(self, niche: str, pages_num: int, products_count: int) -> \
-            dict[int, tuple[str, int]]:
+    def get_products_id_to_name_cost_dict(self, niche: str,
+                                          pages_num: int = -1,
+                                          products_count: int = -1) -> dict[int, tuple[str, int]]:
         page_iterator: int = 1
         id_to_name_cost_dict: dict[int, tuple[str, int]] = {}
         while True:
@@ -134,112 +136,112 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
                 break
         return id_to_name_cost_dict
 
+    def get_products(self, niche: str,
+                     id_to_name_cost_dict: dict[int, tuple[str, int]],
+                     filtered_products_global_ids: list[int]) -> list[Product]:
+        result_products = []
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+        for i in range(0, len(filtered_products_global_ids) - self.THREAD_TASK_COUNT + 1, self.THREAD_TASK_COUNT):
+            loop: AbstractEventLoop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            result_products.extend(
+                loop.run_until_complete(
+                    self.__load_all_product_niche(id_to_name_cost_dict,
+                                                  filtered_products_global_ids[i:i + self.THREAD_TASK_COUNT])
+                )
+            )
+            loop.close()
+        return result_products
+
     async def __load_all_product_niche(self, id_to_name_cost_dict, filtered_products_global_ids) -> list[Product]:
         products: list[Product] = []
-        iterator: int = 0
-        async with aiohttp.ClientSession() as session:
-            tasks: list[Task] = []
-            for global_id in id_to_name_cost_dict.keys():
-                task = asyncio.create_task(self.__get_product_price_history(session, global_id))
-                tasks.append(task)
-            product_price_history_list: any = await asyncio.gather(*tasks)
-            for index in filtered_products_global_ids:
-                products.append(Product(id_to_name_cost_dict[index][0],
-                                        index,
-                                        id_to_name_cost_dict[index][1], 0,
-                                        product_price_history_list[iterator], width=0, height=0, depth=0))
-                iterator += 1
-        await session.close()
+        tasks: list[Task] = []
+        for global_id in filtered_products_global_ids:
+            task = asyncio.create_task(self.__get_product_price_history(global_id))
+            tasks.append(task)
+        product_price_history_list = await asyncio.gather(*tasks)
+        for index, filtered_global_id in enumerate(filtered_products_global_ids):
+            products.append(Product(id_to_name_cost_dict[filtered_global_id][0],
+                                    id_to_name_cost_dict[filtered_global_id][1],
+                                    filtered_global_id, 0, "brand", "seller",  # TODO implement new JORM
+                                    product_price_history_list[index], width=0, height=0, depth=0))
         return products
 
-    def get_products(self, niche: str, id_to_name_cost_dict: dict[int, tuple[str, int]],
-                     filtered_products_global_ids: list[int],
-                     pages_num: int = -1,
-                     products_count: int = -1) -> list[Product]:
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-        loop: AbstractEventLoop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        products: list[Product] = loop.run_until_complete(self.__load_all_product_niche(id_to_name_cost_dict,
-                                                                                        filtered_products_global_ids))
-        loop.close()
-        return products
+    async def __get_product_price_history(self, product_id: int, loop=None, connector=None) -> ProductHistory:
+        cost_history_url: str = f'https://wbx-content-v2.wbstatic.net/price-history/{product_id}.json?'
+        storage_url: str = f'https://card.wb.ru/cards/detail?' \
+                           f'dest=-1221148,-140294,-1751445,-364763' \
+                           f'&nm={product_id}'
+        async with aiohttp.ClientSession() if loop is None or connector is None \
+                else aiohttp.ClientSession(connector=connector, loop=loop) as client_session:
+            request_json = await get_async_request_json(cost_history_url, client_session)
+            result = self.__resolve_json_to_history_units(request_json)
+            if len(result) > 0:
+                last_item = result[len(result) - 1]
+                request_json = await get_async_request_json(storage_url, client_session)
+                if isinstance(request_json, dict):
+                    last_item.leftover = self.__resolve_json_to_storage_dict(request_json)
+        await client_session.close()
+        return ProductHistory(result)
 
     def get_price_history(self, product_id: int) -> ProductHistory:
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-        loop: AbstractEventLoop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        product_history: ProductHistory = loop.run_until_complete(self.__get_price_history_with_loop(loop, product_id))
-        loop.close()
-        return product_history
-
-    async def __get_price_history_with_loop(self, loop, product_id: int) -> ProductHistory:
-        connector = aiohttp.TCPConnector(limit=10)
-        async with aiohttp.ClientSession(connector=connector, loop=loop) as session:
-            product_history: ProductHistory = await self.__get_product_price_history(session, product_id)
-            return product_history
-
-    async def __get_product_price_history(self, client_session: ClientSession, product_id: int) -> ProductHistory:
-        url: str = f'https://wbx-content-v2.wbstatic.net/price-history/{product_id}.json?'
-        result: list[ProductHistoryUnit] = []
-        async with client_session.get(url=url) as request:
-            response_status: int = request.status
-            if response_status != 200:
-                return ProductHistory()
-            else:
-                json_code = await request.json()
-                for item in json_code:
-                    if 'price' not in item or 'RUB' not in item['price'] or 'dt' not in item:
-                        continue
-                    result.append(ProductHistoryUnit(item['price']['RUB'],
-                                                     datetime.fromtimestamp(item['dt']),
-                                                     StorageDict()))
-                if len(result) > 0:
-                    last_item = result[len(result) - 1]
-                    last_item.leftover = await self.__get_product_storage_dict(client_session, product_id)
+        cost_history_url: str = f'https://wbx-content-v2.wbstatic.net/price-history/{product_id}.json?'
+        storage_url: str = f'https://card.wb.ru/cards/detail?' \
+                           f'dest=-1221148,-140294,-1751445,-364763' \
+                           f'&nm={product_id}'
+        request_json = get_request_json(cost_history_url, self._session)
+        result = self.__resolve_json_to_history_units(request_json)
+        if len(result) > 0:
+            last_item = result[len(result) - 1]
+            request_json = get_request_json(storage_url, self._session)
+            if isinstance(request_json, dict):
+                last_item.leftover = self.__resolve_json_to_storage_dict(request_json)
         return ProductHistory(result)
 
     def get_storage_dict(self, product_id: int) -> StorageDict:
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-        loop: AbstractEventLoop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        storage_dict: StorageDict = loop.run_until_complete(self.__get_storage_dict_with_loop(loop, product_id))
-        loop.close()
-        return storage_dict
+        storage_url: str = f'https://card.wb.ru/cards/detail?' \
+                           f'dest=-1221148,-140294,-1751445,-364763' \
+                           f'&nm={product_id}'
+        request_json = get_request_json(storage_url, self._session)
+        if isinstance(request_json, dict):
+            return self.__resolve_json_to_storage_dict(request_json)
+        return StorageDict()
 
-    async def __get_storage_dict_with_loop(self, loop, product_id: int) -> StorageDict:
-        connector = aiohttp.TCPConnector(limit=10)
-        async with aiohttp.ClientSession(connector=connector, loop=loop) as session:
-            storage_dict: StorageDict = await self.__get_product_storage_dict(session, product_id)
-            return storage_dict
+    @staticmethod
+    def __resolve_json_to_history_units(request_json: dict) -> list[ProductHistoryUnit]:
+        result = []
+        for item in request_json:
+            if 'price' not in item \
+                    or 'RUB' not in item['price'] \
+                    or 'dt' not in item:
+                continue
+            result.append(ProductHistoryUnit(item['price']['RUB'],
+                                             datetime.fromtimestamp(item['dt']), StorageDict()))
+        return result
 
-    async def __get_product_storage_dict(self, client_session: ClientSession, product_id: int):
-        url: str = f'https://card.wb.ru/cards/detail?' \
-                   f'dest=-1221148,-140294,-1751445,-364763' \
-                   f'&nm={product_id}'
-        async with client_session.get(url=url) as request:
-            request.raise_for_status()
-            json_code = await request.json()
-            if 'data' not in json_code \
-                    or 'products' not in json_code['data'] or len(json_code['data']['products']) < 1:
-                return StorageDict()
-            product_data = json_code['data']['products'][0]
-            if 'sizes' not in product_data and 'colors' not in product_data:
-                return StorageDict()
-            sizes = product_data['sizes']
-            storage_dict: StorageDict = StorageDict()
-            for size in sizes:
-                if 'stocks' not in size or 'name' not in size:
+    @staticmethod
+    def __resolve_json_to_storage_dict(json_code: dict) -> StorageDict:
+        if 'data' not in json_code \
+                or 'products' not in json_code['data'] or len(json_code['data']['products']) < 1:
+            return StorageDict()
+        product_data = json_code['data']['products'][0]
+        if 'sizes' not in product_data and 'colors' not in product_data:
+            return StorageDict()
+        sizes = product_data['sizes']
+        storage_dict: StorageDict = StorageDict()
+        for size in sizes:
+            if 'stocks' not in size or 'name' not in size:
+                continue
+            specify_name = size['name']
+            if specify_name == '':
+                specify_name = 'default'
+            for stock in size['stocks']:
+                if 'qty' not in stock:
                     continue
-                specify_name = size['name']
-                if specify_name == '':
-                    specify_name = 'default'
-                for stock in size['stocks']:
-                    if 'qty' not in stock:
-                        continue
-                    wh_id: int = stock['wh']
-                    if wh_id not in storage_dict:
-                        storage_dict[wh_id] = []
-                    specified_leftover_list = storage_dict[wh_id]
-                    specified_leftover_list.append(SpecifiedLeftover(specify_name, int(stock['qty'])))
-                    storage_dict[wh_id] = specified_leftover_list
+                wh_id: int = stock['wh']
+                if wh_id not in storage_dict:
+                    storage_dict[wh_id] = []
+                specified_leftover_list = storage_dict[wh_id]
+                specified_leftover_list.append(SpecifiedLeftover(specify_name, int(stock['qty'])))
+                storage_dict[wh_id] = specified_leftover_list
         return storage_dict

@@ -20,7 +20,7 @@ class LoadingTest(unittest.TestCase):
         products_global_ids: dict[int, tuple[str, int]] = object_provider.get_products_id_to_name_cost_dict(
             'Кофе зерновой', 1, 100)
         products: list[Product] = object_provider.get_products("Кофе зерновой", products_global_ids,
-                                                               list(products_global_ids.keys()), 1, 100)
+                                                               list(products_global_ids.keys()))
         print(f"receiving time: {datetime.now() - before}")
         self.assertNotEqual(0, len(products))
 

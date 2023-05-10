@@ -8,6 +8,8 @@ from requests.adapters import HTTPAdapter, Response
 
 
 class DataProvider(ABC):
+    THREAD_TASK_COUNT = 100
+
     def __init__(self):
         self._session = requests.Session()
         __adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100)
@@ -48,8 +50,7 @@ class WildBerriesDataProviderWithoutKey(DataProviderWithoutKey):
 
     @abstractmethod
     def get_products(self, niche: str, id_to_name_cost_dict: dict[int, tuple[str, int]],
-                     filtered_products_global_ids: list[int], pages_num: int = -1,
-                     products_count: int = -1) -> \
+                     filtered_products_global_ids: list[int]) -> \
             list[Product]:
         pass
 
@@ -69,8 +70,9 @@ class WildBerriesDataProviderWithoutKey(DataProviderWithoutKey):
     def get_categories_names(self, category_num: int = -1) -> list[str]:
         pass
 
+    @staticmethod
     @abstractmethod
-    def get_categories(self, category_names_list: list[str]) -> list[Category]:
+    def get_categories(category_names_list: list[str]) -> list[Category]:
         pass
 
     @abstractmethod
