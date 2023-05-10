@@ -58,9 +58,7 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
     def get_categories_names(self, category_num=-1) -> list[str]:
         category_names_list: list[str] = []
         url: str = 'https://static-basket-01.wb.ru/vol0/data/subject-base.json'
-        response: Response = self._session.get(url)
-        response.raise_for_status()
-        json_data: any = response.json()
+        json_data = get_request_json(url, self._session)
         category_iterator: int = 1
         for data in json_data:
             category_names_list.append(data['name'])
@@ -81,9 +79,7 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
         niche_names_list: list[str] = []
         niche_iterator: int = 1
         url: str = 'https://static-basket-01.wb.ru/vol0/data/subject-base.json'
-        response: Response = self._session.get(url)
-        response.raise_for_status()
-        json_data: any = response.json()
+        json_data = get_request_json(url, self._session)
         for data in json_data:
             if data['name'] == name_category:
                 for niche in data['childs']:
@@ -117,12 +113,7 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
                        f'&resultset=catalog' \
                        f'&sort=popular' \
                        f'&page={page_iterator}'
-            request: Response = self._session.get(
-                url
-            )
-            if request.status_code != 200:
-                break
-            json_code: any = request.json()
+            json_code = get_request_json(url, self._session)
             if 'data' not in json_code:
                 break
             product_iterator: int = 0
