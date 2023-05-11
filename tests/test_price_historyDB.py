@@ -32,7 +32,7 @@ class PriceHistoryFillerTest(unittest.TestCase):
                 return_percent=1,
                 category=category)
             product = ProductCard(
-                name='Product_1', global_id=12, rating=12, cost=230, niche=niche)
+                name='Product_1', global_id=12, rating=12, cost=230, niche=niche, brand="brand", seller="seller")
             session.add(product)
             session.flush()
             self.__product_id = product.id

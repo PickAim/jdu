@@ -33,7 +33,7 @@ class ProductFillerTest(unittest.TestCase):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImplTest()
         with self.__db_context.session() as session, session.begin():
             object_filler: WildberriesDBFiller = WildberriesDBFillerImpl(object_provider, session)
-            object_filler.fill_products(1, 10)
+            object_filler.fill_products(10)
         with self.__db_context.session() as session:
             service_product = ProductCardService(ProductCardRepository(session), ProductTableToJormMapper())
             db_products = service_product.find_all_in_niche(1)
