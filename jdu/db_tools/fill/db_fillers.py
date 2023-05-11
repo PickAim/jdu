@@ -40,7 +40,7 @@ class WildberriesDBFiller(DBFiller):
         pass
 
     @abstractmethod
-    def fill_products(self, pages_num: int = -1, products_count: int = -1) -> None:
+    def fill_products(self, products_count: int = -1) -> None:
         pass
 
     @abstractmethod
@@ -85,16 +85,19 @@ class WildberriesDBFillerImpl(WildberriesDBFiller):
             niches: list[Niche] = self.__provider.get_niches(filtered_niches_names)
             self.__niche_service.create_all(niches, category_id)
 
-    def fill_products(self, pages_num: int = -1, products_count: int = -1):
+    def fill_products(self, products_count: int = -1):
         niches = self.__niche_service.find_all_in_marketplace(self.__marketplace_id)
         for niche_id in niches:
-            products_global_ids = self.__provider.get_products_id_to_name_cost_dict(niches[niche_id].name, pages_num,
-                                                                                    products_count)
-            filtered_products_global_ids: list[int] = self.__product_service.filter_existing_global_ids(
-                products_global_ids.keys(), niche_id)
-            products = self.__provider.get_products(niches[niche_id].name, products_global_ids,
-                                                    filtered_products_global_ids, pages_num,
-                                                    products_count)
+            id_to_name_cost_dict = \
+                self.__provider.get_products_id_to_name_cost_dict(niches[niche_id].name, products_count)
+            filtered_products_global_ids: list[int] = \
+                self.__product_service.filter_existing_global_ids(id_to_name_cost_dict.keys(), niche_id)
+            id_to_name_cost_list: list[tuple[int, str, int]] = [
+                (global_id, id_to_name_cost_dict[global_id][0], id_to_name_cost_dict[global_id][1])
+                for global_id in filtered_products_global_ids
+            ]
+            products = \
+                self.__provider.get_products(niches[niche_id].name, id_to_name_cost_list)
             self.__product_service.create_products(products, niche_id)
 
     def fill_price_history(self, niche: str):
@@ -102,7 +105,7 @@ class WildberriesDBFillerImpl(WildberriesDBFiller):
         for niche_id in niches:
             products: dict[int, Product] = self.__product_service.find_all_in_niche(niche_id)
             for product_id in products:
-                price_history: ProductHistory = self.__provider.get_price_history(product_id)
+                price_history: ProductHistory = self.__provider.get_product_price_history(product_id)
                 self.__price_history_service.create(price_history, product_id)
                 for price_history_unit in price_history.get_history():
                     self.__history_unit_service.create(price_history_unit, product_id)

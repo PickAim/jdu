@@ -59,11 +59,11 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
         category_names_list: list[str] = []
         url: str = 'https://static-basket-01.wb.ru/vol0/data/subject-base.json'
         json_data = get_request_json(url, self._session)
-        category_iterator: int = 1
+        category_iterator: int = 0
         for data in json_data:
             category_names_list.append(data['name'])
             category_iterator += 1
-            if category_num != -1 and category_iterator > category_num:
+            if category_num != -1 and category_iterator >= category_num:
                 break
         return category_names_list
 
@@ -72,7 +72,6 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
         categories_list: list[Category] = []
         for category_name in category_names_list:
             categories_list.append(Category(category_name))
-
         return categories_list
 
     def get_niches_names(self, name_category: str, niche_num: int = -1) -> list[str]:
@@ -99,10 +98,9 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
                 HandlerType.CLIENT: 0}, 0))
         return niche_list
 
-    def get_products_id_to_name_cost_dict(self, niche: str,
-                                          pages_num: int = -1,
-                                          products_count: int = -1) -> dict[int, tuple[str, int]]:
+    def get_products_id_to_name_cost_dict(self, niche: str, products_count: int = -1) -> dict[int, tuple[str, int]]:
         page_iterator: int = 1
+        product_iterator: int = 0
         id_to_name_cost_dict: dict[int, tuple[str, int]] = {}
         while True:
             url: str = f'https://search.wb.ru/exactmatch/ru/common/v4/search?' \
@@ -116,45 +114,38 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
             json_code = get_request_json(url, self._session)
             if 'data' not in json_code:
                 break
-            product_iterator: int = 0
             for product in json_code['data']['products']:
                 if products_count != -1 and product_iterator >= products_count:
-                    break
+                    return id_to_name_cost_dict
                 id_to_name_cost_dict[product['id']] = (product['name'], product['priceU'])
                 product_iterator += 1
             page_iterator += 1
-            if pages_num != -1 and page_iterator > pages_num:
-                break
         return id_to_name_cost_dict
 
-    def get_products(self, niche: str,
-                     id_to_name_cost_dict: dict[int, tuple[str, int]],
-                     filtered_products_global_ids: list[int]) -> list[Product]:
+    def get_products(self, niche: str, id_name_cost_list: list[tuple[int, str, int]]) -> list[Product]:
         result_products = []
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-        for i in range(0, len(filtered_products_global_ids) - self.THREAD_TASK_COUNT + 1, self.THREAD_TASK_COUNT):
+        for i in range(0, len(id_name_cost_list) - self.THREAD_TASK_COUNT + 1, self.THREAD_TASK_COUNT):
             loop: AbstractEventLoop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             result_products.extend(
                 loop.run_until_complete(
-                    self.__load_all_product_niche(id_to_name_cost_dict,
-                                                  filtered_products_global_ids[i:i + self.THREAD_TASK_COUNT])
+                    self.__load_all_product_niche(id_name_cost_list[i:i + self.THREAD_TASK_COUNT])
                 )
             )
             loop.close()
         return result_products
 
-    async def __load_all_product_niche(self, id_to_name_cost_dict, filtered_products_global_ids) -> list[Product]:
+    async def __load_all_product_niche(self, id_to_name_cost_dict: list[tuple[int, str, int]]) -> list[Product]:
         products: list[Product] = []
         tasks: list[Task] = []
-        for global_id in filtered_products_global_ids:
-            task = asyncio.create_task(self.__get_product_price_history(global_id))
+        for global_id in id_to_name_cost_dict:
+            task = asyncio.create_task(self.__get_product_price_history(global_id[0]))
             tasks.append(task)
         product_price_history_list = await asyncio.gather(*tasks)
-        for index, filtered_global_id in enumerate(filtered_products_global_ids):
-            products.append(Product(id_to_name_cost_dict[filtered_global_id][0],
-                                    id_to_name_cost_dict[filtered_global_id][1],
-                                    filtered_global_id, 0, "brand", "seller",  # TODO implement new JORM
+        for index, id_name_cost in enumerate(id_to_name_cost_dict):
+            products.append(Product(id_name_cost[1], id_name_cost[2], id_name_cost[0], 0,
+                                    "brand", "seller",  # TODO implement new JORM
                                     product_price_history_list[index], width=0, height=0, depth=0))
         return products
 
@@ -175,7 +166,7 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
         await client_session.close()
         return ProductHistory(result)
 
-    def get_price_history(self, product_id: int) -> ProductHistory:
+    def get_product_price_history(self, product_id: int) -> ProductHistory:
         cost_history_url: str = f'https://wbx-content-v2.wbstatic.net/price-history/{product_id}.json?'
         storage_url: str = f'https://card.wb.ru/cards/detail?' \
                            f'dest=-1221148,-140294,-1751445,-364763' \

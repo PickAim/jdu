@@ -13,32 +13,37 @@ warnings.filterwarnings(action="ignore", message="ResourceWarning: unclosed")
 
 
 class LoadingTest(unittest.TestCase):
-
     def test_get_products_by_niche(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
         before = datetime.now()
-        products_global_ids: dict[int, tuple[str, int]] = object_provider.get_products_id_to_name_cost_dict(
-            'Кофе зерновой', 1, 100)
-        products: list[Product] = object_provider.get_products("Кофе зерновой", products_global_ids,
-                                                               list(products_global_ids.keys()))
+        product_num = 101
+        products_global_ids: dict[int, tuple[str, int]] = \
+            object_provider.get_products_id_to_name_cost_dict('Кофе зерновой', product_num)
+        id_to_name_cost_list: list[tuple[int, str, int]] = [
+            (global_id, products_global_ids[global_id][0], products_global_ids[global_id][1])
+            for global_id in products_global_ids
+        ]
+        products: list[Product] = object_provider.get_products("Кофе зерновой", id_to_name_cost_list)
         print(f"products receiving time: {datetime.now() - before}")
-        self.assertNotEqual(0, len(products))
+        self.assertNotEqual(product_num, len(products))
 
     def test_get_niches(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
         before = datetime.now()
-        niche_names: list[str] = object_provider.get_niches_names("Автомобильные товары", 10)
+        niches_num = 10
+        niche_names: list[str] = object_provider.get_niches_names("Автомобильные товары", niches_num)
         niches: list[Niche] = object_provider.get_niches(niche_names)
         print(f"niches receiving time: {datetime.now() - before}")
-        self.assertNotEqual(0, len(niches))
+        self.assertEqual(niches_num, len(niches))
 
     def test_get_categories(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
         before = datetime.now()
-        category_names: list[str] = object_provider.get_categories_names(10)
+        categories_num = 10
+        category_names: list[str] = object_provider.get_categories_names(categories_num)
         categories: list[Category] = object_provider.get_categories(category_names)
         print(f"categories names receiving time: {datetime.now() - before}")
-        self.assertEqual(10, len(categories))
+        self.assertEqual(categories_num, len(categories))
 
     def test_sorting(self):
         word = "Кофе"
