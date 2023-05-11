@@ -32,7 +32,7 @@ class PriceHistoryFillerTest(unittest.TestCase):
                 return_percent=1,
                 category=category)
             product = ProductCard(
-                name='Product_1', global_id=12, rating=12, cost=230, niche=niche)
+                name='Product_1', global_id=12, rating=12, cost=230, niche=niche, brand="brand", seller="seller")
             session.add(product)
             session.flush()
             self.__product_id = product.id
@@ -61,7 +61,6 @@ class PriceHistoryFillerTest(unittest.TestCase):
             self.__warehouse_id = warehouse.id
             self.__warehouse_gid = warehouse.global_id
 
-    @unittest.expectedFailure  # TODO rework JDB
     def test_fill_price_history(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImplTest()
         with self.__db_context.session() as session, session.begin():
