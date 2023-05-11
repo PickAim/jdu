@@ -12,6 +12,9 @@ class WildBerriesDataProviderWithoutKeyImplTest(WildBerriesDataProviderWithoutKe
     def __init__(self):
         super().__init__()
 
+    def __del__(self):
+        self._session.close()
+
     def get_categories_names(self, category_num=-1) -> list[str]:
         category_names_list: list[str] = []
         for i in range(category_num):
@@ -39,8 +42,9 @@ class WildBerriesDataProviderWithoutKeyImplTest(WildBerriesDataProviderWithoutKe
                 HandlerType.CLIENT: 0}, 0))
         return niche_list
 
-    def get_products_id_to_name_cost_dict(self, niche: str, pages_num: int,
-                                          products_count: int) -> dict[int, tuple[str, int]]:
+    def get_products_id_to_name_cost_dict(self, niche: str,
+                                          pages_num: int = -1,
+                                          products_count: int = -1) -> dict[int, tuple[str, int]]:
         id_to_name_cost_dict: dict[int, tuple[str, int]] = {}
         for i in range(10):
             id_to_name_cost_dict[i] = ('Product_' + i.__str__(), i)
@@ -54,7 +58,7 @@ class WildBerriesDataProviderWithoutKeyImplTest(WildBerriesDataProviderWithoutKe
             list[Product]:
         products_list: list[Product] = []
         for i in filtered_products_global_ids:
-            products_list.append(Product('Product_' + i.__str__(), i, i, i, ProductHistory()))
+            products_list.append(Product('Product_' + i.__str__(), i, i, i, "brand", "seller", ProductHistory()))
         return products_list
 
     def get_price_history(self, product_id: int) -> ProductHistory:
