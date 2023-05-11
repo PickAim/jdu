@@ -124,7 +124,6 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
 
     def get_products(self, niche: str, id_name_cost_list: list[tuple[int, str, int]]) -> list[Product]:
         result_products = []
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
         for i in range(0, len(id_name_cost_list) - self.THREAD_TASK_COUNT + 1, self.THREAD_TASK_COUNT):
             loop: AbstractEventLoop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
