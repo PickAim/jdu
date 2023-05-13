@@ -190,7 +190,7 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
 
     @staticmethod
     def __resolve_json_to_history_units(request_json: dict) -> list[ProductHistoryUnit]:
-        result = []
+        result: list[ProductHistoryUnit] = []
         for item in request_json:
             if 'price' not in item \
                     or 'RUB' not in item['price'] \
