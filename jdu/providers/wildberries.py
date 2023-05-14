@@ -9,8 +9,8 @@ from jorm.support.types import StorageDict, SpecifiedLeftover
 from requests import Response
 
 from jdu.providers import WildBerriesDataProviderWithoutKey, WildBerriesDataProviderWithKey
-from jdu.utils.sorters import score_object_names, sort_by_len_alphabet
-from jdu.utils.utils import get_async_request_json, get_request_json
+from jdu.support.sorters import score_object_names, sort_by_len_alphabet
+from jdu.support.utils import get_async_request_json, get_request_json
 
 
 class WildBerriesDataProviderStandardImpl(WildBerriesDataProviderWithKey):

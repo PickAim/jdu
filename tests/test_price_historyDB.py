@@ -74,4 +74,4 @@ class PriceHistoryFillerTest(unittest.TestCase):
                                                           ProductHistoryTableToJormMapper(
                                                               LeftoverTableToJormMapper()))
             db_price_history = price_history_service.find_product_history(1)
-            print(db_price_history)
+            self.assertEqual(len(db_price_history.get_history()), 10)

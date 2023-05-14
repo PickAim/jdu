@@ -53,6 +53,7 @@ class WildberriesDBFillerImpl(WildberriesDBFiller):
     def __init__(self, provider: WildBerriesDataProviderWithoutKey, session: Session):
         super().__init__()
         self.__provider = provider
+        self.__marketplace_name = 'wildberries'
         self.__marketplace_service = MarketplaceService(MarketplaceRepository(
             session),
             MarketplaceTableToJormMapper(WarehouseTableToJormMapper()))
@@ -66,9 +67,9 @@ class WildberriesDBFillerImpl(WildberriesDBFiller):
                                                              ProductHistoryRepository(session),
                                                              ProductHistoryTableToJormMapper(
                                                                  LeftoverTableToJormMapper()))
-        if not self.__marketplace_service.exists_with_name('wildberries'):
-            self.__marketplace_service.create(Marketplace('wildberries'))
-        self.__marketplace_id = self.__marketplace_service.find_by_name('wildberries')[1]
+        if not self.__marketplace_service.exists_with_name(self.__marketplace_name):
+            self.__marketplace_service.create(Marketplace(self.__marketplace_name))
+        self.__marketplace_id = self.__marketplace_service.find_by_name(self.__marketplace_name)[1]
 
     def fill_categories(self, category_num: int = -1):
         categories_names: list[str] = self.__provider.get_categories_names(category_num)
@@ -107,5 +108,3 @@ class WildberriesDBFillerImpl(WildberriesDBFiller):
             for product_id in products:
                 price_history: ProductHistory = self.__provider.get_product_price_history(product_id)
                 self.__price_history_service.create(price_history, product_id)
-                for price_history_unit in price_history.get_history():
-                    self.__history_unit_service.create(price_history_unit, product_id)
