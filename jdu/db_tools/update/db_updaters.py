@@ -2,11 +2,8 @@ from jorm.jarvis.db_update import UserInfoChanger, JORMChanger
 
 from jorm.market.infrastructure import Niche
 from jorm.market.person import User, Account
-from jorm.market.service import Request
 
 
-# TODO Implement Changers from JORM
-# TODO Think about file and packages renaming
 class UserInfoChangerImpl(UserInfoChanger):
     def update_session_tokens(self, old_update_token: str, new_access_token: str, new_update_token: str) -> None:
         pass
@@ -26,8 +23,5 @@ class UserInfoChangerImpl(UserInfoChanger):
 
 
 class JORMChangerImpl(JORMChanger):
-    def save_request(self, request: Request, user: User) -> None:
-        pass
-
     def load_new_niche(self, niche_name: str) -> Niche:
         pass

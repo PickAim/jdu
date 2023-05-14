@@ -5,60 +5,59 @@ from datetime import datetime
 from jorm.market.infrastructure import Niche, Category
 from jorm.market.items import Product
 
-from jdu.providers.common import WildBerriesDataProviderWithoutKey
-from jdu.providers.wildberries import WildBerriesDataProviderWithoutKeyImpl, WildBerriesDataProviderStandard
+from jdu.providers import WildBerriesDataProviderWithoutKey, \
+    WildBerriesDataProviderWithoutKeyImpl, \
+    WildBerriesDataProviderStandardImpl
 
 warnings.filterwarnings(action="ignore", message="ResourceWarning: unclosed")
 
 
 class LoadingTest(unittest.TestCase):
-
     def test_get_products_by_niche(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
         before = datetime.now()
-        products: list[Product] = object_provider.get_products_by_niche("Кофе зерновой", 1)
-        print(f"receiving time: {datetime.now() - before}")
-        self.assertNotEqual(0, len(products))
+        product_num = 101
+        products_global_ids: dict[int, tuple[str, int]] = \
+            object_provider.get_products_id_to_name_cost_dict('Кофе зерновой', product_num)
+        id_to_name_cost_list: list[tuple[int, str, int]] = [
+            (global_id, products_global_ids[global_id][0], products_global_ids[global_id][1])
+            for global_id in products_global_ids
+        ]
+        products: list[Product] = object_provider.get_products("Кофе зерновой", id_to_name_cost_list)
+        print(f"products receiving time: {datetime.now() - before}")
+        self.assertNotEqual(product_num, len(products))
 
-    def test_get_niche_by_category(self):
+    def test_get_niches(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
         before = datetime.now()
-        niches: list[Niche] = object_provider.get_niches_by_category("Аксессуары для малышей", 1, 1)
-        print(f"receiving time: {datetime.now() - before}")
-        self.assertNotEqual(0, len(niches))
+        niches_num = 10
+        niche_names: list[str] = object_provider.get_niches_names("Автомобильные товары", niches_num)
+        niches: list[Niche] = object_provider.get_niches(niche_names)
+        print(f"niches receiving time: {datetime.now() - before}")
+        self.assertEqual(niches_num, len(niches))
 
     def test_get_categories(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
         before = datetime.now()
-        categories: list[Category] = object_provider.get_categories(1, 1, 1)
-        print(f"receiving time: {datetime.now() - before}")
-        print(f'category size: {len(categories)}\n')
-        summary = 0
-        for category in categories:
-            summary += len(category.niches)
-        print(f'niches number: {summary}\n')
-        summary = 0
-        for category in categories:
-            for niche_key in category.niches:
-                summary += len(category.niches[niche_key].products)
-        print(f'product number: {summary}\n')
-        self.assertNotEqual(0, len(categories))
+        categories_num = 10
+        category_names: list[str] = object_provider.get_categories_names(categories_num)
+        categories: list[Category] = object_provider.get_categories(category_names)
+        print(f"categories names receiving time: {datetime.now() - before}")
+        self.assertEqual(categories_num, len(categories))
 
     def test_sorting(self):
         word = "Кофе"
-        object_provider: WildBerriesDataProviderStandard = \
-            WildBerriesDataProviderStandard('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9'
-                                            '.eyJhY2Nlc3NJRCI6IjhiMGZkZWEwLWYxYjgtNDVjOS05NmM5LTdiMmRlNjU2N2Q3ZCJ9'
-                                            '.6YAvO_GYeXW3em8WZ5cLynTBKcg8x5pmMmoCkgMY6QI')
+        object_provider: WildBerriesDataProviderStandardImpl = \
+            WildBerriesDataProviderStandardImpl('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9'
+                                                '.eyJhY2Nlc3NJRCI6IjhiMGZkZWEwLWYxYjgtNDVjOS05NmM5LTdiMmRlNjU2N2Q3ZCJ9'
+                                                '.6YAvO_GYeXW3em8WZ5cLynTBKcg8x5pmMmoCkgMY6QI')
         result = object_provider.get_nearest_keywords(word)
         self.assertEqual("готовый кофе", result[0])
 
     def test_load_storage(self):
-        product_ids = [26414401, 18681408]
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
-        storage_data: dict[int: dict[int, dict[str: int]]] = object_provider.get_storage_data(product_ids)
+        storage_data = object_provider.get_storage_dict(18681408)
         self.assertIsNotNone(storage_data)
-        self.assertEqual(2, len(storage_data.keys()))
 
 
 if __name__ == '__main__':

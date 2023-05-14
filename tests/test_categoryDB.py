@@ -1,42 +1,35 @@
 import unittest
 
-from jarvis_db import tables
-from jarvis_db.db_config import Base
-from jarvis_db.repositores.mappers.market.infrastructure import CategoryTableToJormMapper, NicheJormToTableMapper, \
-    NicheTableToJormMapper, CategoryJormToTableMapper
+from jarvis_db.repositores.mappers.market.infrastructure import CategoryTableToJormMapper, NicheTableToJormMapper
 from jarvis_db.repositores.market.infrastructure import CategoryRepository
-from jorm.market.infrastructure import Category
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from jarvis_db.services.market.infrastructure.category_service import CategoryService
+from jarvis_db.tables import Marketplace
 
-from jdu.db_access.fill.db_fillers import WildberriesDbFiller, WildberriesDBFillerImpl
-from jdu.providers.common import WildBerriesDataProviderWithoutKey
-from jdu.providers.wildberries import WildBerriesDataProviderWithoutKeyImpl
+from jdu.db_tools import WildberriesDBFillerImpl, \
+    WildberriesDBFiller
+from jdu.providers import WildBerriesDataProviderWithoutKey
+from provider_for_test.test_provider import WildBerriesDataProviderWithoutKeyImplTest
+from tests.db_context import DbContext
 
 
-class CategoryTest(unittest.TestCase):
+class CategoryFillerTest(unittest.TestCase):
 
-    def setUp(self) -> None:
-        engine = create_engine('sqlite://')
-        session = sessionmaker(bind=engine, autoflush=False)
-        Base.metadata.create_all(engine)
-        marketplace_name = 'wildberries'
-        with session() as s, s.begin():
-            s.add(tables.Marketplace(name=marketplace_name))
-        self.__marketplace_name = marketplace_name
-        self.__session = session
+    def setUp(self):
+        self.__db_context = DbContext()
+        with self.__db_context.session() as session, session.begin():
+            marketplace = Marketplace(name='wildberries')
+            session.add(marketplace)
+            session.flush()
+            self.__marketplace_id = marketplace.id
 
     def test_fill_categories(self):
-        object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
-        categories = object_provider.get_categories(1, 1, 1)
-        with self.__session() as session, session.begin():
-            object: WildberriesDbFiller = WildberriesDBFillerImpl(object_provider, session)
-            object.fill_categories(1, 1, 1)
-        with self.__session() as session:
-            category_repository = CategoryRepository(
-                session, CategoryTableToJormMapper(NicheTableToJormMapper()),
-                CategoryJormToTableMapper(NicheJormToTableMapper()))
-            db_categories: list[Category] = category_repository.fetch_marketplace_categories(self.__marketplace_name)
-            print(db_categories)
-            for jorm_category, db_category in zip(categories, db_categories, strict=True):
-                self.assertEqual(jorm_category, db_category)
+        object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImplTest()
+        with self.__db_context.session() as session, session.begin():
+            wildberries_object_filler: WildberriesDBFiller = WildberriesDBFillerImpl(object_provider, session)
+            wildberries_object_filler.fill_categories(10)
+        with self.__db_context.session() as session:
+            service_category = CategoryService(CategoryRepository(session),
+                                               CategoryTableToJormMapper(NicheTableToJormMapper()))
+
+            db_category = service_category.find_all_in_marketplace(1)
+            self.assertEqual(len(db_category), 10)

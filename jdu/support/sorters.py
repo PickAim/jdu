@@ -1,5 +1,3 @@
-
-
 def sort_by_len_alphabet(names: list[str]) -> list[str]:
     length_dict: dict[int, list[str]] = {}
     for name in names:
