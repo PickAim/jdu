@@ -26,6 +26,7 @@ class JormChangerImpl(JORMChanger):
         request_info: RequestInfo,
         user_id: int,
     ) -> int:
+        # TODO how to pass category id?
         return self.__economy_service.save_request(request_info, request, result, user_id, 0)
 
     def save_frequency_request(
