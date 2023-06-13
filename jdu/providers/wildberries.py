@@ -122,20 +122,24 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
             page_iterator += 1
         return id_to_name_cost_dict
 
-    def get_products(self, niche: str, id_name_cost_list: list[tuple[int, str, int]]) -> list[Product]:
+    def get_products(self, niche_name: str, category_name: str, id_name_cost_list: list[tuple[int, str, int]]) -> list[
+        Product]:
         result_products = []
         for i in range(0, len(id_name_cost_list) - self.THREAD_TASK_COUNT + 1, self.THREAD_TASK_COUNT):
             loop: AbstractEventLoop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             result_products.extend(
                 loop.run_until_complete(
-                    self.__load_all_product_niche(id_name_cost_list[i:i + self.THREAD_TASK_COUNT])
+                    self.__load_all_product_niche(id_name_cost_list[i:i + self.THREAD_TASK_COUNT], niche_name,
+                                                  category_name)
                 )
             )
             loop.close()
         return result_products
 
-    async def __load_all_product_niche(self, id_to_name_cost_dict: list[tuple[int, str, int]]) -> list[Product]:
+    async def __load_all_product_niche(self, id_to_name_cost_dict: list[tuple[int, str, int]], niche_name: str,
+                                       category_name: str) -> list[
+        Product]:
         products: list[Product] = []
         tasks: list[Task] = []
         for global_id in id_to_name_cost_dict:
@@ -144,7 +148,7 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
         product_price_history_list = await asyncio.gather(*tasks)
         for index, id_name_cost in enumerate(id_to_name_cost_dict):
             products.append(Product(id_name_cost[1], id_name_cost[2], id_name_cost[0], 0,
-                                    "brand", "seller",  # TODO implement new JORM
+                                    "brand", "seller", niche_name, category_name,
                                     product_price_history_list[index], width=0, height=0, depth=0))
         return products
 

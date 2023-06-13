@@ -87,19 +87,22 @@ class WildberriesDBFillerImpl(WildberriesDBFiller):
             self.__niche_service.create_all(niches, category_id)
 
     def fill_products(self, products_count: int = -1):
-        niches: dict[int, Niche] = self.__niche_service.find_all_in_marketplace(self.__marketplace_id)
-        for niche_id in niches:
-            id_to_name_cost_dict: dict[int, tuple[str, int]] = \
-                self.__provider.get_products_id_to_name_cost_dict(niches[niche_id].name, products_count)
-            filtered_products_global_ids: list[int] = \
-                self.__product_service.filter_existing_global_ids(id_to_name_cost_dict.keys(), niche_id)
-            id_to_name_cost_list: list[tuple[int, str, int]] = [
-                (global_id, id_to_name_cost_dict[global_id][0], id_to_name_cost_dict[global_id][1])
-                for global_id in filtered_products_global_ids
-            ]
-            products: list[Product] = \
-                self.__provider.get_products(niches[niche_id].name, id_to_name_cost_list)
-            self.__product_service.create_products(products, niche_id)
+        categories: dict[int, Category] = self.__category_service.find_all_in_marketplace(self.__marketplace_id)
+        for category_id in categories:
+            niche_dict = self.__niche_service.find_all_in_category(category_id)
+            for niche_id in niche_dict:
+                id_to_name_cost_dict: dict[int, tuple[str, int]] = \
+                    self.__provider.get_products_id_to_name_cost_dict(niche_dict[niche_id].name, products_count)
+                filtered_products_global_ids: list[int] = \
+                    self.__product_service.filter_existing_global_ids(id_to_name_cost_dict.keys())
+                id_to_name_cost_list: list[tuple[int, str, int]] = [
+                    (global_id, id_to_name_cost_dict[global_id][0], id_to_name_cost_dict[global_id][1])
+                    for global_id in filtered_products_global_ids
+                ]
+                products: list[Product] = \
+                    self.__provider.get_products(niche_dict[niche_id].name, categories[category_id].name,
+                                                 id_to_name_cost_list)
+                self.__product_service.create_products(products, niche_id)
 
     def fill_price_history(self, niche: str):
         niches: dict[int, Niche] = self.__niche_service.find_all_in_marketplace(self.__marketplace_id)
