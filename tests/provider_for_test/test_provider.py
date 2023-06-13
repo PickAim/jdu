@@ -53,11 +53,13 @@ class WildBerriesDataProviderWithoutKeyImplTest(WildBerriesDataProviderWithoutKe
     async def load_all_product_niche(self) -> list[Product]:
         pass
 
-    def get_products(self, niche: str, id_to_name_cost_dict: list[tuple[int, str, int]]) -> list[Product]:
+    def get_products(self, niche: str, category: str, id_to_name_cost_dict: list[tuple[int, str, int]]) -> list[
+        Product]:
         products_list: list[Product] = []
         for i in id_to_name_cost_dict:
             products_list.append(
-                Product('Product_' + i[0].__str__(), i[0], i[0], i[0], "brand", "seller", ProductHistory())
+                Product('Product_' + i[0].__str__(), i[0], i[0], i[0], "brand", "seller", "Niche_" + i[0].__str__(),
+                        "Category_" + i[0].__str__(), ProductHistory())
             )
         return products_list
 
