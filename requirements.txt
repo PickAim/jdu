@@ -1,4 +1,4 @@
-jarvis_db@ git+https://github.com/PickAim/jarvis_db.git@v.0.0.29
+jarvis_db@ git+https://github.com/PickAim/jarvis_db.git@v.0.1.3
 SQLAlchemy~=2.0.12
 requests==2.30.0
 aiohttp==3.8.4
