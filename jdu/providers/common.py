@@ -49,7 +49,7 @@ class WildBerriesDataProviderWithoutKey(DataProviderWithoutKey):
 
     @abstractmethod
     def get_products(self, niche_name: str, category_name: str, id_to_name_cost_dict: list[tuple[int, str, int]]) -> \
-    list[Product]:
+            list[Product]:
         pass
 
     @abstractmethod
