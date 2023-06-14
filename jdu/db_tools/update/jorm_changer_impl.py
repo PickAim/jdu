@@ -1,3 +1,5 @@
+from jarvis_db.services.market.service.economy_service import EconomyService
+from jarvis_db.services.market.service.frequency_service import FrequencyService
 from jorm.jarvis.db_update import JORMChanger
 from jorm.market.infrastructure import Niche
 from jorm.market.service import (
@@ -8,33 +10,29 @@ from jorm.market.service import (
     UnitEconomyResult,
 )
 
-from jarvis_db.services.market.service.economy_service import EconomyService
-from jarvis_db.services.market.service.frequency_service import FrequencyService
-
 
 class JormChangerImpl(JORMChanger):
     def __init__(
-        self, economy_service: EconomyService, frequency_service: FrequencyService
+            self, economy_service: EconomyService, frequency_service: FrequencyService
     ):
         self.__economy_service = economy_service
         self.__frequency_service = frequency_service
 
     def save_unit_economy_request(
-        self,
-        request: UnitEconomyRequest,
-        result: UnitEconomyResult,
-        request_info: RequestInfo,
-        user_id: int,
+            self,
+            request: UnitEconomyRequest,
+            result: UnitEconomyResult,
+            request_info: RequestInfo,
+            user_id: int, marketplace_id: int
     ) -> int:
-        # TODO how to pass category id?
-        return self.__economy_service.save_request(request_info, request, result, user_id, 0)
+        return self.__economy_service.save_request(request_info, request, result, user_id, marketplace_id)
 
     def save_frequency_request(
-        self,
-        request: FrequencyRequest,
-        result: FrequencyResult,
-        request_info: RequestInfo,
-        user_id: int,
+            self,
+            request: FrequencyRequest,
+            result: FrequencyResult,
+            request_info: RequestInfo,
+            user_id: int,
     ) -> int:
         return self.__frequency_service.save(request_info, request, result, user_id)
 
