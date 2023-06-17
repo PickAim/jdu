@@ -13,7 +13,7 @@ class DataProvider(ABC):
     def __init__(self):
         self._session = requests.Session()
         __adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100)
-        self._session.mount('http://', __adapter)
+        self._session.mount('https://', __adapter)
 
     def get_exchange_rate(self, currency: str):
         url: str = 'https://www.cbr-xml-daily.ru/daily_json.js'
