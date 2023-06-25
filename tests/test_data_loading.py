@@ -60,8 +60,8 @@ class LoadingTest(unittest.TestCase):
                 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.'
                 'eyJhY2Nlc3NJRCI6IjhiMGZkZWEwLWYxYjgtNDVjOS05NmM5LTdiMmRlNjU2N2Q3ZCJ9.'
                 '6YAvO_GYeXW3em8WZ5cLynTBKcg8x5pmMmoCkgMY6QI')
-        warehouses = object_provider.get_warehouse()
-        self.assertIsNotNone(warehouses)
+        warehouses = object_provider.get_warehouses()
+        self.assertNotEqual(len(warehouses), 0)
 
     def test_load_storage(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()

@@ -84,7 +84,7 @@ class WildBerriesDataProviderStandardImplTest(WildBerriesDataProviderWithKey):
     def __del__(self):
         self._session.close()
 
-    def get_warehouse(self) -> list[Warehouse]:
+    def get_warehouses(self) -> list[Warehouse]:
         warehouses: list[Warehouse] = []
         for i in range(10):
             warehouses.append(

@@ -28,7 +28,7 @@ class WildBerriesDataProviderStandardImpl(WildBerriesDataProviderWithKey):
             id_to_name_address_dict[warehouse['name']] = (warehouse['id'], warehouse['address'])
         return id_to_name_address_dict
 
-    def get_warehouse(self) -> list[Warehouse]:
+    def get_warehouses(self) -> list[Warehouse]:
         warehouses: list[Warehouse] = []
         response = self._session.get('https://suppliers-api.wildberries.ru/api/v3/offices',
                                      headers={

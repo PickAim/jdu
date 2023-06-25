@@ -91,5 +91,5 @@ class WildBerriesDataProviderWithKey(DataProviderWithKey):
         return parent_categories
 
     @abstractmethod
-    def get_warehouse(self) -> list[Warehouse]:
+    def get_warehouses(self) -> list[Warehouse]:
         pass

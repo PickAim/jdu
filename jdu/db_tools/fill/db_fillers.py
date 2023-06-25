@@ -141,5 +141,5 @@ class WildberriesDBFillerWithKeyImpl(WildberriesDBFillerWithKey):
         super().__init__(provider_with_key, session)
 
     def fill_warehouse(self):
-        warehouses: list[Warehouse] = self.provider_with_key.get_warehouse()
+        warehouses: list[Warehouse] = self.provider_with_key.get_warehouses()
         self.warehouse_service.create_all(warehouses, self.marketplace_id)
