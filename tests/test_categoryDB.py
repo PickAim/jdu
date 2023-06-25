@@ -5,8 +5,8 @@ from jarvis_db.repositores.market.infrastructure import CategoryRepository
 from jarvis_db.services.market.infrastructure.category_service import CategoryService
 from jarvis_db.tables import Marketplace
 
-from jdu.db_tools import WildberriesDBFillerImpl, \
-    WildberriesDBFiller
+from jdu.db_tools import WildberriesDBFillerWithoutKeyImpl, \
+    WildberriesDBFillerWithoutKey
 from jdu.providers import WildBerriesDataProviderWithoutKey
 from provider_for_test.test_provider import WildBerriesDataProviderWithoutKeyImplTest
 from tests.db_context import DbContext
@@ -25,7 +25,8 @@ class CategoryFillerTest(unittest.TestCase):
     def test_fill_categories(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImplTest()
         with self.__db_context.session() as session, session.begin():
-            wildberries_object_filler: WildberriesDBFiller = WildberriesDBFillerImpl(object_provider, session)
+            wildberries_object_filler: WildberriesDBFillerWithoutKey = WildberriesDBFillerWithoutKeyImpl(
+                object_provider, session)
             wildberries_object_filler.fill_categories(10)
         with self.__db_context.session() as session:
             service_category = CategoryService(CategoryRepository(session),

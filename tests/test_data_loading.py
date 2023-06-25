@@ -54,6 +54,15 @@ class LoadingTest(unittest.TestCase):
         result = object_provider.get_nearest_keywords(word)
         self.assertEqual("готовый кофе", result[0])
 
+    def test_get_warehouse(self):
+        object_provider: WildBerriesDataProviderStandardImpl = \
+            WildBerriesDataProviderStandardImpl(
+                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.'
+                'eyJhY2Nlc3NJRCI6IjhiMGZkZWEwLWYxYjgtNDVjOS05NmM5LTdiMmRlNjU2N2Q3ZCJ9.'
+                '6YAvO_GYeXW3em8WZ5cLynTBKcg8x5pmMmoCkgMY6QI')
+        warehouses = object_provider.get_warehouse()
+        self.assertIsNotNone(warehouses)
+
     def test_load_storage(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
         storage_data = object_provider.get_storage_dict(18681408)

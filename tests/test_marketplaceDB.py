@@ -9,7 +9,7 @@ from jarvis_db.repositores.market.infrastructure.marketplace_repository import \
 from jarvis_db.services.market.infrastructure.marketplace_service import \
     MarketplaceService
 
-from jdu.db_tools import WildberriesDBFillerImpl
+from jdu.db_tools import WildberriesDBFillerWithoutKeyImpl
 from jdu.providers import WildBerriesDataProviderWithoutKey
 from provider_for_test.test_provider import WildBerriesDataProviderWithoutKeyImplTest
 from tests.db_context import DbContext
@@ -22,7 +22,7 @@ class MarketplaceFillerTest(unittest.TestCase):
     def test_fill_marketplace(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImplTest()
         with self.__db_context.session() as session, session.begin():
-            WildberriesDBFillerImpl(object_provider, session)
+            WildberriesDBFillerWithoutKeyImpl(object_provider, session)
         with self.__db_context.session() as session:
             marketplace_repository: MarketplaceRepository = MarketplaceRepository(
                 session)
