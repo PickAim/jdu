@@ -22,7 +22,8 @@ from jorm.market.infrastructure import Marketplace, Category, Niche
 from jorm.market.items import ProductHistory, Product
 from sqlalchemy.orm import Session
 
-from jdu.providers.common import WildBerriesDataProviderWithoutKey, WildBerriesDataProviderWithKey
+from jdu.providers import WildBerriesDataProviderStandardImpl
+from jdu.providers.common import WildBerriesDataProviderWithoutKey
 
 
 class DBFiller(ABC):
@@ -30,28 +31,9 @@ class DBFiller(ABC):
         self.marketplace_name: str = 'default'
 
 
-class WildberriesDBFillerWithKey(DBFiller):
-    def __init__(self, provider_with_key: WildBerriesDataProviderWithKey, session: Session):
+class WildberriesDBFiller(DBFiller):
+    def __init__(self, session: Session):
         super().__init__()
-        self.provider_with_key = provider_with_key
-        self.marketplace_name = 'wildberries'
-        self.marketplace_service = MarketplaceService(MarketplaceRepository(
-            session),
-            MarketplaceTableToJormMapper(WarehouseTableToJormMapper()))
-        self.warehouse_service = WarehouseService(WarehouseRepository(session), WarehouseTableToJormMapper())
-        if not self.marketplace_service.exists_with_name(self.marketplace_name):
-            self.marketplace_service.create(Marketplace(self.marketplace_name))
-        self.marketplace_id = self.marketplace_service.find_by_name(self.marketplace_name)[1]
-
-    @abstractmethod
-    def fill_warehouse(self) -> None:
-        pass
-
-
-class WildberriesDBFillerWithoutKey(DBFiller):
-    def __init__(self, provider_without_key: WildBerriesDataProviderWithoutKey, session: Session):
-        super().__init__()
-        self.provider_without_key = provider_without_key
         self.marketplace_name = 'wildberries'
         self.marketplace_service = MarketplaceService(MarketplaceRepository(
             session),
@@ -61,6 +43,7 @@ class WildberriesDBFillerWithoutKey(DBFiller):
         self.niche_service = NicheService(NicheRepository(session), NicheTableToJormMapper())
         self.product_service = ProductCardService(ProductCardRepository(session), ProductTableToJormMapper())
         self.history_unit_service = ProductHistoryUnitService(ProductHistoryRepository(session))
+        self.warehouse_service = WarehouseService(WarehouseRepository(session), WarehouseTableToJormMapper())
         self.price_history_service = ProductHistoryService(self.history_unit_service, LeftoverService(
             LeftoverRepository(session), WarehouseRepository(session), self.history_unit_service),
                                                            ProductHistoryRepository(session),
@@ -69,6 +52,22 @@ class WildberriesDBFillerWithoutKey(DBFiller):
         if not self.marketplace_service.exists_with_name(self.marketplace_name):
             self.marketplace_service.create(Marketplace(self.marketplace_name))
         self.marketplace_id = self.marketplace_service.find_by_name(self.marketplace_name)[1]
+
+
+class WildberriesDBFillerWithKey(WildberriesDBFiller):
+    def __init__(self, provider_with_key: WildBerriesDataProviderStandardImpl, session: Session):
+        super().__init__(session)
+        self.provider_with_key = provider_with_key
+
+    @abstractmethod
+    def fill_warehouse(self) -> None:
+        pass
+
+
+class WildberriesDBFillerWithoutKey(WildberriesDBFiller):
+    def __init__(self, provider_without_key: WildBerriesDataProviderWithoutKey, session: Session):
+        super().__init__(session)
+        self.provider_without_key = provider_without_key
 
     @abstractmethod
     def fill_categories(self, category_num: int = -1) -> None:
@@ -137,7 +136,7 @@ class WildberriesDBFillerWithoutKeyImpl(WildberriesDBFillerWithoutKey):
 
 
 class WildberriesDBFillerWithKeyImpl(WildberriesDBFillerWithKey):
-    def __init__(self, provider_with_key: WildBerriesDataProviderWithKey, session: Session):
+    def __init__(self, provider_with_key: WildBerriesDataProviderStandardImpl, session: Session):
         super().__init__(provider_with_key, session)
 
     def fill_warehouse(self):
