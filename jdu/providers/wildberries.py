@@ -103,14 +103,13 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
         product_iterator: int = 0
         id_to_name_cost_dict: dict[int, tuple[str, int]] = {}
         while True:
-            url: str = f'https://search.wb.ru/exactmatch/ru/common/v4/search?' \
-                       f'appType=1' \
-                       f'&dest=-1221148,-140294,-1751445,-364763' \
-                       f'&lang=ru' \
+            url: str = f'https://search.wb.ru/exactmatch/ru/common/v4/search' \
+                       f'?appType=1' \
+                       f'&curr=rub&dest=-1257786' \
+                       f'&page={page_iterator}' \
                        f'&query={niche}' \
-                       f'&resultset=catalog' \
-                       f'&sort=popular' \
-                       f'&page={page_iterator}'
+                       f'&resultset=catalog&sort=popular' \
+                       f'&suppressSpellcheck=false'
             json_code = get_request_json(url, self._session)
             if 'data' not in json_code:
                 break
@@ -122,10 +121,11 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
             page_iterator += 1
         return id_to_name_cost_dict
 
-    def get_products(self, niche_name: str, category_name: str, id_name_cost_list: list[tuple[int, str, int]]) -> list[
-        Product]:
+    def get_products(self, niche_name: str,
+                     category_name: str,
+                     id_name_cost_list: list[tuple[int, str, int]]) -> list[Product]:
         result_products = []
-        for i in range(0, len(id_name_cost_list) - self.THREAD_TASK_COUNT + 1, self.THREAD_TASK_COUNT):
+        for i in range(0, max(len(id_name_cost_list) - self.THREAD_TASK_COUNT + 1, 1), self.THREAD_TASK_COUNT):
             loop: AbstractEventLoop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             result_products.extend(
@@ -137,9 +137,10 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
             loop.close()
         return result_products
 
-    async def __load_all_product_niche(self, id_to_name_cost_dict: list[tuple[int, str, int]], niche_name: str,
-                                       category_name: str) -> list[
-        Product]:
+    async def __load_all_product_niche(self,
+                                       id_to_name_cost_dict: list[tuple[int, str, int]],
+                                       niche_name: str,
+                                       category_name: str) -> list[Product]:
         products: list[Product] = []
         tasks: list[Task] = []
         for global_id in id_to_name_cost_dict:

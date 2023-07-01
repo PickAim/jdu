@@ -16,7 +16,7 @@ class LoadingTest(unittest.TestCase):
     def test_get_products_by_niche(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
         before = datetime.now()
-        product_num = 101
+        product_num = 10
         products_global_ids: dict[int, tuple[str, int]] = \
             object_provider.get_products_id_to_name_cost_dict('Кофе зерновой', product_num)
         id_to_name_cost_list: list[tuple[int, str, int]] = [
@@ -25,7 +25,7 @@ class LoadingTest(unittest.TestCase):
         ]
         products: list[Product] = object_provider.get_products("Кофе зерновой", 'xuita', id_to_name_cost_list)
         print(f"products receiving time: {datetime.now() - before}")
-        self.assertNotEqual(product_num, len(products))
+        self.assertEqual(product_num, len(products))
 
     def test_get_niches(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImpl()
