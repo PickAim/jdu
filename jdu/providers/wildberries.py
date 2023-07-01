@@ -126,13 +126,14 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
         while True:
             url: str = f'https://search.wb.ru/exactmatch/ru/common/v4/search' \
                        f'?appType=1' \
-                       f'&curr=rub&dest=-1257786' \
+                       f'&dest=-1257786' \
                        f'&page={page_iterator}' \
                        f'&query={niche}' \
-                       f'&resultset=catalog&sort=popular' \
+                       f'&resultset=catalog' \
+                       f'&sort=popular' \
                        f'&suppressSpellcheck=false'
             json_code = get_request_json(url, self._session)
-            if 'data' not in json_code:
+            if 'data' not in json_code or 'products' not in json_code['data']:
                 break
             for product in json_code['data']['products']:
                 if products_count != -1 and product_iterator >= products_count:
@@ -151,27 +152,29 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
             asyncio.set_event_loop(loop)
             result_products.extend(
                 loop.run_until_complete(
-                    self.__load_all_product_niche(id_name_cost_list[i:i + self.THREAD_TASK_COUNT], niche_name,
-                                                  category_name)
+                    self.__load_all_product_niche(
+                        id_name_cost_list[i:i + self.THREAD_TASK_COUNT],
+                        niche_name, category_name
+                    )
                 )
             )
             loop.close()
         return result_products
 
     async def __load_all_product_niche(self,
-                                       id_to_name_cost_dict: list[tuple[int, str, int]],
+                                       id_name_cost_list: list[tuple[int, str, int]],
                                        niche_name: str,
                                        category_name: str) -> list[Product]:
         products: list[Product] = []
         tasks: list[Task] = []
-        for global_id in id_to_name_cost_dict:
+        for global_id in id_name_cost_list:
             task = asyncio.create_task(self.__get_product_price_history(global_id[0]))
             tasks.append(task)
         product_price_history_list = await asyncio.gather(*tasks)
-        for index, id_name_cost in enumerate(id_to_name_cost_dict):
+        for index, id_name_cost in enumerate(id_name_cost_list):
             products.append(Product(id_name_cost[1], id_name_cost[2], id_name_cost[0], 0,
                                     "brand", "seller", niche_name, category_name,
-                                    product_price_history_list[index], width=0, height=0, depth=0))
+                                    history=product_price_history_list[index], width=0, height=0, depth=0))
         return products
 
     async def __get_product_price_history(self, product_id: int, loop=None, connector=None) -> ProductHistory:

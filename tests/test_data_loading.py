@@ -19,11 +19,11 @@ class LoadingTest(unittest.TestCase):
         product_num = 10
         products_global_ids: dict[int, tuple[str, int]] = \
             object_provider.get_products_id_to_name_cost_dict('Кофе зерновой', product_num)
-        id_to_name_cost_list: list[tuple[int, str, int]] = [
+        id_name_cost_list: list[tuple[int, str, int]] = [
             (global_id, products_global_ids[global_id][0], products_global_ids[global_id][1])
             for global_id in products_global_ids
         ]
-        products: list[Product] = object_provider.get_products("Кофе зерновой", 'xuita', id_to_name_cost_list)
+        products: list[Product] = object_provider.get_products("Кофе зерновой", 'xuita', id_name_cost_list)
         print(f"products receiving time: {datetime.now() - before}")
         self.assertEqual(product_num, len(products))
 

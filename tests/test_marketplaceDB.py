@@ -1,5 +1,3 @@
-import unittest
-
 from jarvis_db.repositores.mappers.market.infrastructure.marketplace_mappers import \
     MarketplaceTableToJormMapper
 from jarvis_db.repositores.mappers.market.infrastructure.warehouse_mappers import \
@@ -12,18 +10,18 @@ from jarvis_db.services.market.infrastructure.marketplace_service import \
 from jdu.db_tools import WildberriesDBFillerWithoutKeyImpl
 from jdu.providers import WildBerriesDataProviderWithoutKey
 from provider_for_test.test_provider import WildBerriesDataProviderWithoutKeyImplTest
-from tests.db_context import DbContext
+from tests.basic_db_test import BasicDBTest, TestDBContextAdditions
 
 
-class MarketplaceFillerTest(unittest.TestCase):
-    def setUp(self):
-        self.__db_context = DbContext()
+class MarketplaceFillerTest(BasicDBTest):
+    def get_additions_flags(self) -> list[TestDBContextAdditions]:
+        return []
 
     def test_fill_marketplace(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImplTest()
-        with self.__db_context.session() as session, session.begin():
+        with self.db_context.session() as session, session.begin():
             WildberriesDBFillerWithoutKeyImpl(object_provider, session)
-        with self.__db_context.session() as session:
+        with self.db_context.session() as session:
             marketplace_repository: MarketplaceRepository = MarketplaceRepository(
                 session)
             service_marketplace = MarketplaceService(marketplace_repository,
