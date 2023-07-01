@@ -6,8 +6,8 @@ from jarvis_db.repositores.market.infrastructure import NicheRepository
 from jarvis_db.services.market.infrastructure.niche_service import NicheService
 from jarvis_db.tables import Marketplace, Category
 
-from jdu.db_tools import WildberriesDBFillerImpl, \
-    WildberriesDBFiller
+from jdu.db_tools import WildberriesDBFillerWithoutKeyImpl, \
+    WildberriesDBFillerWithoutKey
 from jdu.providers import WildBerriesDataProviderWithoutKey
 from provider_for_test.test_provider import WildBerriesDataProviderWithoutKeyImplTest
 from tests.db_context import DbContext
@@ -29,7 +29,7 @@ class NicheFillerTest(unittest.TestCase):
     def test_fill_niches(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImplTest()
         with self.__db_context.session() as session, session.begin():
-            object_filler: WildberriesDBFiller = WildberriesDBFillerImpl(object_provider, session)
+            object_filler: WildberriesDBFillerWithoutKey = WildberriesDBFillerWithoutKeyImpl(object_provider, session)
             object_filler.fill_niches(10)
         with self.__db_context.session() as session, session.begin():
             service_niche = NicheService(NicheRepository(session), NicheTableToJormMapper())

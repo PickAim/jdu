@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 import requests
-from jorm.market.infrastructure import Category, Niche, Product
+from jorm.market.infrastructure import Category, Niche, Product, Warehouse
 from jorm.market.items import ProductHistory
 from jorm.support.types import StorageDict
 from requests.adapters import HTTPAdapter, Response
@@ -89,3 +89,7 @@ class WildBerriesDataProviderWithKey(DataProviderWithKey):
         for data in json_code['data']:
             parent_categories.append(data['name'])
         return parent_categories
+
+    @abstractmethod
+    def get_warehouses(self) -> list[Warehouse]:
+        pass

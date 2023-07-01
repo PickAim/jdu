@@ -10,8 +10,8 @@ from jarvis_db.services.market.items.product_history_service import ProductHisto
 from jarvis_db.services.market.items.product_history_unit_service import ProductHistoryUnitService
 from jarvis_db.tables import Marketplace, Warehouse, Address, ProductCard, Niche, Category
 
-from jdu.db_tools import WildberriesDBFillerImpl, \
-    WildberriesDBFiller
+from jdu.db_tools import WildberriesDBFillerWithoutKeyImpl, \
+    WildberriesDBFillerWithoutKey
 from jdu.providers import WildBerriesDataProviderWithoutKey
 from provider_for_test.test_provider import WildBerriesDataProviderWithoutKeyImplTest
 from tests.db_context import DbContext
@@ -64,7 +64,8 @@ class PriceHistoryFillerTest(unittest.TestCase):
     def test_fill_price_history(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImplTest()
         with self.__db_context.session() as session, session.begin():
-            wildberries_object_filler: WildberriesDBFiller = WildberriesDBFillerImpl(object_provider, session)
+            wildberries_object_filler: WildberriesDBFillerWithoutKey = WildberriesDBFillerWithoutKeyImpl(
+                object_provider, session)
             wildberries_object_filler.fill_price_history("Niche_1")
         with self.__db_context.session() as session:
             history_unit_service = ProductHistoryUnitService(ProductHistoryRepository(session))

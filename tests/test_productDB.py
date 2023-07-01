@@ -6,8 +6,8 @@ from jarvis_db.services.market.items.product_card_service import ProductCardServ
 from jarvis_db.tables import Marketplace, Category, Niche
 
 from db_context import DbContext
-from jdu.db_tools import WildberriesDBFillerImpl, \
-    WildberriesDBFiller
+from jdu.db_tools import WildberriesDBFillerWithoutKeyImpl, \
+    WildberriesDBFillerWithoutKey
 from jdu.providers import WildBerriesDataProviderWithoutKey
 from tests.provider_for_test.test_provider import WildBerriesDataProviderWithoutKeyImplTest
 
@@ -32,7 +32,7 @@ class ProductFillerTest(unittest.TestCase):
     def test_add_products(self):
         object_provider: WildBerriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImplTest()
         with self.__db_context.session() as session, session.begin():
-            object_filler: WildberriesDBFiller = WildberriesDBFillerImpl(object_provider, session)
+            object_filler: WildberriesDBFillerWithoutKey = WildberriesDBFillerWithoutKeyImpl(object_provider, session)
             object_filler.fill_products(10)
         with self.__db_context.session() as session:
             service_product = ProductCardService(ProductCardRepository(session), ProductTableToJormMapper())

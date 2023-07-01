@@ -1,10 +1,10 @@
 from datetime import datetime
 
-from jorm.market.infrastructure import Niche, Product, HandlerType, Category
+from jorm.market.infrastructure import Niche, Product, HandlerType, Category, Warehouse, Address
 from jorm.market.items import ProductHistoryUnit, ProductHistory
 from jorm.support.types import StorageDict, SpecifiedLeftover
 
-from jdu.providers.common import WildBerriesDataProviderWithoutKey
+from jdu.providers.common import WildBerriesDataProviderWithoutKey, WildBerriesDataProviderWithKey
 
 
 class WildBerriesDataProviderWithoutKeyImplTest(WildBerriesDataProviderWithoutKey):
@@ -75,3 +75,18 @@ class WildBerriesDataProviderWithoutKeyImplTest(WildBerriesDataProviderWithoutKe
             specified_leftover_list.append(SpecifiedLeftover('SpecifyName_' + i.__str__(), i))
             storage_dict[i] = specified_leftover_list
         return storage_dict
+
+
+class WildBerriesDataProviderStandardImplTest(WildBerriesDataProviderWithKey):
+    def __init__(self):
+        super().__init__("api-key")
+
+    def __del__(self):
+        self._session.close()
+
+    def get_warehouses(self) -> list[Warehouse]:
+        warehouses: list[Warehouse] = []
+        for i in range(10):
+            warehouses.append(
+                Warehouse('warehouse_' + i.__str__(), i, HandlerType.MARKETPLACE, Address('Address_' + i.__str__())))
+        return warehouses

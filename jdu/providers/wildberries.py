@@ -3,7 +3,7 @@ from asyncio import AbstractEventLoop, Task
 from datetime import datetime
 
 import aiohttp
-from jorm.market.infrastructure import Product, Category, Niche, HandlerType
+from jorm.market.infrastructure import Product, Category, Niche, HandlerType, Warehouse
 from jorm.market.items import ProductHistoryUnit, ProductHistory
 from jorm.support.types import StorageDict, SpecifiedLeftover
 from requests import Response
@@ -17,6 +17,27 @@ class WildBerriesDataProviderStandardImpl(WildBerriesDataProviderWithKey):
 
     def __init__(self, api_key: str):
         super().__init__(api_key)
+
+    def get_warehouse_name_id_address(self) -> dict[str, tuple[int, str]]:
+        id_to_name_address_dict: dict[str, tuple[int, str]] = {}
+        response = self._session.get('https://suppliers-api.wildberries.ru/api/v3/offices',
+                                     headers={
+                                         'Authorization': self._api_key})
+        json_code = response.json()
+        for warehouse in json_code:
+            id_to_name_address_dict[warehouse['name']] = (warehouse['id'], warehouse['address'])
+        return id_to_name_address_dict
+
+    def get_warehouses(self) -> list[Warehouse]:
+        warehouses: list[Warehouse] = []
+        response = self._session.get('https://suppliers-api.wildberries.ru/api/v3/offices',
+                                     headers={
+                                         'Authorization': self._api_key})
+        json_code = response.json()
+        for warehouse in json_code:
+            warehouses.append(
+                Warehouse(warehouse['name'], warehouse['id'], HandlerType.MARKETPLACE, warehouse['address']))
+        return warehouses
 
     def __get_nearest_names(self, text: str) -> list[str]:
         object_name_list: list[str] = []

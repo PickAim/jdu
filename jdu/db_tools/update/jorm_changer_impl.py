@@ -12,19 +12,15 @@ from jorm.market.service import (
 
 
 class JormChangerImpl(JORMChanger):
+
     def __init__(
             self, economy_service: EconomyService, frequency_service: FrequencyService
     ):
         self.__economy_service = economy_service
         self.__frequency_service = frequency_service
 
-    def save_unit_economy_request(
-            self,
-            request: UnitEconomyRequest,
-            result: UnitEconomyResult,
-            request_info: RequestInfo,
-            user_id: int, marketplace_id: int
-    ) -> int:
+    def save_unit_economy_request(self, request: UnitEconomyRequest, result: UnitEconomyResult,
+                                  request_info: RequestInfo, user_id: int, marketplace_id: int) -> int:
         return self.__economy_service.save_request(request_info, request, result, user_id, marketplace_id)
 
     def save_frequency_request(
