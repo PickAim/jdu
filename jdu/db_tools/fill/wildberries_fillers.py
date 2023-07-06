@@ -1,0 +1,108 @@
+from abc import ABC
+from abc import abstractmethod
+
+from jarvis_db.tables import Warehouse
+from jorm.market.infrastructure import Category, Niche
+from jorm.market.items import Product
+from jorm.support.constants import DEFAULT_CATEGORY_NAME
+from sqlalchemy.orm import Session
+
+from jdu.db_tools.fill.db_fillers import StandardDBFiller, SimpleDBFiller
+from jdu.db_tools.fill.initializers import WildberriesDBFillerInitializer
+from jdu.providers.wildberries_providers import WildberriesDataProviderWithoutKey, WildberriesUserMarketDataProvider
+from jdu.support.types import ProductInfo
+
+
+class __SimpleWildberriesDBFiller(SimpleDBFiller):
+    def __init__(self, session: Session):
+        super().__init__(session, WildberriesDBFillerInitializer)
+
+
+class __StandardWildberriesDBFiller(StandardDBFiller, ABC):
+    def __init__(self, session: Session):
+        super().__init__(session, WildberriesDBFillerInitializer)
+
+
+class WildberriesDBFillerWithKey(__SimpleWildberriesDBFiller):
+    def __init__(self, provider_with_key: WildberriesUserMarketDataProvider, session: Session):
+        super().__init__(session)
+        self.provider_with_key: WildberriesUserMarketDataProvider = provider_with_key
+
+    @abstractmethod
+    def fill_warehouse(self) -> None:
+        pass
+
+
+class WildberriesDBFillerImpl(__StandardWildberriesDBFiller):
+    def __init__(self, provider_without_key: WildberriesDataProviderWithoutKey, session: Session):
+        super().__init__(session)
+        self.provider_without_key = provider_without_key
+
+    def fill_categories(self, category_num: int = -1):
+        categories_names: list[str] = self.provider_without_key.get_categories_names(category_num)
+        filtered_categories_names: list[str] = \
+            self.category_service.filter_existing_names(categories_names, self.marketplace_id)
+        categories: list[Category] = self.provider_without_key.get_categories(filtered_categories_names)
+        self.category_service.create_all(categories, self.marketplace_id)
+
+    def fill_niches(self, niche_num: int = -1):
+        categories: dict[int, Category] = self.category_service.find_all_in_marketplace(self.marketplace_id)
+        for category_id in categories:
+            niches_names: list[str] = self.provider_without_key.get_niches_names(categories[category_id].name,
+                                                                                 niche_num)
+            filtered_niches_names: list[str] = self.niche_service.filter_existing_names(niches_names, category_id)
+            niches: list[Niche] = self.provider_without_key.get_niches(filtered_niches_names)
+            self.niche_service.create_all(niches, category_id)
+
+    def fill_niche_by_name(self, niche_name: str) -> Niche | None:
+        if not self.category_service.exists_with_name(DEFAULT_CATEGORY_NAME, self.marketplace_id):
+            return None
+        default_category_search_result = \
+            self.category_service.find_by_name(DEFAULT_CATEGORY_NAME, self.marketplace_id)
+        _, default_category_id = default_category_search_result
+        niches: list[Niche] = self.provider_without_key.get_niches([niche_name])
+        loaded_niche = niches[0]
+        loaded_products = self.__get_new_products(niche_name, DEFAULT_CATEGORY_NAME)
+        loaded_niche.products = loaded_products
+        self.niche_service.create(loaded_niche, default_category_id)
+        return loaded_niche
+
+    def fill_products(self, products_per_niche: int = -1):
+        categories: dict[int, Category] = self.category_service.find_all_in_marketplace(self.marketplace_id)
+        for category_id in categories:
+            if categories[category_id].name == DEFAULT_CATEGORY_NAME:
+                continue
+            niche_dict = self.niche_service.find_all_in_category(category_id)
+            for niche_id in niche_dict:
+                products_to_add = self.__get_new_products(niche_dict[niche_id].name,
+                                                          categories[category_id].name, products_per_niche, niche_id)
+                self.product_service.create_products(products_to_add, niche_id)
+
+    def __get_new_products(self, niche_name: str, category_name: str,
+                           product_number: int = -1, niche_id: int = -1) -> list[Product]:
+        products_info: list[ProductInfo] = \
+            self.provider_without_key.get_products_mapped_info(niche_name, product_number)
+        mapped_products_info = {product_info.global_id: product_info for product_info in products_info}
+        filtered_id_name_cost = self.__filter_product_ids(mapped_products_info, niche_id)
+        return self.provider_without_key.get_products(niche_name, category_name, filtered_id_name_cost)
+
+    def __filter_product_ids(self,
+                             mapped_products_info: dict[int, ProductInfo],
+                             niche_id: int = -1) -> list[ProductInfo]:
+        filtered_products_global_ids = list(mapped_products_info.keys())
+        if niche_id != -1:
+            filtered_products_global_ids: list[int] = \
+                self.product_service.filter_existing_global_ids(filtered_products_global_ids)
+        return [
+            mapped_products_info[global_id]
+            for global_id in filtered_products_global_ids
+        ]
+
+
+class WildberriesDBFillerWithKeyImpl(WildberriesDBFillerWithKey):
+    def __init__(self, provider_with_key: WildberriesUserMarketDataProvider, session: Session):
+        super().__init__(provider_with_key, session)
+
+    def fill_warehouse(self):
+        warehouses: list[Warehouse] = self.provider_with_key.get_warehouses()
+        self.warehouse_service.create_all(warehouses, self.marketplace_id)

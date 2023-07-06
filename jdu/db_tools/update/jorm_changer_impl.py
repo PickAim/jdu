@@ -14,7 +14,7 @@ from jorm.market.service import (
 class JormChangerImpl(JORMChanger):
 
     def __init__(
-            self, economy_service: EconomyService, frequency_service: FrequencyService
+            self, economy_service: EconomyService, frequency_service: FrequencyService,
     ):
         self.__economy_service = economy_service
         self.__frequency_service = frequency_service
