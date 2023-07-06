@@ -20,9 +20,11 @@ async def get_async_request_json(url: str, session: aiohttp.ClientSession):
         if len(data) > 0:
             return json.loads(data)
         return ""
-    
 
-def get_request_json(url: str, session: requests.Session):
-    with session.get(url) as request:
+
+def get_request_json(url: str, session: requests.Session, headers=None):
+    if headers is None:
+        headers = {}
+    with session.get(url, headers=headers) as request:
         request.raise_for_status()
         return request.json()

@@ -2,10 +2,10 @@ from jarvis_db.repositores.mappers.market.infrastructure import WarehouseTableTo
 from jarvis_db.repositores.market.infrastructure import WarehouseRepository
 from jarvis_db.services.market.infrastructure.warehouse_service import WarehouseService
 
-from jdu.db_tools.fill.db_fillers import WildberriesDBFillerWithKeyImpl, WildberriesDBFillerWithKey
-from jdu.providers import WildBerriesDataProviderWithKey
+from jdu.db_tools.fill.wildberries_fillers import WildberriesDBFillerWithKeyImpl, WildberriesDBFillerWithKey
+from jdu.providers.wildberries_providers import WildberriesUserMarketDataProvider
 from tests.basic_db_test import BasicDBTest, TestDBContextAdditions
-from tests.provider_for_test.test_provider import WildBerriesDataProviderStandardImplTest
+from tests.provider_for_test.test_provider import WildberriesUserMarketDataProviderImplTest
 
 
 class WarehouseFillerTest(BasicDBTest):
@@ -13,7 +13,7 @@ class WarehouseFillerTest(BasicDBTest):
         return [TestDBContextAdditions.MARKETPLACE]
 
     def test_fill_warehouses(self):
-        object_provider: WildBerriesDataProviderWithKey = WildBerriesDataProviderStandardImplTest()
+        object_provider: WildberriesUserMarketDataProvider = WildberriesUserMarketDataProviderImplTest()
         with self.db_context.session() as session, session.begin():
             wildberries_object_filler: WildberriesDBFillerWithKey = WildberriesDBFillerWithKeyImpl(
                 object_provider, session)

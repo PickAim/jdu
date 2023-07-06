@@ -1,4 +1,5 @@
 import asyncio
+from abc import ABC
 from asyncio import AbstractEventLoop, Task
 from datetime import datetime
 
@@ -6,47 +7,38 @@ import aiohttp
 from jorm.market.infrastructure import Product, Category, Niche, HandlerType, Warehouse
 from jorm.market.items import ProductHistoryUnit, ProductHistory
 from jorm.support.types import StorageDict, SpecifiedLeftover
-from requests import Response
 
-from jdu.providers import WildBerriesDataProviderWithoutKey, WildBerriesDataProviderWithKey
+from jdu.providers.providers import UserMarketDataProvider, DataProviderWithoutKey, DataProviderWithKey
 from jdu.support.sorters import score_object_names, sort_by_len_alphabet
-from jdu.support.utils import get_async_request_json, get_request_json
+from jdu.support.types import ProductInfo
 
 
-class WildBerriesDataProviderStandardImpl(WildBerriesDataProviderWithKey):
-
+class WildberriesUserMarketDataProvider(UserMarketDataProvider, ABC):
     def __init__(self, api_key: str):
         super().__init__(api_key)
 
-    def get_warehouse_name_id_address(self) -> dict[str, tuple[int, str]]:
-        id_to_name_address_dict: dict[str, tuple[int, str]] = {}
-        response = self._session.get('https://suppliers-api.wildberries.ru/api/v3/offices',
-                                     headers={
-                                         'Authorization': self._api_key})
-        json_code = response.json()
-        for warehouse in json_code:
-            id_to_name_address_dict[warehouse['name']] = (warehouse['id'], warehouse['address'])
-        return id_to_name_address_dict
+
+class WildberriesUserMarketDataProviderImpl(WildberriesUserMarketDataProvider):
+    def __init__(self, api_key: str):
+        super().__init__(api_key)
 
     def get_warehouses(self) -> list[Warehouse]:
         warehouses: list[Warehouse] = []
-        response = self._session.get('https://suppliers-api.wildberries.ru/api/v3/offices',
-                                     headers={
-                                         'Authorization': self._api_key})
-        json_code = response.json()
+        url = 'https://suppliers-api.wildberries.ru/api/v3/offices'
+        json_code = self.get_authorized_request_json(url)
         for warehouse in json_code:
-            warehouses.append(
-                Warehouse(warehouse['name'], warehouse['id'], HandlerType.MARKETPLACE, warehouse['address']))
+            if any(k not in warehouse for k in ("name", "id", "address")):
+                continue
+            warehouses.append(Warehouse(warehouse['name'], warehouse['id'], HandlerType.CLIENT, warehouse['address']))
         return warehouses
 
     def __get_nearest_names(self, text: str) -> list[str]:
         object_name_list: list[str] = []
-        response: Response = self._session.get('https://suppliers-api.wildberries.ru/content/v1/object/all?name=' + text
-                                               + '&top=100',
-                                               headers={
-                                                   'Authorization': self._api_key})
-        json_code: any = response.json()
+        url = f'https://suppliers-api.wildberries.ru/content/v1/object/all?name={text}&top=100'
+        json_code = self.get_authorized_request_json(url)
         for data in json_code['data']:
+            if 'objectName' not in data:
+                continue
             object_name_list.append(data['objectName'])
         return object_name_list
 
@@ -59,33 +51,46 @@ class WildBerriesDataProviderStandardImpl(WildBerriesDataProviderWithKey):
         return result
 
 
-class WildBerriesDataProviderStatisticsImpl(WildBerriesDataProviderWithKey):
+class WildberriesDataProviderWithKey(DataProviderWithKey):
+    def get_parents(self) -> list[str]:
+        parent_categories: list[str] = []
+        url = 'https://suppliers-api.wildberries.ru/content/v1/object/parent/all'
+        json_code = self.get_authorized_request_json(url)
+        for data in json_code['data']:
+            parent_categories.append(data['name'])
+        return parent_categories
 
+
+class WildberriesDataProviderStatisticsImpl(WildberriesDataProviderWithKey):
     def __init__(self, api_key: str):
         super().__init__(api_key)
 
 
-class WildBerriesDataProviderAdsImpl(WildBerriesDataProviderWithKey):
-
+class WildberriesDataProviderAdsImpl(WildberriesDataProviderWithKey):
     def __init__(self, api_key: str):
         super().__init__(api_key)
 
 
-class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
+class WildberriesDataProviderWithoutKey(DataProviderWithoutKey, ABC):
+    def __init__(self):
+        super().__init__()
+        self.marketplace_name = 'wildberries'
 
+
+class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
     def __init__(self):
         super().__init__()
 
     def get_categories_names(self, category_num=-1) -> list[str]:
         category_names_list: list[str] = []
         url: str = 'https://static-basket-01.wb.ru/vol0/data/subject-base.json'
-        json_data = get_request_json(url, self._session)
-        category_iterator: int = 0
-        for data in json_data:
-            category_names_list.append(data['name'])
-            category_iterator += 1
-            if category_num != -1 and category_iterator >= category_num:
+        json_data = self.get_request_json(url)
+        for i, data in enumerate(json_data):
+            if category_num != -1 and i >= category_num:
                 break
+            if 'name' not in data:
+                continue
+            category_names_list.append(data['name'])
         return category_names_list
 
     @staticmethod
@@ -95,34 +100,34 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
             categories_list.append(Category(category_name))
         return categories_list
 
-    def get_niches_names(self, name_category: str, niche_num: int = -1) -> list[str]:
-        niche_names_list: list[str] = []
-        niche_iterator: int = 1
+    def get_niches_names(self, category_name: str, niche_num: int = -1) -> list[str]:
+        niche_names: list[str] = []
+        niche_counter: int = 0
         url: str = 'https://static-basket-01.wb.ru/vol0/data/subject-base.json'
-        json_data = get_request_json(url, self._session)
+        json_data = self.get_request_json(url)
         for data in json_data:
-            if data['name'] == name_category:
-                for niche in data['childs']:
-                    niche_names_list.append(niche['name'])
-                    niche_iterator += 1
-                    if niche_num != -1 and niche_iterator > niche_num:
-                        break
-                break
-        return niche_names_list
+            if data['name'] != category_name:
+                continue
+            for niche in data['childs']:
+                if niche_num != -1 and niche_counter >= niche_num:
+                    return niche_names
+                niche_names.append(niche['name'])
+                niche_counter += 1
+        return niche_names
 
     def get_niches(self, niche_names_list):
         niche_list: list[Niche] = []
         for niche_name in niche_names_list:
             niche_list.append(Niche(niche_name, {
-                HandlerType.MARKETPLACE: 0,
+                HandlerType.MARKETPLACE: 0,  # TODO think about constants loading
                 HandlerType.PARTIAL_CLIENT: 0,
                 HandlerType.CLIENT: 0}, 0))
         return niche_list
 
-    def get_products_id_to_name_cost_dict(self, niche: str, products_count: int = -1) -> dict[int, tuple[str, int]]:
+    def get_products_mapped_info(self, niche: str, products_count: int = -1) -> list[ProductInfo]:
         page_iterator: int = 1
-        product_iterator: int = 0
-        id_to_name_cost_dict: dict[int, tuple[str, int]] = {}
+        product_counter: int = 0
+        products_info: list[ProductInfo] = []
         while True:
             url: str = f'https://search.wb.ru/exactmatch/ru/common/v4/search' \
                        f'?appType=1' \
@@ -132,28 +137,31 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
                        f'&resultset=catalog' \
                        f'&sort=popular' \
                        f'&suppressSpellcheck=false'
-            json_code = get_request_json(url, self._session)
+            json_code = self.get_request_json(url)
             if 'data' not in json_code or 'products' not in json_code['data']:
                 break
             for product in json_code['data']['products']:
-                if products_count != -1 and product_iterator >= products_count:
-                    return id_to_name_cost_dict
-                id_to_name_cost_dict[product['id']] = (product['name'], product['priceU'])
-                product_iterator += 1
+                if products_count != -1 and product_counter >= products_count:
+                    return products_info
+                if any(k not in product for k in ["id", "name", "priceU"]):
+                    continue
+                product_info = ProductInfo(product['id'], product['name'], product['priceU'])
+                products_info.append(product_info)
+                product_counter += 1
             page_iterator += 1
-        return id_to_name_cost_dict
+        return products_info
 
     def get_products(self, niche_name: str,
                      category_name: str,
-                     id_name_cost_list: list[tuple[int, str, int]]) -> list[Product]:
+                     products_info: list[ProductInfo]) -> list[Product]:
         result_products = []
-        for i in range(0, max(len(id_name_cost_list) - self.THREAD_TASK_COUNT + 1, 1), self.THREAD_TASK_COUNT):
+        for i in range(0, max(len(products_info) - self.THREAD_TASK_COUNT + 1, 1), self.THREAD_TASK_COUNT):
             loop: AbstractEventLoop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             result_products.extend(
                 loop.run_until_complete(
                     self.__load_all_product_niche(
-                        id_name_cost_list[i:i + self.THREAD_TASK_COUNT],
+                        products_info[i:i + self.THREAD_TASK_COUNT],
                         niche_name, category_name
                     )
                 )
@@ -162,19 +170,19 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
         return result_products
 
     async def __load_all_product_niche(self,
-                                       id_name_cost_list: list[tuple[int, str, int]],
+                                       products_info: list[ProductInfo],
                                        niche_name: str,
                                        category_name: str) -> list[Product]:
         products: list[Product] = []
         tasks: list[Task] = []
-        for global_id in id_name_cost_list:
-            task = asyncio.create_task(self.__get_product_price_history(global_id[0]))
+        for product_info in products_info:
+            task = asyncio.create_task(self.__get_product_price_history(product_info.global_id))
             tasks.append(task)
-        product_price_history_list = await asyncio.gather(*tasks)
-        for index, id_name_cost in enumerate(id_name_cost_list):
-            products.append(Product(id_name_cost[1], id_name_cost[2], id_name_cost[0], 0,
+        product_price_histories = await asyncio.gather(*tasks)
+        for i, product_info in enumerate(products_info):
+            products.append(Product(product_info.name, product_info.price, product_info.global_id, 0,
                                     "brand", "seller", niche_name, category_name,
-                                    history=product_price_history_list[index], width=0, height=0, depth=0))
+                                    history=product_price_histories[i], width=0, height=0, depth=0))
         return products
 
     async def __get_product_price_history(self, product_id: int, loop=None, connector=None) -> ProductHistory:
@@ -184,53 +192,52 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
                            f'&nm={product_id}'
         async with aiohttp.ClientSession() if loop is None or connector is None \
                 else aiohttp.ClientSession(connector=connector, loop=loop) as client_session:
-            request_json = await get_async_request_json(cost_history_url, client_session)
-            result = self.__resolve_json_to_history_units(request_json)
-            if len(result) > 0:
-                last_item = result[len(result) - 1]
-                request_json = await get_async_request_json(storage_url, client_session)
-                if isinstance(request_json, dict):
-                    last_item.leftover = self.__resolve_json_to_storage_dict(request_json)
+            request_json = await self.get_async_request_json(cost_history_url, client_session)
+            product_history_units = self.__resolve_json_to_history_units(request_json)
+            if len(product_history_units) > 0:
+                last_item = product_history_units[len(product_history_units) - 1]
+                request_json = await self.get_async_request_json(storage_url, client_session)
+                last_item.leftover = self.__resolve_json_to_storage_dict(request_json)
         await client_session.close()
-        return ProductHistory(result)
+        return ProductHistory(product_history_units)
 
     def get_product_price_history(self, product_id: int) -> ProductHistory:
         cost_history_url: str = f'https://wbx-content-v2.wbstatic.net/price-history/{product_id}.json?'
         storage_url: str = f'https://card.wb.ru/cards/detail?' \
                            f'dest=-1221148,-140294,-1751445,-364763' \
                            f'&nm={product_id}'
-        request_json = get_request_json(cost_history_url, self._session)
-        result = self.__resolve_json_to_history_units(request_json)
-        if len(result) > 0:
-            last_item = result[len(result) - 1]
-            request_json = get_request_json(storage_url, self._session)
+        request_json = self.get_request_json(cost_history_url)
+        product_history_units = self.__resolve_json_to_history_units(request_json)
+        if len(product_history_units) > 0:
+            last_item = product_history_units[len(product_history_units) - 1]
+            request_json = self.get_request_json(storage_url)
             if isinstance(request_json, dict):
                 last_item.leftover = self.__resolve_json_to_storage_dict(request_json)
-        return ProductHistory(result)
+        return ProductHistory(product_history_units)
 
     def get_storage_dict(self, product_id: int) -> StorageDict:
         storage_url: str = f'https://card.wb.ru/cards/detail?' \
                            f'dest=-1221148,-140294,-1751445,-364763' \
                            f'&nm={product_id}'
-        request_json = get_request_json(storage_url, self._session)
+        request_json = self.get_request_json(storage_url)
         if isinstance(request_json, dict):
             return self.__resolve_json_to_storage_dict(request_json)
         return StorageDict()
 
     @staticmethod
     def __resolve_json_to_history_units(request_json: dict) -> list[ProductHistoryUnit]:
-        result: list[ProductHistoryUnit] = []
+        result_units: list[ProductHistoryUnit] = []
         for item in request_json:
             if 'price' not in item \
                     or 'RUB' not in item['price'] \
                     or 'dt' not in item:
                 continue
-            result.append(ProductHistoryUnit(item['price']['RUB'],
-                                             datetime.fromtimestamp(item['dt']), StorageDict()))
-        return result
+            result_units.append(ProductHistoryUnit(item['price']['RUB'],
+                                                   datetime.fromtimestamp(item['dt']), StorageDict()))
+        return result_units
 
     @staticmethod
-    def __resolve_json_to_storage_dict(json_code: dict) -> StorageDict:
+    def __resolve_json_to_storage_dict(json_code) -> StorageDict:
         if 'data' not in json_code \
                 or 'products' not in json_code['data'] or len(json_code['data']['products']) < 1:
             return StorageDict()
@@ -246,7 +253,7 @@ class WildBerriesDataProviderWithoutKeyImpl(WildBerriesDataProviderWithoutKey):
             if specify_name == '':
                 specify_name = 'default'
             for stock in size['stocks']:
-                if 'qty' not in stock:
+                if 'qty' not in stock or 'wh' not in stock:
                     continue
                 wh_id: int = stock['wh']
                 if wh_id not in storage_dict:
