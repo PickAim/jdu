@@ -137,7 +137,10 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                        f'&resultset=catalog' \
                        f'&sort=popular' \
                        f'&suppressSpellcheck=false'
-            json_code = self.get_request_json(url)
+            try:
+                json_code = self.get_request_json(url)
+            except Exception:
+                break  # TODO last page save logic
             if 'data' not in json_code or 'products' not in json_code['data']:
                 break
             for product in json_code['data']['products']:

@@ -54,17 +54,19 @@ class WildberriesDBFillerImpl(__StandardWildberriesDBFiller):
             niches: list[Niche] = self.provider_without_key.get_niches(filtered_niches_names)
             self.niche_service.create_all(niches, category_id)
 
-    def fill_niche_by_name(self, niche_name: str) -> Niche | None:
+    def fill_niche_by_name(self, niche_name: str, product_num: int = -1) -> Niche | None:
         if not self.category_service.exists_with_name(DEFAULT_CATEGORY_NAME, self.marketplace_id):
-            return None
+            self.category_service.create(Category(DEFAULT_CATEGORY_NAME), self.marketplace_id)
         default_category_search_result = \
             self.category_service.find_by_name(DEFAULT_CATEGORY_NAME, self.marketplace_id)
         _, default_category_id = default_category_search_result
         niches: list[Niche] = self.provider_without_key.get_niches([niche_name])
         loaded_niche = niches[0]
-        loaded_products = self.__get_new_products(niche_name, DEFAULT_CATEGORY_NAME)
+        loaded_products = self.__get_new_products(niche_name, DEFAULT_CATEGORY_NAME, product_num)
         loaded_niche.products = loaded_products
         self.niche_service.create(loaded_niche, default_category_id)
+        _, loaded_niche_id = self.niche_service.find_by_name(loaded_niche.name, default_category_id)
+        self.product_service.create_products(loaded_niche.products, loaded_niche_id)
         return loaded_niche
 
     def fill_products(self, products_per_niche: int = -1):

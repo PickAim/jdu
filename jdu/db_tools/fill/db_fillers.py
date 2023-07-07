@@ -33,7 +33,7 @@ class StandardDBFiller(__InitializableDBFiller, ABC):
         pass
 
     @abstractmethod
-    def fill_niche_by_name(self, niche_name: str) -> Niche | None:
+    def fill_niche_by_name(self, niche_name: str, product_num: int = -1) -> Niche | None:
         pass
 
     @abstractmethod

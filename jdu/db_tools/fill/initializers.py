@@ -47,7 +47,7 @@ class WildberriesDBFillerInitializer(DBFillerInitializer):
         db_filler.history_unit_service = ProductHistoryUnitService(product_history_repository)
         db_filler.warehouse_service = WarehouseService(warehouse_repository,
                                                        WarehouseTableToJormMapper())
-        db_filler.price_history_service = \
+        db_filler.product_history_service = \
             ProductHistoryService(db_filler.history_unit_service,
                                   LeftoverService(LeftoverRepository(session),
                                                   warehouse_repository,
