@@ -5,12 +5,15 @@ from jarvis_db.services.market.infrastructure.warehouse_service import Warehouse
 from jdu.db_tools.fill.wildberries_fillers import WildberriesDBFillerWithKeyImpl, WildberriesDBFillerWithKey
 from jdu.providers.wildberries_providers import WildberriesUserMarketDataProvider
 from tests.basic_db_test import BasicDBTest, TestDBContextAdditions
-from tests.provider_for_test.test_provider import WildberriesUserMarketDataProviderImplTest
+from tests.providers.wildberries_test_provider import WildberriesUserMarketDataProviderImplTest
 
 
-class WarehouseFillerTest(BasicDBTest):
-    def get_additions_flags(self) -> list[TestDBContextAdditions]:
-        return [TestDBContextAdditions.MARKETPLACE]
+class WildberriesDBFillerWithKeyTest(BasicDBTest):
+    @classmethod
+    def get_db_init_flags_for_tests(cls) -> dict[str, list[TestDBContextAdditions]]:
+        return {
+            'test_fill_warehouses': [TestDBContextAdditions.MARKETPLACE]
+        }
 
     def test_fill_warehouses(self):
         object_provider: WildberriesUserMarketDataProvider = WildberriesUserMarketDataProviderImplTest()

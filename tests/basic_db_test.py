@@ -1,4 +1,5 @@
 import abc
+import inspect
 import unittest
 from enum import IntEnum
 from typing import Callable
@@ -203,14 +204,23 @@ class BasicDBTest(unittest.TestCase):
     test_user_phone = "+777777777"
     test_user_password = "123!Hashed"
 
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.addition_flags_for_tests = cls.get_db_init_flags_for_tests()
+
     def setUp(self):
         self.db_context = DbContext()
+        frame = inspect.currentframe()
+        test_name = inspect.getargvalues(frame).locals['self']._testMethodName
+        if test_name not in self.addition_flags_for_tests:
+            return
+        addition_flags = self.addition_flags_for_tests[test_name]
         with self.db_context.session() as session, session.begin():
-            addition_flags = self.get_additions_flags()
             for flag in addition_flags:
                 _CREATE_TEST_OBJECT_METHODS[flag](session)
             session.flush()
 
+    @classmethod
     @abc.abstractmethod
-    def get_additions_flags(self) -> list[TestDBContextAdditions]:
+    def get_db_init_flags_for_tests(cls) -> dict[str, list[TestDBContextAdditions]]:
         pass

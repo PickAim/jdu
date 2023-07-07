@@ -32,6 +32,14 @@ class WildberriesUserMarketDataProviderImpl(WildberriesUserMarketDataProvider):
             warehouses.append(Warehouse(warehouse['name'], warehouse['id'], HandlerType.CLIENT, warehouse['address']))
         return warehouses
 
+    def get_nearest_keywords(self, word: str) -> list[str]:
+        names: list[str] = self.__get_nearest_names(word)
+        scored_dict: dict[float, list[str]] = score_object_names(word, names)
+        result: list[str] = []
+        for score in scored_dict.keys():
+            result.extend(sort_by_len_alphabet(scored_dict[score]))
+        return result
+
     def __get_nearest_names(self, text: str) -> list[str]:
         object_name_list: list[str] = []
         url = f'https://suppliers-api.wildberries.ru/content/v1/object/all?name={text}&top=100'
@@ -41,14 +49,6 @@ class WildberriesUserMarketDataProviderImpl(WildberriesUserMarketDataProvider):
                 continue
             object_name_list.append(data['objectName'])
         return object_name_list
-
-    def get_nearest_keywords(self, word: str) -> list[str]:
-        names: list[str] = self.__get_nearest_names(word)
-        scored_dict: dict[float, list[str]] = score_object_names(word, names)
-        result: list[str] = []
-        for score in scored_dict.keys():
-            result.extend(sort_by_len_alphabet(scored_dict[score]))
-        return result
 
 
 class WildberriesDataProviderWithKey(DataProviderWithKey):

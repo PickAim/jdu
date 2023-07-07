@@ -12,8 +12,12 @@ class FrequencyRequestTest(BasicDBTest):
     request = FrequencyRequest(BasicDBTest.test_niche_name, BasicDBTest.test_category_name, BasicDBTest.marketplace_id)
     result = FrequencyResult({i: i + 1 for i in range(10)})
 
-    def get_additions_flags(self) -> list[TestDBContextAdditions]:
-        return [TestDBContextAdditions.NICHE, TestDBContextAdditions.USER]
+    @classmethod
+    def get_db_init_flags_for_tests(cls) -> dict[str, list[TestDBContextAdditions]]:
+        return {
+            '_test_change_frequency': [TestDBContextAdditions.NICHE, TestDBContextAdditions.USER],
+            '_test_remove_frequency': [TestDBContextAdditions.NICHE, TestDBContextAdditions.USER]
+        }
 
     def _test_change_frequency(self):  # TODO waiting for JDB mapping fixes
         with self.db_context.session() as session, session.begin():

@@ -8,8 +8,16 @@ from tests.test_utils import create_economy_service, create_frequency_service
 
 
 class AccountServiceTest(BasicDBTest):
-    def get_additions_flags(self) -> list[TestDBContextAdditions]:
-        return [TestDBContextAdditions.NICHE, TestDBContextAdditions.WAREHOUSE, TestDBContextAdditions.USER]
+    @classmethod
+    def get_db_init_flags_for_tests(cls) -> dict[str, list[TestDBContextAdditions]]:
+        return {
+            'test_change_unit_economy': [TestDBContextAdditions.NICHE,
+                                         TestDBContextAdditions.WAREHOUSE,
+                                         TestDBContextAdditions.USER],
+            'test_remove_unit_economy': [TestDBContextAdditions.NICHE,
+                                         TestDBContextAdditions.WAREHOUSE,
+                                         TestDBContextAdditions.USER]
+        }
 
     def test_change_unit_economy(self):
         request_info = RequestInfo(date=datetime(2020, 10, 23), name="name")
