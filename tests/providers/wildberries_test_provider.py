@@ -1,14 +1,14 @@
 from datetime import datetime
 
-from jorm.market.infrastructure import Niche, Product, HandlerType, Category
+from jorm.market.infrastructure import Niche, Product, HandlerType, Category, Warehouse, Address
 from jorm.market.items import ProductHistoryUnit, ProductHistory
 from jorm.support.types import StorageDict, SpecifiedLeftover
 
-from jdu.providers.common import WildBerriesDataProviderWithoutKey
+from jdu.providers.wildberries_providers import WildberriesDataProviderWithoutKey, WildberriesUserMarketDataProvider
+from jdu.support.types import ProductInfo
 
 
-class WildBerriesDataProviderWithoutKeyImplTest(WildBerriesDataProviderWithoutKey):
-
+class WildBerriesDataProviderWithoutKeyImplTest(WildberriesDataProviderWithoutKey):
     def __init__(self):
         super().__init__()
 
@@ -42,24 +42,22 @@ class WildBerriesDataProviderWithoutKeyImplTest(WildBerriesDataProviderWithoutKe
                 HandlerType.CLIENT: 0}, 0))
         return niche_list
 
-    def get_products_id_to_name_cost_dict(self, niche: str,
-                                          pages_num: int = -1,
-                                          products_count: int = -1) -> dict[int, tuple[str, int]]:
-        id_to_name_cost_dict: dict[int, tuple[str, int]] = {}
+    def get_products_mapped_info(self, niche: str, products_count: int = -1) -> set[ProductInfo]:
+        products_info: set[ProductInfo] = set()
         for i in range(10):
-            id_to_name_cost_dict[i] = ('Product_' + i.__str__(), i)
-        return id_to_name_cost_dict
+            products_info.add(ProductInfo(i, 'Product_' + i.__str__(), i))
+        return products_info
 
     async def load_all_product_niche(self) -> list[Product]:
         pass
 
-    def get_products(self, niche: str, category: str, id_to_name_cost_dict: list[tuple[int, str, int]]) -> list[
-        Product]:
+    def get_products(self, niche_name: str, category_name: str,
+                     products_info: list[ProductInfo]) -> list[Product]:
         products_list: list[Product] = []
-        for i in id_to_name_cost_dict:
+        for product_info in products_info:
             products_list.append(
-                Product('Product_' + i[0].__str__(), i[0], i[0], i[0], "brand", "seller", "Niche_" + i[0].__str__(),
-                        "Category_" + i[0].__str__(), ProductHistory())
+                Product(product_info.name, product_info.price, product_info.global_id, 0,
+                        "brand", "seller", niche_name, category_name, ProductHistory())
             )
         return products_list
 
@@ -75,3 +73,21 @@ class WildBerriesDataProviderWithoutKeyImplTest(WildBerriesDataProviderWithoutKe
             specified_leftover_list.append(SpecifiedLeftover('SpecifyName_' + i.__str__(), i))
             storage_dict[i] = specified_leftover_list
         return storage_dict
+
+
+class WildberriesUserMarketDataProviderImplTest(WildberriesUserMarketDataProvider):
+    def __init__(self):
+        super().__init__("api-key")
+
+    def get_warehouses(self) -> list[Warehouse]:
+        warehouses: list[Warehouse] = []
+        for i in range(10):
+            warehouses.append(
+                Warehouse('warehouse_' + i.__str__(), i, HandlerType.MARKETPLACE, Address('Address_' + i.__str__())))
+        return warehouses
+
+    def get_nearest_keywords(self, word: str) -> list[str]:
+        return ["word", "word", "word"]
+
+    def __del__(self):
+        self._session.close()
