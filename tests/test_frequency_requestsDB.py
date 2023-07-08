@@ -4,7 +4,7 @@ from jorm.market.service import RequestInfo, FrequencyRequest, FrequencyResult
 
 from jdu.db_tools.update.jorm_changer_impl import JormChangerImpl
 from tests.basic_db_test import BasicDBTest, TestDBContextAdditions
-from tests.test_utils import create_economy_service, create_frequency_service
+from tests.test_utils import create_economy_service, create_frequency_service, create_wb_db_filler
 
 
 class FrequencyRequestTest(BasicDBTest):
@@ -22,7 +22,8 @@ class FrequencyRequestTest(BasicDBTest):
     def _test_change_frequency(self):  # TODO waiting for JDB mapping fixes
         with self.db_context.session() as session, session.begin():
             wildberries_changer = JormChangerImpl(create_economy_service(session),
-                                                  create_frequency_service(session))
+                                                  create_frequency_service(session),
+                                                  create_wb_db_filler(session))
             wildberries_changer.save_frequency_request(self.request,
                                                        self.result,
                                                        self.request_info,
@@ -37,7 +38,8 @@ class FrequencyRequestTest(BasicDBTest):
         request_id = 1
         with self.db_context.session() as session, session.begin():
             wildberries_changer = JormChangerImpl(create_economy_service(session),
-                                                  create_frequency_service(session))
+                                                  create_frequency_service(session),
+                                                  create_wb_db_filler(session))
             wildberries_changer.save_frequency_request(self.request,
                                                        self.result,
                                                        self.request_info,

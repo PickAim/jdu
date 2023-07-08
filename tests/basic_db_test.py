@@ -112,7 +112,7 @@ def __add_user(session: Session) -> int:
     user = __create_test_user()
     service = UserService(UserRepository(session), UserTableToJormMapper())
     try:
-        found_info = service.find_by_id(user.user_id)
+        service.find_by_id(user.user_id)
     except Exception:
         service.create(user, account_id)
     return user.user_id

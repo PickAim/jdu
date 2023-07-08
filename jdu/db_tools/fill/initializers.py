@@ -4,8 +4,8 @@ from jarvis_db.repositores.mappers.market.infrastructure import NicheTableToJorm
     WarehouseTableToJormMapper, CategoryTableToJormMapper
 from jarvis_db.repositores.mappers.market.items import ProductTableToJormMapper, ProductHistoryTableToJormMapper
 from jarvis_db.repositores.mappers.market.items.leftover_mappers import LeftoverTableToJormMapper
-from jarvis_db.repositores.market.infrastructure import WarehouseRepository, MarketplaceRepository, CategoryRepository, \
-    NicheRepository
+from jarvis_db.repositores.market.infrastructure import WarehouseRepository, MarketplaceRepository, \
+    CategoryRepository, NicheRepository
 from jarvis_db.repositores.market.items import ProductHistoryRepository, ProductCardRepository
 from jarvis_db.repositores.market.items.leftover_repository import LeftoverRepository
 from jarvis_db.services.market.infrastructure.category_service import CategoryService
