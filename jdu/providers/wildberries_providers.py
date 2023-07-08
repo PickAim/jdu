@@ -4,13 +4,12 @@ from asyncio import AbstractEventLoop, Task
 from datetime import datetime
 
 import aiohttp
-from jorm.market.infrastructure import Product, Category, Niche, HandlerType, Warehouse
-from jorm.market.items import ProductHistoryUnit, ProductHistory
-from jorm.support.types import StorageDict, SpecifiedLeftover
-
 from jdu.providers.providers import UserMarketDataProvider, DataProviderWithoutKey, DataProviderWithKey
 from jdu.support.sorters import score_object_names, sort_by_len_alphabet
 from jdu.support.types import ProductInfo
+from jorm.market.infrastructure import Product, Category, Niche, HandlerType, Warehouse
+from jorm.market.items import ProductHistoryUnit, ProductHistory
+from jorm.support.types import StorageDict, SpecifiedLeftover
 
 
 class WildberriesUserMarketDataProvider(UserMarketDataProvider, ABC):
@@ -129,6 +128,7 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
         product_counter: int = 0
         products_info: set[ProductInfo] = set()
         while True:
+            # TODO think about it https://search-goods.wildberries.ru/search?query=
             url: str = f'https://search.wb.ru/exactmatch/ru/common/v4/search' \
                        f'?appType=1' \
                        f'&dest=-1257786' \
@@ -143,6 +143,8 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                 self.reset_session()
                 continue
             if 'data' not in json_code or 'products' not in json_code['data']:
+                break
+            if len(json_code['data']['products']) == 0:
                 break
             for product in json_code['data']['products']:
                 if products_count != -1 and product_counter >= products_count:

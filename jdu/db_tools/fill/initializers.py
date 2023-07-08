@@ -22,16 +22,26 @@ from jdu.db_tools.fill.base import DBFiller
 
 
 class DBFillerInitializer(ABC):
-    @staticmethod
+    def init_db_filler(self, session: Session, db_filler_to_init: DBFiller):
+        db_filler_to_init.marketplace_name = self.get_marketplace_name()
+        self.additional_init_db_filler(session, db_filler_to_init)
+
     @abstractmethod
-    def init_db_filler(session: Session, db_filler_to_init: DBFiller):
-        pass
+    def additional_init_db_filler(self, session: Session, db_filler_to_init: DBFiller):
+        return
+
+    @abstractmethod
+    def get_marketplace_name(self) -> str:
+        return 'default'
 
 
 class WildberriesDBFillerInitializer(DBFillerInitializer):
-    @staticmethod
-    def init_db_filler(session: Session, db_filler: DBFiller):
-        db_filler.marketplace_name = 'wildberries'
+    WILDBERRIES_NAME = 'wildberries'
+
+    def get_marketplace_name(self) -> str:
+        return self.WILDBERRIES_NAME
+
+    def additional_init_db_filler(self, session: Session, db_filler: DBFiller):
         niche_table_to_jorm_mapper = NicheTableToJormMapper()
         product_history_repository = ProductHistoryRepository(session)
         warehouse_repository = WarehouseRepository(session)

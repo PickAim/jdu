@@ -12,7 +12,7 @@ from jdu.db_tools.fill.initializers import DBFillerInitializer
 class __InitializableDBFiller(DBFiller):
     def __init__(self, session: Session, db_initializer_class: Type[DBFillerInitializer]):
         super().__init__()
-        db_initializer_class.init_db_filler(session, self)
+        db_initializer_class().init_db_filler(session, self)
         self.__try_to_init_marketplace_in_db()
 
     def __try_to_init_marketplace_in_db(self):
@@ -24,7 +24,7 @@ class __InitializableDBFiller(DBFiller):
 class SimpleDBFiller(__InitializableDBFiller):
     def __init__(self, session: Session, db_initializer_class: Type[DBFillerInitializer]):
         super().__init__(session, db_initializer_class)
-        db_initializer_class.init_db_filler(session, self)
+        db_initializer_class().init_db_filler(session, self)
 
 
 class StandardDBFiller(__InitializableDBFiller, ABC):
