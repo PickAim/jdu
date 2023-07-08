@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from abc import ABC
 from asyncio import AbstractEventLoop, Task
 from datetime import datetime
@@ -79,6 +80,7 @@ class WildberriesDataProviderWithoutKey(DataProviderWithoutKey, ABC):
 class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
     def __init__(self):
         super().__init__()
+        self.LOGGER = logging.getLogger(self.__class__.__name__)
 
     def get_categories_names(self, category_num=-1) -> list[str]:
         category_names_list: list[str] = []
@@ -127,6 +129,7 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
         page_iterator: int = 1
         product_counter: int = 0
         products_info: set[ProductInfo] = set()
+        self.LOGGER.info("Start products info mapping.")
         while True:
             # TODO think about it https://search-goods.wildberries.ru/search?query=
             url: str = f'https://search.wb.ru/exactmatch/ru/common/v4/search' \
@@ -155,12 +158,14 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                 products_info.add(product_info)
                 product_counter += 1
             page_iterator += 1
+        self.LOGGER.info(f"End mapping products info. {len(products_info)} was mapped.")
         return products_info
 
     def get_products(self, niche_name: str,
                      category_name: str,
                      products_info: list[ProductInfo]) -> list[Product]:
         result_products = []
+        self.LOGGER.info("Start products loading.")
         for i in range(0, max(len(products_info) - self.THREAD_TASK_COUNT + 1, 1), self.THREAD_TASK_COUNT):
             loop: AbstractEventLoop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
@@ -173,6 +178,7 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                 )
             )
             loop.close()
+        self.LOGGER.info(f"End products loading. {len(products_info)} was loaded.")
         return result_products
 
     async def __load_all_product_niche(self,

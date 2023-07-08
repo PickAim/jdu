@@ -1,5 +1,5 @@
-from abc import ABC
 from abc import abstractmethod
+from typing import Type
 
 from jorm.market.infrastructure import Category, Niche, Warehouse, HandlerType, Address
 from jorm.market.items import Product
@@ -7,24 +7,16 @@ from jorm.support.constants import DEFAULT_CATEGORY_NAME
 from sqlalchemy.orm import Session
 
 from jdu.db_tools.fill.db_fillers import StandardDBFiller, SimpleDBFiller
-from jdu.db_tools.fill.initializers import WildberriesDBFillerInitializer
+from jdu.db_tools.fill.initializers import DBFillerInitializer
 from jdu.providers.wildberries_providers import WildberriesDataProviderWithoutKey, WildberriesUserMarketDataProvider
 from jdu.support.types import ProductInfo
 
 
-class __SimpleWildberriesDBFiller(SimpleDBFiller):
-    def __init__(self, session: Session):
-        super().__init__(session, WildberriesDBFillerInitializer)
-
-
-class __StandardWildberriesDBFiller(StandardDBFiller, ABC):
-    def __init__(self, session: Session):
-        super().__init__(session, WildberriesDBFillerInitializer)
-
-
-class WildberriesDBFillerWithKey(__SimpleWildberriesDBFiller):
-    def __init__(self, provider_with_key: WildberriesUserMarketDataProvider, session: Session):
-        super().__init__(session)
+class WildberriesDBFillerWithKey(SimpleDBFiller):
+    def __init__(self, session: Session,
+                 provider_with_key: WildberriesUserMarketDataProvider,
+                 db_initializer_class: Type[DBFillerInitializer]):
+        super().__init__(session, db_initializer_class)
         self.provider_with_key: WildberriesUserMarketDataProvider = provider_with_key
 
     @abstractmethod
@@ -32,9 +24,11 @@ class WildberriesDBFillerWithKey(__SimpleWildberriesDBFiller):
         pass
 
 
-class WildberriesDBFillerImpl(__StandardWildberriesDBFiller):
-    def __init__(self, provider_without_key: WildberriesDataProviderWithoutKey, session: Session):
-        super().__init__(session)
+class WildberriesDBFillerImpl(StandardDBFiller):
+    def __init__(self, session: Session,
+                 provider_without_key: WildberriesDataProviderWithoutKey,
+                 db_initializer_class: Type[DBFillerInitializer]):
+        super().__init__(session, db_initializer_class)
         self.provider_without_key = provider_without_key
 
     def fill_categories(self, category_num: int = -1):
@@ -70,23 +64,15 @@ class WildberriesDBFillerImpl(__StandardWildberriesDBFiller):
         return loaded_niche
 
     def __check_warehouse_filled(self, products: list[Product]):
-        db_warehouses = self.warehouse_service.find_all_warehouses()
-        db_warehouse_ids = set(  # TODO USE filtering by service as ready
-            [
-                db_warehouses[warehouse_id].global_id
-                for warehouse_id in db_warehouses
-            ]
-        )
-        warehouse_to_add_as_unfilled: list[Warehouse] = []
         warehouse_ids: set[int] = set()
         for product in products:
             warehouse_id_to_leftovers = product.history.get_all_leftovers()
             for warehouse_id in warehouse_id_to_leftovers:
-                if warehouse_id not in db_warehouse_ids and warehouse_id not in warehouse_ids:
-                    warehouse_to_add_as_unfilled.append(
-                        self.__create_warehouse_with_global_id(warehouse_id)
-                    )
-                    warehouse_ids.add(warehouse_id)
+                warehouse_ids.add(warehouse_id)
+        filtered_warehouse_global_ids = self.warehouse_service.fileter_existing_global_ids(warehouse_ids)
+        warehouse_to_add_as_unfilled: list[Warehouse] = []
+        for global_id in filtered_warehouse_global_ids:
+            warehouse_to_add_as_unfilled.append(self.__create_warehouse_with_global_id(global_id))
         self.__fill_warehouses(warehouse_to_add_as_unfilled)
 
     @staticmethod
@@ -133,7 +119,7 @@ class WildberriesDBFillerImpl(__StandardWildberriesDBFiller):
         filtered_products_global_ids = list(mapped_products_info.keys())
         if niche_id != -1:
             filtered_products_global_ids: list[int] = \
-                self.product_service.filter_existing_global_ids(filtered_products_global_ids)
+                self.product_service.filter_existing_global_ids(niche_id, filtered_products_global_ids)
         return [
             mapped_products_info[global_id]
             for global_id in filtered_products_global_ids
@@ -141,8 +127,10 @@ class WildberriesDBFillerImpl(__StandardWildberriesDBFiller):
 
 
 class WildberriesDBFillerWithKeyImpl(WildberriesDBFillerWithKey):
-    def __init__(self, provider_with_key: WildberriesUserMarketDataProvider, session: Session):
-        super().__init__(provider_with_key, session)
+    def __init__(self, session: Session,
+                 provider_with_key: WildberriesUserMarketDataProvider,
+                 db_initializer_class: Type[DBFillerInitializer]):
+        super().__init__(session, provider_with_key, db_initializer_class)
 
     def fill_warehouse(self):
         warehouses: list[Warehouse] = self.provider_with_key.get_warehouses()

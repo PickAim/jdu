@@ -16,10 +16,8 @@ from jarvis_db.services.market.items.product_history_unit_service import Product
 from jorm.support.constants import DEFAULT_CATEGORY_NAME
 
 from jdu.db_tools.fill.db_fillers import StandardDBFiller
-from jdu.db_tools.fill.wildberries_fillers import WildberriesDBFillerImpl
-from jdu.providers.wildberries_providers import WildberriesDataProviderWithoutKey, WildberriesDataProviderWithoutKeyImpl
 from tests.basic_db_test import BasicDBTest, TestDBContextAdditions
-from tests.providers.wildberries_test_provider import WildBerriesDataProviderWithoutKeyImplTest
+from tests.test_utils import create_wb_db_filler
 
 
 class WildberriesDBFillerImplTest(BasicDBTest):
@@ -32,9 +30,8 @@ class WildberriesDBFillerImplTest(BasicDBTest):
         }
 
     def test_init_marketplace(self):
-        object_provider: WildberriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImplTest()
         with self.db_context.session() as session, session.begin():
-            WildberriesDBFillerImpl(object_provider, session)
+            create_wb_db_filler(session)
         with self.db_context.session() as session:
             marketplace_repository: MarketplaceRepository = MarketplaceRepository(session)
             service_marketplace = MarketplaceService(marketplace_repository,
@@ -43,10 +40,8 @@ class WildberriesDBFillerImplTest(BasicDBTest):
             self.assertEqual('wildberries', marketplace.name)
 
     def test_fill_categories(self):
-        object_provider: WildberriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImplTest()
         with self.db_context.session() as session, session.begin():
-            wildberries_db_filler: StandardDBFiller = \
-                WildberriesDBFillerImpl(object_provider, session)
+            wildberries_db_filler: StandardDBFiller = create_wb_db_filler(session)
             wildberries_db_filler.fill_categories(10)
         with self.db_context.session() as session:
             category_service = CategoryService(CategoryRepository(session),
@@ -56,9 +51,8 @@ class WildberriesDBFillerImplTest(BasicDBTest):
             self.assertEqual(10, len(db_category))
 
     def test_fill_niches(self):
-        object_provider: WildberriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImplTest()
         with self.db_context.session() as session, session.begin():
-            db_filler: StandardDBFiller = WildberriesDBFillerImpl(object_provider, session)
+            db_filler: StandardDBFiller = create_wb_db_filler(session)
             db_filler.fill_niches(10)
         with self.db_context.session() as session, session.begin():
             service_niche = NicheService(NicheRepository(session), NicheTableToJormMapper())
@@ -67,9 +61,8 @@ class WildberriesDBFillerImplTest(BasicDBTest):
 
     def test_fill_products(self):
         product_num = 10
-        object_provider: WildberriesDataProviderWithoutKey = WildBerriesDataProviderWithoutKeyImplTest()
         with self.db_context.session() as session, session.begin():
-            db_filler: StandardDBFiller = WildberriesDBFillerImpl(object_provider, session)
+            db_filler: StandardDBFiller = create_wb_db_filler(session)
             db_filler.fill_products(product_num)
         with self.db_context.session() as session:
             unit_service = ProductHistoryUnitService(ProductHistoryRepository(session))
@@ -90,9 +83,8 @@ class WildberriesDBFillerImplTest(BasicDBTest):
     def test_fill_loaded_products(self):
         product_num = 10
         loaded_niche_name = 'Кофе'
-        object_provider: WildberriesDataProviderWithoutKey = WildberriesDataProviderWithoutKeyImpl()
         with self.db_context.session() as session, session.begin():
-            db_filler: StandardDBFiller = WildberriesDBFillerImpl(object_provider, session)
+            db_filler: StandardDBFiller = create_wb_db_filler(session)
             loaded_niche = db_filler.fill_niche_by_name(loaded_niche_name, product_num)
             self.assertIsNotNone(loaded_niche)
         with self.db_context.session() as session:
