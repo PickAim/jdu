@@ -21,9 +21,9 @@ class LoadingTest(unittest.TestCase):
         object_provider: WildberriesDataProviderWithoutKey = WildberriesDataProviderWithoutKeyImpl()
         before = datetime.now()
         product_num = 10
-        products_info: list[ProductInfo] = \
+        products_info: set[ProductInfo] = \
             object_provider.get_products_mapped_info('Кофе зерновой', product_num)
-        products: list[Product] = object_provider.get_products("Кофе зерновой", 'xuita', products_info)
+        products: list[Product] = object_provider.get_products("Кофе зерновой", 'xuita', list(products_info))
         print(f"products receiving time: {datetime.now() - before}")
         self.assertEqual(product_num, len(products))
 

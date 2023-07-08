@@ -42,10 +42,10 @@ class WildBerriesDataProviderWithoutKeyImplTest(WildberriesDataProviderWithoutKe
                 HandlerType.CLIENT: 0}, 0))
         return niche_list
 
-    def get_products_mapped_info(self, niche: str, products_count: int = -1) -> list[ProductInfo]:
-        products_info: list[ProductInfo] = []
+    def get_products_mapped_info(self, niche: str, products_count: int = -1) -> set[ProductInfo]:
+        products_info: set[ProductInfo] = set()
         for i in range(10):
-            products_info.append(ProductInfo(i, 'Product_' + i.__str__(), i))
+            products_info.add(ProductInfo(i, 'Product_' + i.__str__(), i))
         return products_info
 
     async def load_all_product_niche(self) -> list[Product]:

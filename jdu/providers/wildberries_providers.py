@@ -124,10 +124,10 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                 HandlerType.CLIENT: 0}, 0))
         return niche_list
 
-    def get_products_mapped_info(self, niche: str, products_count: int = -1) -> list[ProductInfo]:
+    def get_products_mapped_info(self, niche: str, products_count: int = -1) -> set[ProductInfo]:
         page_iterator: int = 1
         product_counter: int = 0
-        products_info: list[ProductInfo] = []
+        products_info: set[ProductInfo] = set()
         while True:
             url: str = f'https://search.wb.ru/exactmatch/ru/common/v4/search' \
                        f'?appType=1' \
@@ -140,7 +140,8 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
             try:
                 json_code = self.get_request_json(url)
             except Exception:
-                break  # TODO last page save logic
+                self.reset_session()
+                continue
             if 'data' not in json_code or 'products' not in json_code['data']:
                 break
             for product in json_code['data']['products']:
@@ -149,7 +150,7 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                 if any(k not in product for k in ["id", "name", "priceU"]):
                     continue
                 product_info = ProductInfo(product['id'], product['name'], product['priceU'])
-                products_info.append(product_info)
+                products_info.add(product_info)
                 product_counter += 1
             page_iterator += 1
         return products_info

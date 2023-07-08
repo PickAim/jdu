@@ -76,7 +76,7 @@ class WildberriesDBFillerImplTest(BasicDBTest):
         object_provider: WildberriesDataProviderWithoutKey = WildberriesDataProviderWithoutKeyImpl()
         with self.db_context.session() as session, session.begin():
             db_filler: StandardDBFiller = WildberriesDBFillerImpl(object_provider, session)
-            loaded_niche = db_filler.fill_niche_by_name(loaded_niche_name)
+            loaded_niche = db_filler.fill_niche_by_name(loaded_niche_name, product_num)
             self.assertIsNotNone(loaded_niche)
         with self.db_context.session() as session:
             category_service = CategoryService(CategoryRepository(session),

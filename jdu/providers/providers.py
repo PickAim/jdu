@@ -19,6 +19,12 @@ class DataProvider(ABC):
         __adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100)
         self._session.mount('https://', __adapter)
 
+    def reset_session(self):
+        self._session.close()
+        self._session = requests.Session()
+        __adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100)
+        self._session.mount('https://', __adapter)
+
     def get_request_json(self, url: str):
         return get_request_json(url, self._session)
 
@@ -41,7 +47,7 @@ class DataProviderWithoutKey(DataProvider):
 
     @abstractmethod
     def get_products_mapped_info(self, niche: str,
-                                 products_count: int = -1) -> list[ProductInfo]:
+                                 products_count: int = -1) -> set[ProductInfo]:
         pass
 
     @abstractmethod

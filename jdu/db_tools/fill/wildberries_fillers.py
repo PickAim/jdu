@@ -82,7 +82,7 @@ class WildberriesDBFillerImpl(__StandardWildberriesDBFiller):
 
     def __get_new_products(self, niche_name: str, category_name: str,
                            product_number: int = -1, niche_id: int = -1) -> list[Product]:
-        products_info: list[ProductInfo] = \
+        products_info: set[ProductInfo] = \
             self.provider_without_key.get_products_mapped_info(niche_name, product_number)
         mapped_products_info = {product_info.global_id: product_info for product_info in products_info}
         filtered_id_name_cost = self.__filter_product_ids(mapped_products_info, niche_id)
