@@ -18,19 +18,19 @@ from jarvis_db.services.market.items.product_history_service import ProductHisto
 from jarvis_db.services.market.items.product_history_unit_service import ProductHistoryUnitService
 from sqlalchemy.orm import Session
 
-from jdu.db_tools.fill.base import _DBFiller
+from jdu.db_tools.fill.base import DBFiller
 
 
 class DBFillerInitializer(ABC):
     @staticmethod
     @abstractmethod
-    def init_db_filler(session: Session, db_filler_to_init: _DBFiller):
+    def init_db_filler(session: Session, db_filler_to_init: DBFiller):
         pass
 
 
 class WildberriesDBFillerInitializer(DBFillerInitializer):
     @staticmethod
-    def init_db_filler(session: Session, db_filler: _DBFiller):
+    def init_db_filler(session: Session, db_filler: DBFiller):
         db_filler.marketplace_name = 'wildberries'
         niche_table_to_jorm_mapper = NicheTableToJormMapper()
         product_history_repository = ProductHistoryRepository(session)
@@ -42,7 +42,18 @@ class WildberriesDBFillerInitializer(DBFillerInitializer):
         db_filler.category_service = CategoryService(CategoryRepository(session),
                                                      CategoryTableToJormMapper(niche_table_to_jorm_mapper))
         db_filler.niche_service = NicheService(NicheRepository(session), niche_table_to_jorm_mapper)
+
+        unit_service = ProductHistoryUnitService(ProductHistoryRepository(session))
+        product_history_service = ProductHistoryService(
+            unit_service,
+            LeftoverService(
+                LeftoverRepository(session), WarehouseRepository(session), unit_service
+            ),
+            ProductHistoryRepository(session),
+            ProductHistoryTableToJormMapper(LeftoverTableToJormMapper()),
+        )
         db_filler.product_service = ProductCardService(ProductCardRepository(session),
+                                                       product_history_service,
                                                        ProductTableToJormMapper())
         db_filler.history_unit_service = ProductHistoryUnitService(product_history_repository)
         db_filler.warehouse_service = WarehouseService(warehouse_repository,

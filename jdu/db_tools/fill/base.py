@@ -7,7 +7,7 @@ from jarvis_db.services.market.items.product_history_service import ProductHisto
 from jarvis_db.services.market.items.product_history_unit_service import ProductHistoryUnitService
 
 
-class _DBFiller:
+class DBFiller:
     def __init__(self):
         self.marketplace_name: str = ""
         self.marketplace_service: MarketplaceService | None = None

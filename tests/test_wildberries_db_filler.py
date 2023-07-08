@@ -1,12 +1,18 @@
 from jarvis_db.repositores.mappers.market.infrastructure import CategoryTableToJormMapper, NicheTableToJormMapper, \
     MarketplaceTableToJormMapper, WarehouseTableToJormMapper
-from jarvis_db.repositores.mappers.market.items import ProductTableToJormMapper
-from jarvis_db.repositores.market.infrastructure import CategoryRepository, NicheRepository, MarketplaceRepository
-from jarvis_db.repositores.market.items import ProductCardRepository
+from jarvis_db.repositores.mappers.market.items import ProductTableToJormMapper, ProductHistoryTableToJormMapper
+from jarvis_db.repositores.mappers.market.items.leftover_mappers import LeftoverTableToJormMapper
+from jarvis_db.repositores.market.infrastructure import CategoryRepository, NicheRepository, MarketplaceRepository, \
+    WarehouseRepository
+from jarvis_db.repositores.market.items import ProductCardRepository, ProductHistoryRepository
+from jarvis_db.repositores.market.items.leftover_repository import LeftoverRepository
 from jarvis_db.services.market.infrastructure.category_service import CategoryService
 from jarvis_db.services.market.infrastructure.marketplace_service import MarketplaceService
 from jarvis_db.services.market.infrastructure.niche_service import NicheService
+from jarvis_db.services.market.items.leftover_service import LeftoverService
 from jarvis_db.services.market.items.product_card_service import ProductCardService
+from jarvis_db.services.market.items.product_history_service import ProductHistoryService
+from jarvis_db.services.market.items.product_history_unit_service import ProductHistoryUnitService
 from jorm.support.constants import DEFAULT_CATEGORY_NAME
 
 from jdu.db_tools.fill.db_fillers import StandardDBFiller
@@ -22,7 +28,7 @@ class WildberriesDBFillerImplTest(BasicDBTest):
         return {
             'test_fill_niches': [TestDBContextAdditions.CATEGORY],
             'test_fill_products': [TestDBContextAdditions.NICHE],
-            'test_fill_loaded_products': [TestDBContextAdditions.CATEGORY]
+            'test_fill_loaded_products': [TestDBContextAdditions.CATEGORY, TestDBContextAdditions.WAREHOUSES]
         }
 
     def test_init_marketplace(self):
@@ -66,7 +72,18 @@ class WildberriesDBFillerImplTest(BasicDBTest):
             db_filler: StandardDBFiller = WildberriesDBFillerImpl(object_provider, session)
             db_filler.fill_products(product_num)
         with self.db_context.session() as session:
-            product_service = ProductCardService(ProductCardRepository(session), ProductTableToJormMapper())
+            unit_service = ProductHistoryUnitService(ProductHistoryRepository(session))
+            product_history_service = ProductHistoryService(
+                unit_service,
+                LeftoverService(
+                    LeftoverRepository(session), WarehouseRepository(session), unit_service
+                ),
+                ProductHistoryRepository(session),
+                ProductHistoryTableToJormMapper(LeftoverTableToJormMapper()),
+            )
+            product_service = ProductCardService(ProductCardRepository(session),
+                                                 product_history_service,
+                                                 ProductTableToJormMapper())
             db_products = product_service.find_all_in_niche(self.niche_id)
             self.assertEqual(product_num, len(db_products))
 
@@ -88,6 +105,17 @@ class WildberriesDBFillerImplTest(BasicDBTest):
             found_niche_info = niche_service.find_by_name(loaded_niche_name, category_id)
             self.assertIsNotNone(found_niche_info)
             _, niche_id = found_niche_info
-            product_service = ProductCardService(ProductCardRepository(session), ProductTableToJormMapper())
+            unit_service = ProductHistoryUnitService(ProductHistoryRepository(session))
+            product_history_service = ProductHistoryService(
+                unit_service,
+                LeftoverService(
+                    LeftoverRepository(session), WarehouseRepository(session), unit_service
+                ),
+                ProductHistoryRepository(session),
+                ProductHistoryTableToJormMapper(LeftoverTableToJormMapper()),
+            )
+            product_service = ProductCardService(ProductCardRepository(session),
+                                                 product_history_service,
+                                                 ProductTableToJormMapper())
             db_products = product_service.find_all_in_niche(niche_id)
             self.assertEqual(len(loaded_niche.products), len(db_products))

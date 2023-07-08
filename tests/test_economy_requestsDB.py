@@ -12,10 +12,10 @@ class AccountServiceTest(BasicDBTest):
     def get_db_init_flags_for_tests(cls) -> dict[str, list[TestDBContextAdditions]]:
         return {
             'test_change_unit_economy': [TestDBContextAdditions.NICHE,
-                                         TestDBContextAdditions.WAREHOUSE,
+                                         TestDBContextAdditions.WAREHOUSES,
                                          TestDBContextAdditions.USER],
             'test_remove_unit_economy': [TestDBContextAdditions.NICHE,
-                                         TestDBContextAdditions.WAREHOUSE,
+                                         TestDBContextAdditions.WAREHOUSES,
                                          TestDBContextAdditions.USER]
         }
 

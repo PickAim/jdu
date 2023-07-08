@@ -5,11 +5,11 @@ from typing import Type
 from jorm.market.infrastructure import Niche, Marketplace
 from sqlalchemy.orm import Session
 
-from jdu.db_tools.fill.base import _DBFiller
+from jdu.db_tools.fill.base import DBFiller
 from jdu.db_tools.fill.initializers import DBFillerInitializer
 
 
-class __InitializableDBFiller(_DBFiller):
+class __InitializableDBFiller(DBFiller):
     def __init__(self, session: Session, db_initializer_class: Type[DBFillerInitializer]):
         super().__init__()
         db_initializer_class.init_db_filler(session, self)

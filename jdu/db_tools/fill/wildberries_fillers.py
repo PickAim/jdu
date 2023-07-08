@@ -1,8 +1,7 @@
 from abc import ABC
 from abc import abstractmethod
 
-from jarvis_db.tables import Warehouse
-from jorm.market.infrastructure import Category, Niche
+from jorm.market.infrastructure import Category, Niche, Warehouse, HandlerType, Address
 from jorm.market.items import Product
 from jorm.support.constants import DEFAULT_CATEGORY_NAME
 from sqlalchemy.orm import Session
@@ -66,8 +65,48 @@ class WildberriesDBFillerImpl(__StandardWildberriesDBFiller):
         loaded_niche.products = loaded_products
         self.niche_service.create(loaded_niche, default_category_id)
         _, loaded_niche_id = self.niche_service.find_by_name(loaded_niche.name, default_category_id)
+        self.__check_warehouse_filled(loaded_niche.products)
         self.product_service.create_products(loaded_niche.products, loaded_niche_id)
         return loaded_niche
+
+    def __check_warehouse_filled(self, products: list[Product]):
+        db_warehouses = self.warehouse_service.find_all_warehouses()
+        db_warehouse_ids = set(  # TODO USE filtering by service as ready
+            [
+                db_warehouses[warehouse_id].global_id
+                for warehouse_id in db_warehouses
+            ]
+        )
+        warehouse_to_add_as_unfilled: list[Warehouse] = []
+        warehouse_ids: set[int] = set()
+        for product in products:
+            warehouse_id_to_leftovers = product.history.get_all_leftovers()
+            for warehouse_id in warehouse_id_to_leftovers:
+                if warehouse_id not in db_warehouse_ids and warehouse_id not in warehouse_ids:
+                    warehouse_to_add_as_unfilled.append(
+                        self.__create_warehouse_with_global_id(warehouse_id)
+                    )
+                    warehouse_ids.add(warehouse_id)
+        self.__fill_warehouses(warehouse_to_add_as_unfilled)
+
+    @staticmethod
+    def __create_warehouse_with_global_id(global_id: int) -> Warehouse:
+        return Warehouse(  # think about loading ALL warehouses from WB
+            f"unfilled{global_id}",
+            global_id,
+            HandlerType.MARKETPLACE,
+            Address(),
+            basic_logistic_to_customer_commission=0,
+            additional_logistic_to_customer_commission=0,
+            logistic_from_customer_commission=0,
+            basic_storage_commission=0,
+            additional_storage_commission=0,
+            mono_palette_storage_commission=0
+        )
+
+    def __fill_warehouses(self, warehouses: list[Warehouse]):
+        for warehouse in warehouses:
+            self.warehouse_service.create_warehouse(warehouse, self.marketplace_id)
 
     def fill_products(self, products_per_niche: int = -1):
         categories: dict[int, Category] = self.category_service.find_all_in_marketplace(self.marketplace_id)

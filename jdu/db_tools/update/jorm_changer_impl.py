@@ -24,7 +24,7 @@ class JormChangerImpl(JORMChanger):
 
     def save_unit_economy_request(self, request: UnitEconomyRequest, result: UnitEconomyResult,
                                   request_info: RequestInfo, user_id: int) -> int:
-        return self.__economy_service.save_request(request_info, request, result, user_id, request.marketplace_id)
+        return self.__economy_service.save_request(request_info, request, result, user_id)
 
     def save_frequency_request(
             self,

@@ -6,24 +6,34 @@ from typing import Callable
 
 from jarvis_db.repositores.mappers.market.infrastructure import CategoryTableToJormMapper, NicheTableToJormMapper, \
     MarketplaceTableToJormMapper, WarehouseTableToJormMapper
-from jarvis_db.repositores.mappers.market.items import ProductTableToJormMapper
+from jarvis_db.repositores.mappers.market.items import ProductTableToJormMapper, ProductHistoryTableToJormMapper
+from jarvis_db.repositores.mappers.market.items.leftover_mappers import LeftoverTableToJormMapper
 from jarvis_db.repositores.mappers.market.person import UserTableToJormMapper, AccountTableToJormMapper
 from jarvis_db.repositores.market.infrastructure import CategoryRepository, MarketplaceRepository, NicheRepository, \
     WarehouseRepository
-from jarvis_db.repositores.market.items import ProductCardRepository
+from jarvis_db.repositores.market.items import ProductCardRepository, ProductHistoryRepository
+from jarvis_db.repositores.market.items.leftover_repository import LeftoverRepository
 from jarvis_db.repositores.market.person import UserRepository, AccountRepository
 from jarvis_db.services.market.infrastructure.category_service import CategoryService
 from jarvis_db.services.market.infrastructure.marketplace_service import MarketplaceService
 from jarvis_db.services.market.infrastructure.niche_service import NicheService
 from jarvis_db.services.market.infrastructure.warehouse_service import WarehouseService
+from jarvis_db.services.market.items.leftover_service import LeftoverService
 from jarvis_db.services.market.items.product_card_service import ProductCardService
+from jarvis_db.services.market.items.product_history_service import ProductHistoryService
+from jarvis_db.services.market.items.product_history_unit_service import ProductHistoryUnitService
 from jarvis_db.services.market.person import UserService, AccountService
 from jorm.market.infrastructure import Marketplace, Warehouse, HandlerType, Category, Niche, Address
 from jorm.market.items import Product
 from jorm.market.person import Account, User
 from sqlalchemy.orm import Session
 
+from jdu.providers.wildberries_providers import WildberriesUserMarketDataProvider, WildberriesUserMarketDataProviderImpl
 from tests.db_context import DbContext
+
+AUTH_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9' \
+           '.eyJhY2Nlc3NJRCI6IjhiMGZkZWEwLWYxYjgtNDVjOS05NmM5LTdiMmRlNjU2N2Q3ZCJ9' \
+           '.6YAvO_GYeXW3em8WZ5cLynTBKcg8x5pmMmoCkgMY6QI'
 
 
 class TestDBContextAdditions(IntEnum):
@@ -31,7 +41,7 @@ class TestDBContextAdditions(IntEnum):
     CATEGORY = 1
     NICHE = 2
     PRODUCT = 3
-    WAREHOUSE = 4
+    WAREHOUSES = 4
     USER = 5
 
 
@@ -52,10 +62,20 @@ def __create_test_warehouse() -> Warehouse:
     return warehouse
 
 
-def __add_warehouse(session: Session) -> int:
+LOADED_WAREHOUSES = None
+
+
+def __add_warehouses(session: Session) -> int:
+    object_provider: WildberriesUserMarketDataProvider = \
+        WildberriesUserMarketDataProviderImpl(AUTH_KEY)
     marketplace_id = __add_marketplace(session)
-    warehouse = __create_test_warehouse()
     service = WarehouseService(WarehouseRepository(session), WarehouseTableToJormMapper())
+    global LOADED_WAREHOUSES
+    if LOADED_WAREHOUSES is None:
+        LOADED_WAREHOUSES = object_provider.get_warehouses()
+        for warehouse in LOADED_WAREHOUSES:
+            service.create_warehouse(warehouse, marketplace_id)
+    warehouse = __create_test_warehouse()
     found_info = service.find_warehouse_by_name(warehouse.name)
     if found_info is None:
         service.create_warehouse(warehouse, marketplace_id)
@@ -167,7 +187,18 @@ def __create_test_product() -> Product:
 def __add_product(session: Session) -> int:
     niche_id = __add_niche(session)
     product = __create_test_product()
-    service = ProductCardService(ProductCardRepository(session), ProductTableToJormMapper())
+    unit_service = ProductHistoryUnitService(ProductHistoryRepository(session))
+    product_history_service = ProductHistoryService(
+        unit_service,
+        LeftoverService(
+            LeftoverRepository(session), WarehouseRepository(session), unit_service
+        ),
+        ProductHistoryRepository(session),
+        ProductHistoryTableToJormMapper(LeftoverTableToJormMapper()),
+    )
+    service = ProductCardService(ProductCardRepository(session),
+                                 product_history_service,
+                                 ProductTableToJormMapper())
     found_info = service.find_all_in_niche(niche_id)
     if len(found_info) == 0:
         service.create_product(product, niche_id)
@@ -179,7 +210,7 @@ _CREATE_TEST_OBJECT_METHODS: dict[TestDBContextAdditions, Callable[[Session], in
     TestDBContextAdditions.CATEGORY: __add_category,
     TestDBContextAdditions.NICHE: __add_niche,
     TestDBContextAdditions.PRODUCT: __add_product,
-    TestDBContextAdditions.WAREHOUSE: __add_warehouse,
+    TestDBContextAdditions.WAREHOUSES: __add_warehouses,
     TestDBContextAdditions.USER: __add_user,
 }
 

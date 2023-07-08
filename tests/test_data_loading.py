@@ -8,12 +8,9 @@ from jorm.market.items import Product
 from jdu.providers.wildberries_providers import WildberriesDataProviderWithoutKey, WildberriesUserMarketDataProvider, \
     WildberriesUserMarketDataProviderImpl, WildberriesDataProviderWithoutKeyImpl
 from jdu.support.types import ProductInfo
+from tests.basic_db_test import AUTH_KEY
 
 warnings.filterwarnings(action="ignore", message="ResourceWarning: unclosed")
-
-AUTH_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9' \
-           '.eyJhY2Nlc3NJRCI6IjhiMGZkZWEwLWYxYjgtNDVjOS05NmM5LTdiMmRlNjU2N2Q3ZCJ9' \
-           '.6YAvO_GYeXW3em8WZ5cLynTBKcg8x5pmMmoCkgMY6QI'
 
 
 class LoadingTest(unittest.TestCase):
