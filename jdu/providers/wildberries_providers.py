@@ -1,18 +1,19 @@
 import asyncio
 import logging
 import math
+import time
 from abc import ABC
 from asyncio import AbstractEventLoop, Task
 from datetime import datetime
 
 import aiohttp
+from jdu.providers.providers import UserMarketDataProvider, DataProviderWithoutKey, DataProviderWithKey
+from jdu.support.loggers import LOADING_LOGGER
+from jdu.support.sorters import score_object_names, sort_by_len_alphabet
+from jdu.support.types import ProductInfo
 from jorm.market.infrastructure import Product, Category, Niche, HandlerType, Warehouse
 from jorm.market.items import ProductHistoryUnit, ProductHistory
 from jorm.support.types import StorageDict, SpecifiedLeftover
-
-from jdu.providers.providers import UserMarketDataProvider, DataProviderWithoutKey, DataProviderWithKey
-from jdu.support.sorters import score_object_names, sort_by_len_alphabet
-from jdu.support.types import ProductInfo
 
 
 class WildberriesUserMarketDataProvider(UserMarketDataProvider, ABC):
@@ -82,7 +83,7 @@ class WildberriesDataProviderWithoutKey(DataProviderWithoutKey, ABC):
 class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
     def __init__(self):
         super().__init__()
-        self.LOGGER = logging.getLogger(self.__class__.__name__)
+        self.LOGGER = logging.getLogger(LOADING_LOGGER)
 
     __VOL_HOST_PARTS: dict[str, tuple[int, int]] = {
         "01": (0, 143),
@@ -148,6 +149,7 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
         product_counter: int = 0
         products_info: set[ProductInfo] = set()
         self.LOGGER.info("Start products info mapping.")
+        start_time = time.time()
         while True:
             # TODO think about it https://search-goods.wildberries.ru/search?query=
             url: str = f'https://search.wb.ru/exactmatch/ru/common/v4/search' \
@@ -176,7 +178,8 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                 products_info.add(product_info)
                 product_counter += 1
             page_iterator += 1
-        self.LOGGER.info(f"End mapping products info. {len(products_info)} was mapped.")
+        self.LOGGER.info(f"End mapping products info. {len(products_info)} "
+                         f"was mapped in {time.time() - start_time} seconds.")
         return products_info
 
     def get_products(self, niche_name: str,
@@ -184,6 +187,7 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                      products_info: list[ProductInfo]) -> list[Product]:
         result_products = []
         self.LOGGER.info("Start products loading.")
+        start_time = time.time()
         for i in range(0, max(len(products_info) - self.THREAD_TASK_COUNT + 1, 1), self.THREAD_TASK_COUNT):
             loop: AbstractEventLoop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
@@ -196,7 +200,8 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                 )
             )
             loop.close()
-        self.LOGGER.info(f"End products loading. {len(products_info)} was loaded.")
+        self.LOGGER.info(f"End products loading. {len(products_info)} "
+                         f"was loaded in {time.time() - start_time} seconds..")
         return result_products
 
     async def __load_all_product_niche(self,
