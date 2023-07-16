@@ -2,12 +2,12 @@ import unittest
 import warnings
 from datetime import datetime
 
-from jdu.providers.wildberries_providers import WildberriesDataProviderWithoutKey, WildberriesUserMarketDataProvider, \
-    WildberriesUserMarketDataProviderImpl, WildberriesDataProviderWithoutKeyImpl
-from jdu.support.types import ProductInfo
 from jorm.market.infrastructure import Niche, Category
 from jorm.market.items import Product
 
+from jdu.providers.wildberries_providers import WildberriesDataProviderWithoutKey, WildberriesUserMarketDataProvider, \
+    WildberriesUserMarketDataProviderImpl, WildberriesDataProviderWithoutKeyImpl
+from jdu.support.types import ProductInfo
 from tests.basic_db_test import AUTH_KEY
 
 warnings.filterwarnings(action="ignore", message="ResourceWarning: unclosed")
@@ -31,6 +31,7 @@ class LoadingTest(unittest.TestCase):
         niche_names: list[str] = object_provider.get_niches_names("Автомобильные товары", niches_num)
         niches: list[Niche] = object_provider.get_niches(niche_names)
         print(f"niches receiving time: {datetime.now() - before}")
+        print(niches)
         self.assertEqual(niches_num, len(niches))
 
     def test_get_categories(self):
@@ -59,6 +60,10 @@ class LoadingTest(unittest.TestCase):
         object_provider: WildberriesDataProviderWithoutKey = WildberriesDataProviderWithoutKeyImpl()
         storage_data = object_provider.get_storage_dict(18681408)
         self.assertIsNotNone(storage_data)
+    # todo
+    # def test_json_commission(self):
+    #     bool_check = find_similar()
+    #     self.assertEqual(bool_check, 0)
 
 
 if __name__ == '__main__':

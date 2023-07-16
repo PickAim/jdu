@@ -7,13 +7,15 @@ from asyncio import AbstractEventLoop, Task
 from datetime import datetime
 
 import aiohttp
+from jorm.market.infrastructure import Product, Category, Niche, HandlerType, Warehouse
+from jorm.market.items import ProductHistoryUnit, ProductHistory
+from jorm.support.types import StorageDict, SpecifiedLeftover
+
 from jdu.providers.providers import UserMarketDataProvider, DataProviderWithoutKey, DataProviderWithKey
 from jdu.support.loggers import LOADING_LOGGER
 from jdu.support.sorters import score_object_names, sort_by_len_alphabet
 from jdu.support.types import ProductInfo
-from jorm.market.infrastructure import Product, Category, Niche, HandlerType, Warehouse
-from jorm.market.items import ProductHistoryUnit, ProductHistory
-from jorm.support.types import StorageDict, SpecifiedLeftover
+from jdu.support.utils import get_commission_for, get_return_percent_for
 
 
 class WildberriesUserMarketDataProvider(UserMarketDataProvider, ABC):
@@ -139,9 +141,11 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
         niche_list: list[Niche] = []
         for niche_name in niche_names_list:
             niche_list.append(Niche(niche_name, {
-                HandlerType.MARKETPLACE: 0,  # TODO think about constants loading
-                HandlerType.PARTIAL_CLIENT: 0,
-                HandlerType.CLIENT: 0}, 0))
+                HandlerType.MARKETPLACE: get_commission_for(niche_name, "HandlerType.MARKETPLACE"),
+                HandlerType.PARTIAL_CLIENT: get_commission_for(niche_name, "HandlerType.PARTIAL_CLIENT"),
+                HandlerType.CLIENT: get_commission_for(niche_name, "HandlerType.CLIENT")},
+                                    get_return_percent_for(niche_name)))
+
         return niche_list
 
     def get_products_mapped_info(self, niche: str, products_count: int = -1) -> set[ProductInfo]:
