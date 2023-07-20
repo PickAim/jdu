@@ -1,15 +1,14 @@
 from abc import abstractmethod
 from typing import Type
 
-from jorm.market.infrastructure import Category, Niche, Warehouse, HandlerType, Address
-from jorm.market.items import Product
-from jorm.support.constants import DEFAULT_CATEGORY_NAME
-from sqlalchemy.orm import Session
-
 from jdu.db_tools.fill.db_fillers import StandardDBFiller, SimpleDBFiller
 from jdu.db_tools.fill.initializers import DBFillerInitializer
 from jdu.providers.wildberries_providers import WildberriesDataProviderWithoutKey, WildberriesUserMarketDataProvider
 from jdu.support.types import ProductInfo
+from jorm.market.infrastructure import Category, Niche, Warehouse, HandlerType, Address
+from jorm.market.items import Product
+from jorm.support.constants import DEFAULT_CATEGORY_NAME
+from sqlalchemy.orm import Session
 
 
 class WildberriesDBFillerWithKey(SimpleDBFiller):
@@ -77,7 +76,7 @@ class WildberriesDBFillerImpl(StandardDBFiller):
 
     @staticmethod
     def __create_warehouse_with_global_id(global_id: int) -> Warehouse:
-        return Warehouse(  # think about loading ALL warehouses from WB
+        return Warehouse(  # TODO think about loading ALL warehouses from WB
             f"unfilled{global_id}",
             global_id,
             HandlerType.MARKETPLACE,

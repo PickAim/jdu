@@ -2,12 +2,12 @@ import unittest
 import warnings
 from datetime import datetime
 
-from jorm.market.infrastructure import Niche, Category
-from jorm.market.items import Product
-
 from jdu.providers.wildberries_providers import WildberriesDataProviderWithoutKey, WildberriesUserMarketDataProvider, \
     WildberriesUserMarketDataProviderImpl, WildberriesDataProviderWithoutKeyImpl
 from jdu.support.types import ProductInfo
+from jorm.market.infrastructure import Niche, Category
+from jorm.market.items import Product
+
 from tests.basic_db_test import AUTH_KEY
 
 warnings.filterwarnings(action="ignore", message="ResourceWarning: unclosed")

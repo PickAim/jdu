@@ -1,11 +1,14 @@
 import asyncio
 import logging
+import math
+import time
 from abc import ABC
 from asyncio import AbstractEventLoop, Task
 from datetime import datetime
 
 import aiohttp
 from jdu.providers.providers import UserMarketDataProvider, DataProviderWithoutKey, DataProviderWithKey
+from jdu.support.loggers import LOADING_LOGGER
 from jdu.support.sorters import score_object_names, sort_by_len_alphabet
 from jdu.support.types import ProductInfo
 from jorm.market.infrastructure import Product, Category, Niche, HandlerType, Warehouse
@@ -80,7 +83,23 @@ class WildberriesDataProviderWithoutKey(DataProviderWithoutKey, ABC):
 class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
     def __init__(self):
         super().__init__()
-        self.LOGGER = logging.getLogger(self.__class__.__name__)
+        self.LOGGER = logging.getLogger(LOADING_LOGGER)
+
+    __VOL_HOST_PARTS: dict[str, tuple[int, int]] = {
+        "01": (0, 143),
+        "02": (144, 287),
+        "03": (288, 431),
+        "04": (431, 719),
+        "05": (720, 1007),
+        "06": (1008, 1061),
+        "07": (1062, 1115),
+        "08": (1116, 1169),
+        "09": (1170, 1313),
+        "10": (1314, 1601),
+        "11": (1602, 1655),
+        "12": (1656, 1919),
+        "13": (1920, 10000)
+    }
 
     def get_categories_names(self, category_num=-1) -> list[str]:
         category_names_list: list[str] = []
@@ -130,6 +149,7 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
         product_counter: int = 0
         products_info: set[ProductInfo] = set()
         self.LOGGER.info("Start products info mapping.")
+        start_time = time.time()
         while True:
             # TODO think about it https://search-goods.wildberries.ru/search?query=
             url: str = f'https://search.wb.ru/exactmatch/ru/common/v4/search' \
@@ -158,7 +178,8 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                 products_info.add(product_info)
                 product_counter += 1
             page_iterator += 1
-        self.LOGGER.info(f"End mapping products info. {len(products_info)} was mapped.")
+        self.LOGGER.info(f"End mapping products info. {len(products_info)} "
+                         f"was mapped in {time.time() - start_time} seconds.")
         return products_info
 
     def get_products(self, niche_name: str,
@@ -166,6 +187,7 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                      products_info: list[ProductInfo]) -> list[Product]:
         result_products = []
         self.LOGGER.info("Start products loading.")
+        start_time = time.time()
         for i in range(0, max(len(products_info) - self.THREAD_TASK_COUNT + 1, 1), self.THREAD_TASK_COUNT):
             loop: AbstractEventLoop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
@@ -178,7 +200,8 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                 )
             )
             loop.close()
-        self.LOGGER.info(f"End products loading. {len(products_info)} was loaded.")
+        self.LOGGER.info(f"End products loading. {len(products_info)} "
+                         f"was loaded in {time.time() - start_time} seconds..")
         return result_products
 
     async def __load_all_product_niche(self,
@@ -198,7 +221,7 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
         return products
 
     async def __get_product_price_history(self, product_id: int, loop=None, connector=None) -> ProductHistory:
-        cost_history_url: str = f'https://wbx-content-v2.wbstatic.net/price-history/{product_id}.json?'
+        cost_history_url: str = self.get_product_history_url(product_id)
         storage_url: str = f'https://card.wb.ru/cards/detail?' \
                            f'dest=-1221148,-140294,-1751445,-364763' \
                            f'&nm={product_id}'
@@ -214,7 +237,7 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
         return ProductHistory(product_history_units)
 
     def get_product_price_history(self, product_id: int) -> ProductHistory:
-        cost_history_url: str = f'https://wbx-content-v2.wbstatic.net/price-history/{product_id}.json?'
+        cost_history_url: str = self.get_product_history_url(product_id)
         storage_url: str = f'https://card.wb.ru/cards/detail?' \
                            f'dest=-1221148,-140294,-1751445,-364763' \
                            f'&nm={product_id}'
@@ -226,6 +249,27 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
             if isinstance(request_json, dict):
                 last_item.leftover = self.__resolve_json_to_storage_dict(request_json)
         return ProductHistory(product_history_units)
+
+    def get_product_history_url(self, global_product_id: int) -> str:
+        basket_domain_part = self.__calculate_basket_domain_part(global_product_id)
+        return f"https://{basket_domain_part}/info/price-history.json"
+
+    def __calculate_basket_domain_part(self, global_product_id: int) -> str:
+        vol_number = math.floor(global_product_id / 1e5)
+        basket_url_part = self.__get_basket_host_part(vol_number)
+        part_number = math.floor(global_product_id / 1e3)
+        return f"{basket_url_part}/vol{vol_number}/part{part_number}/{global_product_id}"
+
+    @staticmethod
+    def __get_basket_host_part(basket_number: int) -> str:
+        result_basket_idx = "13"
+        for basket_idx in WildberriesDataProviderWithoutKeyImpl.__VOL_HOST_PARTS:
+            lower_basket_frontier, upper_basket_frontier = WildberriesDataProviderWithoutKeyImpl.__VOL_HOST_PARTS[
+                basket_idx]
+            if lower_basket_frontier <= basket_number <= upper_basket_frontier:
+                result_basket_idx = basket_idx
+                break
+        return f"basket-{result_basket_idx}.wb.ru"
 
     def get_storage_dict(self, product_id: int) -> StorageDict:
         storage_url: str = f'https://card.wb.ru/cards/detail?' \

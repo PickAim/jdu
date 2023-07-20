@@ -1,10 +1,11 @@
 from datetime import datetime
 
+from jarvis_db.factories.services import create_economy_service
 from jorm.market.service import RequestInfo, UnitEconomyRequest, UnitEconomyResult
 
 from jdu.db_tools.update.jorm_changer_impl import JormChangerImpl
 from tests.basic_db_test import BasicDBTest, TestDBContextAdditions
-from tests.test_utils import create_economy_service, create_frequency_service, create_wb_db_filler
+from tests.test_utils import create_frequency_service, create_wb_db_filler
 
 
 class AccountServiceTest(BasicDBTest):
@@ -22,10 +23,10 @@ class AccountServiceTest(BasicDBTest):
     def test_change_unit_economy(self):
         request_info = RequestInfo(date=datetime(2020, 10, 23), name="name")
         request_entity = UnitEconomyRequest(
-            100,
-            20,
             self.test_niche_name,
             self.test_category_name,
+            self.marketplace_id,
+            100,
             self.marketplace_id,
             transit_count=11,
             transit_price=121,
@@ -43,7 +44,7 @@ class AccountServiceTest(BasicDBTest):
                                                           self.user_id)
         with self.db_context.session() as session:
             service = create_economy_service(session)
-            db_economy = service.find_user_requests(1)
+            db_economy = service.find_user_requests(self.user_id)
             self.assertEqual(len(db_economy), 1)
 
     def test_remove_unit_economy(self):
