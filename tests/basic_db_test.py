@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 
 from jdu.providers.wildberries_providers import WildberriesUserMarketDataProvider, WildberriesUserMarketDataProviderImpl
 from tests.db_context import DbContext
+from tests.initializers.wildberries_initializer import WildberriesTestDataProviderInitializer
 
 AUTH_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9' \
            '.eyJhY2Nlc3NJRCI6IjhiMGZkZWEwLWYxYjgtNDVjOS05NmM5LTdiMmRlNjU2N2Q3ZCJ9' \
@@ -56,7 +57,7 @@ LOADED_WAREHOUSES = None
 
 def __add_warehouses(session: Session) -> int:
     object_provider: WildberriesUserMarketDataProvider = \
-        WildberriesUserMarketDataProviderImpl(AUTH_KEY)
+        WildberriesUserMarketDataProviderImpl(AUTH_KEY, WildberriesTestDataProviderInitializer)
     marketplace_id = __add_marketplace(session)
     service = WarehouseService(WarehouseRepository(session), WarehouseTableToJormMapper())
     global LOADED_WAREHOUSES

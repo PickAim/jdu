@@ -5,27 +5,28 @@ import time
 from abc import ABC
 from asyncio import AbstractEventLoop, Task
 from datetime import datetime
+from typing import Type
 
 import aiohttp
 from jorm.market.infrastructure import Product, Category, Niche, HandlerType, Warehouse
 from jorm.market.items import ProductHistoryUnit, ProductHistory
 from jorm.support.types import StorageDict, SpecifiedLeftover
 
+from jdu.providers.initializers_provider import DataProviderInitializer
 from jdu.providers.providers import UserMarketDataProvider, DataProviderWithoutKey, DataProviderWithKey
 from jdu.support.loggers import LOADING_LOGGER
 from jdu.support.sorters import score_object_names, sort_by_len_alphabet
 from jdu.support.types import ProductInfo
-from jdu.support.utils import get_commission_for, get_return_percent_for
 
 
 class WildberriesUserMarketDataProvider(UserMarketDataProvider, ABC):
-    def __init__(self, api_key: str):
-        super().__init__(api_key)
+    def __init__(self, api_key: str, data_provider_initializer_class: Type[DataProviderInitializer]):
+        super().__init__(api_key, data_provider_initializer_class)
 
 
 class WildberriesUserMarketDataProviderImpl(WildberriesUserMarketDataProvider):
-    def __init__(self, api_key: str):
-        super().__init__(api_key)
+    def __init__(self, api_key: str, data_provider_initializer_class: Type[DataProviderInitializer]):
+        super().__init__(api_key, data_provider_initializer_class)
 
     def get_warehouses(self) -> list[Warehouse]:
         warehouses: list[Warehouse] = []
@@ -57,6 +58,9 @@ class WildberriesUserMarketDataProviderImpl(WildberriesUserMarketDataProvider):
 
 
 class WildberriesDataProviderWithKey(DataProviderWithKey):
+    def __init__(self, api_key: str, data_provider_initializer_class: Type[DataProviderInitializer]):
+        super().__init__(api_key, data_provider_initializer_class)
+
     def get_parents(self) -> list[str]:
         parent_categories: list[str] = []
         url = 'https://suppliers-api.wildberries.ru/content/v1/object/parent/all'
@@ -67,24 +71,24 @@ class WildberriesDataProviderWithKey(DataProviderWithKey):
 
 
 class WildberriesDataProviderStatisticsImpl(WildberriesDataProviderWithKey):
-    def __init__(self, api_key: str):
-        super().__init__(api_key)
+    def __init__(self, api_key: str, data_provider_initializer_class: Type[DataProviderInitializer]):
+        super().__init__(api_key, data_provider_initializer_class)
 
 
 class WildberriesDataProviderAdsImpl(WildberriesDataProviderWithKey):
-    def __init__(self, api_key: str):
-        super().__init__(api_key)
+    def __init__(self, api_key: str, data_provider_initializer_class: Type[DataProviderInitializer]):
+        super().__init__(api_key, data_provider_initializer_class)
 
 
 class WildberriesDataProviderWithoutKey(DataProviderWithoutKey, ABC):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, data_provider_initializer_class: Type[DataProviderInitializer]):
+        super().__init__(data_provider_initializer_class)
         self.marketplace_name = 'wildberries'
 
 
 class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, data_provider_initializer_class: Type[DataProviderInitializer]):
+        super().__init__(data_provider_initializer_class)
         self.LOGGER = logging.getLogger(LOADING_LOGGER)
 
     __VOL_HOST_PARTS: dict[str, tuple[int, int]] = {
@@ -140,11 +144,8 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
     def get_niches(self, niche_names_list):
         niche_list: list[Niche] = []
         for niche_name in niche_names_list:
-            niche_list.append(Niche(niche_name, {
-                HandlerType.MARKETPLACE: get_commission_for(niche_name, "HandlerType.MARKETPLACE"),
-                HandlerType.PARTIAL_CLIENT: get_commission_for(niche_name, "HandlerType.PARTIAL_CLIENT"),
-                HandlerType.CLIENT: get_commission_for(niche_name, "HandlerType.CLIENT")},
-                                    get_return_percent_for(niche_name)))
+            niche_list.append(Niche(niche_name, self.commission_resolver.get_commission_for(niche_name),
+                                    self.commission_resolver.get_return_percent_for(niche_name)))
 
         return niche_list
 
