@@ -4,8 +4,7 @@ import aiohttp
 import requests
 from jorm.market.infrastructure import HandlerType
 
-from jdu.support.constant import COMMISSION_KEY, RETURN_PERCENT_KEY
-from jdu.support.file_constants import commission_json
+from jdu.support.constant import COMMISSION_KEY, RETURN_PERCENT_KEY, COMMISSION_WILDBERRIES_JSON
 
 
 def split_to_chunks(any_list: list[any], chunk_size: int) -> list[any]:
@@ -36,38 +35,20 @@ def get_request_json(url: str, session: requests.Session, headers=None):
         return ""
 
 
-def resolve_commission_file(filepath: str) -> None:
+def resolve_wildberries_commission_file(filepath: str) -> None:
     with open(filepath, "r") as file:
         commission_dict: dict = {}
         lines: list[str] = file.readlines()
         for line in lines:
             splitted: list[str] = line.split(";")
-            if splitted[0] not in commission_dict.keys():
-                commission_dict[splitted[0]] = {}
-            commission_dict[splitted[0]][splitted[1]] = {
+            commission_dict[splitted[1]] = {
                 COMMISSION_KEY: {
-                    str(HandlerType.MARKETPLACE): float(splitted[2]) / 100,
-                    str(HandlerType.PARTIAL_CLIENT): float(splitted[3]) / 100,
-                    str(HandlerType.CLIENT): float(splitted[4]) / 100
+                    HandlerType.MARKETPLACE.value: float(splitted[2]) / 100,
+                    HandlerType.PARTIAL_CLIENT.value: float(splitted[3]) / 100,
+                    HandlerType.CLIENT.value: float(splitted[4]) / 100
                 },
                 RETURN_PERCENT_KEY: int(splitted[5].replace("%", ""))
             }
         json_string: str = json.dumps(commission_dict, indent=4, ensure_ascii=False)
-        with open(commission_json, "w") as out_file:
+        with open(COMMISSION_WILDBERRIES_JSON, "w") as out_file:
             out_file.write(json_string)
-
-
-def get_commission_for(niche_name: str, own_type: str) -> float:
-    with open(commission_json, "r") as json_file:
-        commission_data: dict = json.load(json_file)
-        if niche_name not in commission_data:
-            return 0.0
-        return commission_data[niche_name][COMMISSION_KEY][own_type]
-
-
-def get_return_percent_for(niche_name: str) -> float:
-    with open(commission_json, "r") as json_file:
-        commission_data: dict = json.load(json_file)
-        if niche_name not in commission_data:
-            return 0.0
-        return commission_data[niche_name][RETURN_PERCENT_KEY] / 100

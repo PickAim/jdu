@@ -1,49 +1,25 @@
 from abc import ABC, abstractmethod
+from typing import Type
 
-import requests
-from aiohttp import ClientSession
 from jorm.market.infrastructure import Category, Niche, Product, Warehouse
 from jorm.market.items import ProductHistory
 from jorm.support.types import StorageDict
-from requests.adapters import HTTPAdapter
 
+from jdu.providers.base_data_provider import DataProvider
+from jdu.providers.initializers_provider import DataProviderInitializer
 from jdu.support.types import ProductInfo
-from jdu.support.utils import get_request_json, get_async_request_json
+from jdu.support.utils import get_request_json
 
 
-class DataProvider(ABC):
-    THREAD_TASK_COUNT = 100
-
-    def __init__(self):
-        self._session = requests.Session()
-        __adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100)
-        self._session.mount('https://', __adapter)
-
-    def reset_session(self):
-        self._session.close()
-        self._session = requests.Session()
-        __adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100)
-        self._session.mount('https://', __adapter)
-
-    def get_request_json(self, url: str):
-        return get_request_json(url, self._session)
-
-    @staticmethod
-    async def get_async_request_json(url: str, client_session: ClientSession):
-        return await get_async_request_json(url, client_session)
-
-    def get_exchange_rate(self, currency: str):
-        url: str = 'https://www.cbr-xml-daily.ru/daily_json.js'
-        json_data = self.get_request_json(url)
-        return json_data['Valute'][currency]
-
-    def __del__(self):
-        self._session.close()
-
-
-class DataProviderWithoutKey(DataProvider):
-    def __init__(self):
+class __InitializableDataProvider(DataProvider):
+    def __init__(self, data_provider_initializer_class: Type[DataProviderInitializer]):
         super().__init__()
+        data_provider_initializer_class().init_data_provider(self)
+
+
+class DataProviderWithoutKey(__InitializableDataProvider, ABC):
+    def __init__(self, data_provider_initializer_class: Type[DataProviderInitializer]):
+        super().__init__(data_provider_initializer_class)
 
     @abstractmethod
     def get_products_mapped_info(self, niche: str,
@@ -81,21 +57,21 @@ class DataProviderWithoutKey(DataProvider):
         pass
 
 
-class DataProviderWithKey(DataProvider):
-    def __init__(self, api_key: str):
-        super().__init__()
+class DataProviderWithKey(__InitializableDataProvider, ABC):
+    def __init__(self, api_key: str, data_provider_initializer_class: Type[DataProviderInitializer]):
+        super().__init__(data_provider_initializer_class)
         self._api_key: str = api_key
 
     def get_authorized_request_json(self, url: str):
         headers = {
             'Authorization': self._api_key
         }
-        return get_request_json(url, self._session, headers)
+        return get_request_json(url, self.session, headers)
 
 
 class UserMarketDataProvider(DataProviderWithKey, ABC):
-    def __init__(self, api_key: str):
-        super().__init__(api_key)
+    def __init__(self, api_key: str, data_provider_initializer_class: Type[DataProviderInitializer]):
+        super().__init__(api_key, data_provider_initializer_class)
 
     @abstractmethod
     def get_warehouses(self) -> list[Warehouse]:
