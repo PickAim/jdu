@@ -15,6 +15,7 @@ class DataProvider(ABC):
     def __init__(self):
         self.session: Session | None = None
         self.commission_resolver: CommissionResolver | None = None
+        self.marketplace_name: str = ""
 
     def reset_session(self):
         self.session.close()

@@ -5,7 +5,7 @@ from jorm.market.infrastructure import Niche, Product, HandlerType, Category, Wa
 from jorm.market.items import ProductHistoryUnit, ProductHistory
 from jorm.support.types import StorageDict, SpecifiedLeftover
 
-from jdu.providers.initializers_provider import DataProviderInitializer
+from jdu.providers.initializers import DataProviderInitializer
 from jdu.providers.wildberries_providers import WildberriesDataProviderWithoutKey, WildberriesUserMarketDataProvider
 from jdu.support.types import ProductInfo
 

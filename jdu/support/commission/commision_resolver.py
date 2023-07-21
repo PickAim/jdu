@@ -36,7 +36,7 @@ class CommissionResolver(ABC):
         pass
 
     @abstractmethod
-    def get_commission_for(self, niche_name: str) -> dict[HandlerType: float]:
+    def get_commission_for_niche_mapped(self, niche_name: str) -> dict[HandlerType: float]:
         pass
 
     @abstractmethod
