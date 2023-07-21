@@ -19,11 +19,11 @@ class WildberriesCommissionResolver(CommissionResolver):
         return COMMISSION_WILDBERRIES_JSON
 
     def _get_commission_data(self, json_path: str) -> dict[str, any]:
-        with open(COMMISSION_WILDBERRIES_JSON, "r") as json_file:
+        with open(COMMISSION_WILDBERRIES_JSON, "r", encoding='cp1251') as json_file:
             return json.load(json_file)
 
     def update_commission_file(self, filepath: str) -> None:
-        with open(filepath, "r") as file:
+        with open(filepath, "r", encoding='cp1251') as file:
             commission_dict: dict = {}
             lines: list[str] = file.readlines()
         for line in lines:
@@ -37,7 +37,7 @@ class WildberriesCommissionResolver(CommissionResolver):
                 RETURN_PERCENT_KEY: int(splitted[5].replace("%", ""))
             }
         json_string: str = json.dumps(commission_dict, indent=4, ensure_ascii=False)
-        with open(COMMISSION_WILDBERRIES_JSON, "w") as out_file:
+        with open(COMMISSION_WILDBERRIES_JSON, "w", encoding='cp1251') as out_file:
             out_file.write(json_string)
 
     def _get_commission_for_niche(self, niche_name: str) -> dict:

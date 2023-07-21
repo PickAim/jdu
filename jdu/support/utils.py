@@ -36,7 +36,7 @@ def get_request_json(url: str, session: requests.Session, headers=None):
 
 
 def resolve_wildberries_commission_file(filepath: str) -> None:
-    with open(filepath, "r") as file:
+    with open(filepath, "r", encoding='cp1251') as file:
         commission_dict: dict = {}
         lines: list[str] = file.readlines()
         for line in lines:
@@ -50,5 +50,5 @@ def resolve_wildberries_commission_file(filepath: str) -> None:
                 RETURN_PERCENT_KEY: int(splitted[5].replace("%", ""))
             }
         json_string: str = json.dumps(commission_dict, indent=4, ensure_ascii=False)
-        with open(COMMISSION_WILDBERRIES_JSON, "w") as out_file:
+        with open(COMMISSION_WILDBERRIES_JSON, "w", encoding='cp1251') as out_file:
             out_file.write(json_string)
