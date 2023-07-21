@@ -12,7 +12,7 @@ from jorm.market.infrastructure import Product, Category, Niche, HandlerType, Wa
 from jorm.market.items import ProductHistoryUnit, ProductHistory
 from jorm.support.types import StorageDict, SpecifiedLeftover
 
-from jdu.providers.initializers_provider import DataProviderInitializer
+from jdu.providers.initializers import DataProviderInitializer
 from jdu.providers.providers import UserMarketDataProvider, DataProviderWithoutKey, DataProviderWithKey
 from jdu.support.loggers import LOADING_LOGGER
 from jdu.support.sorters import score_object_names, sort_by_len_alphabet
@@ -83,7 +83,6 @@ class WildberriesDataProviderAdsImpl(WildberriesDataProviderWithKey):
 class WildberriesDataProviderWithoutKey(DataProviderWithoutKey, ABC):
     def __init__(self, data_provider_initializer_class: Type[DataProviderInitializer]):
         super().__init__(data_provider_initializer_class)
-        self.marketplace_name = 'wildberries'
 
 
 class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
@@ -144,7 +143,7 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
     def get_niches(self, niche_names_list):
         niche_list: list[Niche] = []
         for niche_name in niche_names_list:
-            niche_list.append(Niche(niche_name, self.commission_resolver.get_commission_for(niche_name),
+            niche_list.append(Niche(niche_name, self.commission_resolver.get_commission_for_niche_mapped(niche_name),
                                     self.commission_resolver.get_return_percent_for(niche_name)))
 
         return niche_list

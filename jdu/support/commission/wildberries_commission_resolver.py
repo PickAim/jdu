@@ -19,26 +19,26 @@ class WildberriesCommissionResolver(CommissionResolver):
         return COMMISSION_WILDBERRIES_JSON
 
     def _get_commission_data(self, json_path: str) -> dict[str, any]:
-        with open(COMMISSION_WILDBERRIES_JSON, "r", encoding='cp1251') as json_file:
+        with open(json_path, "r", encoding='cp1251') as json_file:
             return json.load(json_file)
 
     def update_commission_file(self, filepath: str) -> None:
         with open(filepath, "r", encoding='cp1251') as file:
             commission_dict: dict = {}
             lines: list[str] = file.readlines()
-        for line in lines:
-            splitted: list[str] = line.split(";")
-            commission_dict[splitted[1]] = {
-                COMMISSION_KEY: {
-                    HandlerType.MARKETPLACE.value: float(splitted[2]) / 100,
-                    HandlerType.PARTIAL_CLIENT.value: float(splitted[3]) / 100,
-                    HandlerType.CLIENT.value: float(splitted[4]) / 100
-                },
-                RETURN_PERCENT_KEY: int(splitted[5].replace("%", ""))
-            }
-        json_string: str = json.dumps(commission_dict, indent=4, ensure_ascii=False)
-        with open(COMMISSION_WILDBERRIES_JSON, "w", encoding='cp1251') as out_file:
-            out_file.write(json_string)
+            for line in lines:
+                splitted: list[str] = line.split(";")
+                commission_dict[splitted[1]] = {
+                    COMMISSION_KEY: {
+                        HandlerType.MARKETPLACE.value: float(splitted[2]) / 100,
+                        HandlerType.PARTIAL_CLIENT.value: float(splitted[3]) / 100,
+                        HandlerType.CLIENT.value: float(splitted[4]) / 100
+                    },
+                    RETURN_PERCENT_KEY: int(splitted[5].replace("%", ""))
+                }
+            json_string: str = json.dumps(commission_dict, indent=4, ensure_ascii=False)
+            with open(COMMISSION_WILDBERRIES_JSON, "w", encoding='cp1251') as out_file:
+                out_file.write(json_string)
 
     def _get_commission_for_niche(self, niche_name: str) -> dict:
         if niche_name not in self._commission_data:
@@ -49,7 +49,7 @@ class WildberriesCommissionResolver(CommissionResolver):
             }}
         return self._commission_data[niche_name]["commission"]
 
-    def get_commission_for(self, niche_name: str) -> dict:
+    def get_commission_for_niche_mapped(self, niche_name: str) -> dict:
         commission_for_niche: dict = self._get_commission_for_niche(niche_name)
         return {
             HandlerType.MARKETPLACE: commission_for_niche[HandlerType.MARKETPLACE.value],
