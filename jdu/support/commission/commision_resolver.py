@@ -26,7 +26,7 @@ class CommissionResolver(ABC):
 
     def __template_get_commission_data(self) -> dict[str, any]:
         json_path: str = self.get_json_path()
-        if os.path.exists(json_path):
+        if not os.path.exists(json_path):
             csv_path: str = self.get_csv_path()
             self.update_commission_file(csv_path)
         return self._get_commission_data(json_path)
