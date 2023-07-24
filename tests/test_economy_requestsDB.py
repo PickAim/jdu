@@ -24,10 +24,10 @@ class AccountServiceTest(BasicDBTest):
         request_info = RequestInfo(date=datetime(2020, 10, 23), name="name")
         request_entity = UnitEconomyRequest(
             self.test_niche_name,
-            self.test_category_name,
+            self.category_id,
             self.marketplace_id,
             100,
-            self.marketplace_id,
+            50,
             transit_count=11,
             transit_price=121,
             market_place_transit_price=33,

@@ -5,12 +5,9 @@ from enum import IntEnum
 from typing import Callable
 
 from jarvis_db.factories.services import create_niche_service, create_category_service, create_marketplace_service, \
-    create_product_card_service
-from jarvis_db.repositores.mappers.market.infrastructure import WarehouseTableToJormMapper
+    create_product_card_service, create_warehouse_service
 from jarvis_db.repositores.mappers.market.person import UserTableToJormMapper, AccountTableToJormMapper
-from jarvis_db.repositores.market.infrastructure import WarehouseRepository
 from jarvis_db.repositores.market.person import UserRepository, AccountRepository
-from jarvis_db.services.market.infrastructure.warehouse_service import WarehouseService
 from jarvis_db.services.market.person import UserService, AccountService
 from jorm.market.infrastructure import Marketplace, Warehouse, HandlerType, Category, Niche, Address
 from jorm.market.items import Product
@@ -59,7 +56,7 @@ def __add_warehouses(session: Session) -> int:
     object_provider: WildberriesUserMarketDataProvider = \
         WildberriesUserMarketDataProviderImpl(AUTH_KEY, WildberriesTestDataProviderInitializer)
     marketplace_id = __add_marketplace(session)
-    service = WarehouseService(WarehouseRepository(session), WarehouseTableToJormMapper())
+    service = create_warehouse_service(session)
     global LOADED_WAREHOUSES
     if LOADED_WAREHOUSES is None:
         LOADED_WAREHOUSES = object_provider.get_warehouses()
