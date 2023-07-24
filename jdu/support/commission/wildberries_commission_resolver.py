@@ -28,7 +28,7 @@ class WildberriesCommissionResolver(CommissionResolver):
             lines: list[str] = file.readlines()
             for line in lines:
                 splitted: list[str] = line.split(";")
-                commission_dict[splitted[1]] = {
+                commission_dict[splitted[1].lower()] = {
                     COMMISSION_KEY: {
                         HandlerType.MARKETPLACE.value: float(splitted[2]) / 100,
                         HandlerType.PARTIAL_CLIENT.value: float(splitted[3]) / 100,
@@ -40,13 +40,13 @@ class WildberriesCommissionResolver(CommissionResolver):
             with open(COMMISSION_WILDBERRIES_JSON, "w", encoding='cp1251') as out_file:
                 out_file.write(json_string)
 
-    def _get_commission_for_niche(self, niche_name: str) -> dict:
+    def _get_commission_for_niche(self, niche_name: str) -> dict[str, float]:
         if niche_name not in self._commission_data:
-            return {niche_name: {
+            return {
                 HandlerType.MARKETPLACE.value: 0,
                 HandlerType.PARTIAL_CLIENT.value: 0,
                 HandlerType.CLIENT.value: 0
-            }}
+            }
         return self._commission_data[niche_name]["commission"]
 
     def get_commission_for_niche_mapped(self, niche_name: str) -> dict:
