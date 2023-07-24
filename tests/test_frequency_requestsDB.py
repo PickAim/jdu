@@ -10,7 +10,7 @@ from tests.test_utils import create_frequency_service, create_wb_db_filler
 
 class FrequencyRequestTest(BasicDBTest):
     request_info = RequestInfo(date=datetime(2020, 2, 2), name="name")
-    request = FrequencyRequest(BasicDBTest.test_niche_name, BasicDBTest.test_category_name, BasicDBTest.marketplace_id)
+    request = FrequencyRequest(BasicDBTest.test_niche_name, BasicDBTest.category_id, BasicDBTest.marketplace_id)
     result = FrequencyResult(x=[i for i in range(10)], y=[i for i in range(10)])
 
     @classmethod

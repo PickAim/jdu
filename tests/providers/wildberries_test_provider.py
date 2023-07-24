@@ -1,19 +1,21 @@
 from datetime import datetime
+from typing import Type
 
 from jorm.market.infrastructure import Niche, Product, HandlerType, Category, Warehouse, Address
 from jorm.market.items import ProductHistoryUnit, ProductHistory
 from jorm.support.types import StorageDict, SpecifiedLeftover
 
+from jdu.providers.initializers import DataProviderInitializer
 from jdu.providers.wildberries_providers import WildberriesDataProviderWithoutKey, WildberriesUserMarketDataProvider
 from jdu.support.types import ProductInfo
 
 
 class WildBerriesDataProviderWithoutKeyImplTest(WildberriesDataProviderWithoutKey):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, data_provider_initializer_class: Type[DataProviderInitializer]):
+        super().__init__(data_provider_initializer_class)
 
     def __del__(self):
-        self._session.close()
+        self.session.close()
 
     def get_categories_names(self, category_num=-1) -> list[str]:
         category_names_list: list[str] = []
@@ -76,8 +78,8 @@ class WildBerriesDataProviderWithoutKeyImplTest(WildberriesDataProviderWithoutKe
 
 
 class WildberriesUserMarketDataProviderImplTest(WildberriesUserMarketDataProvider):
-    def __init__(self):
-        super().__init__("api-key")
+    def __init__(self, data_provider_initializer_class: Type[DataProviderInitializer]):
+        super().__init__("api-key", data_provider_initializer_class)
 
     def get_warehouses(self) -> list[Warehouse]:
         warehouses: list[Warehouse] = []
@@ -90,4 +92,4 @@ class WildberriesUserMarketDataProviderImplTest(WildberriesUserMarketDataProvide
         return ["word", "word", "word"]
 
     def __del__(self):
-        self._session.close()
+        self.session.close()
