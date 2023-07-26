@@ -9,12 +9,12 @@ from jarvis_db.factories.services import create_niche_service, create_category_s
 from jarvis_db.repositores.mappers.market.person import UserTableToJormMapper, AccountTableToJormMapper
 from jarvis_db.repositores.market.person import UserRepository, AccountRepository
 from jarvis_db.services.market.person import UserService, AccountService
+from jdu.providers.wildberries_providers import WildberriesUserMarketDataProvider, WildberriesUserMarketDataProviderImpl
 from jorm.market.infrastructure import Marketplace, Warehouse, HandlerType, Category, Niche, Address
 from jorm.market.items import Product
 from jorm.market.person import Account, User
 from sqlalchemy.orm import Session
 
-from jdu.providers.wildberries_providers import WildberriesUserMarketDataProvider, WildberriesUserMarketDataProviderImpl
 from tests.db_context import DbContext
 from tests.initializers.wildberries_initializer import WildberriesTestDataProviderInitializer
 
@@ -63,10 +63,10 @@ def __add_warehouses(session: Session) -> int:
         for warehouse in LOADED_WAREHOUSES:
             service.create_warehouse(warehouse, marketplace_id)
     warehouse = __create_test_warehouse()
-    found_info = service.find_warehouse_by_name(warehouse.name)
+    found_info = service.find_warehouse_by_name(warehouse.name, marketplace_id)
     if found_info is None:
         service.create_warehouse(warehouse, marketplace_id)
-        found_info = service.find_warehouse_by_name(warehouse.name)
+        found_info = service.find_warehouse_by_name(warehouse.name, marketplace_id)
     return found_info[1]
 
 
