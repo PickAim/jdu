@@ -86,6 +86,7 @@ class WildberriesDataProviderWithoutKey(DataProviderWithoutKey, ABC):
 
 
 class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
+
     def __init__(self, data_provider_initializer_class: Type[DataProviderInitializer]):
         super().__init__(data_provider_initializer_class)
         self.LOGGER = logging.getLogger(LOADING_LOGGER)
@@ -322,3 +323,16 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                 specified_leftover_list.append(SpecifiedLeftover(specify_name, int(stock['qty'])))
                 storage_dict[wh_id] = specified_leftover_list
         return storage_dict
+
+    def get_top_request_by_marketplace_query(self, search_period: str = 'month', number_top: int = 1000,
+                                             search_query: str = '') -> dict[str, int] | None:
+        self.LOGGER.info("Start top-request loading.")
+        name_and_request_count_dict: dict[str, int] = {}
+        url = f'https://trending-searches.wb.ru/api?itemsPerPage={number_top}' \
+              f'&offset=0&period={search_period}&query={search_query}&sort=desc'
+        json_data = self.get_request_json(url)
+        if json_data['data']['count'] == 0:
+            return None
+        for query_from_top in json_data['data']['list']:
+            name_and_request_count_dict[query_from_top['text']] = query_from_top['count']
+        return name_and_request_count_dict

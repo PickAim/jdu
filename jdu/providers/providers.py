@@ -44,6 +44,11 @@ class DataProviderWithoutKey(__InitializableDataProvider, ABC):
         pass
 
     @abstractmethod
+    def get_top_request_by_marketplace_query(self, search_period: str = 'month', number_top: int = 1000,
+                                             search_query: str = '') -> dict[str, int] | None:
+        pass
+
+    @abstractmethod
     def get_categories_names(self, category_num: int = -1) -> list[str]:
         pass
 
