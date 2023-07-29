@@ -7,7 +7,7 @@ from jorm.market.items import Product
 
 from jdu.providers.wildberries_providers import WildberriesDataProviderWithoutKey, WildberriesUserMarketDataProvider
 from jdu.support.types import ProductInfo
-from tests.test_utils import create_real_wb_data_provider_with_key, \
+from tests.test_utils import create_wb_data_provider_with_key, \
     create_wb_real_data_provider_without_key
 
 warnings.filterwarnings(action="ignore", message="ResourceWarning: unclosed")
@@ -19,7 +19,7 @@ class LoadingTest(unittest.TestCase):
         before = datetime.now()
         product_num = 10
         products_info = \
-            object_provider.get_products_globals_ids('Кофе зерновой', product_num)
+            object_provider.get_products_mapped_info('Кофе зерновой', product_num)
         products: list[Product] = object_provider.get_products("Кофе зерновой", 'xuita', list(products_info))
         print(f"products receiving time: {datetime.now() - before}")
         self.assertEqual(product_num, len(products))
@@ -44,17 +44,17 @@ class LoadingTest(unittest.TestCase):
 
     def test_sorting(self):
         word = "Кофе"
-        object_provider: WildberriesUserMarketDataProvider = create_real_wb_data_provider_with_key()
+        object_provider: WildberriesUserMarketDataProvider = create_wb_data_provider_with_key()
         result = object_provider.get_nearest_keywords(word)
         self.assertEqual("готовый кофе", result[0])
 
     def test_get_warehouse(self):
-        object_provider: WildberriesUserMarketDataProvider = create_real_wb_data_provider_with_key()
+        object_provider: WildberriesUserMarketDataProvider = create_wb_data_provider_with_key()
         warehouses = object_provider.get_warehouses()
         self.assertNotEqual(0, len(warehouses))
 
     def test_get_user_products(self):
-        object_provider: WildberriesUserMarketDataProvider = create_real_wb_data_provider_with_key()
+        object_provider: WildberriesUserMarketDataProvider = create_wb_data_provider_with_key()
         products_ids = object_provider.get_user_products()
         self.assertNotEqual(len(products_ids), 0)
 
@@ -62,6 +62,7 @@ class LoadingTest(unittest.TestCase):
         object_provider: WildberriesDataProviderWithoutKey = create_wb_real_data_provider_without_key()
         storage_data = object_provider.get_storage_dict(18681408)
         self.assertIsNotNone(storage_data)
+
 
     def test_load_top_request(self):
         object_provider: WildberriesDataProviderWithoutKey = create_wb_real_data_provider_without_key()

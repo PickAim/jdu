@@ -2,6 +2,8 @@ from jarvis_db.services.market.person.account_service import AccountService
 from jarvis_db.services.market.person.token_service import TokenService
 from jarvis_db.services.market.person.user_service import UserService
 from jorm.jarvis.db_update import UserInfoChanger
+from jorm.market.infrastructure import Warehouse
+from jorm.market.items import Product
 from jorm.market.person import Account, User
 
 
