@@ -7,6 +7,7 @@ from jorm.support.types import StorageDict
 
 from jdu.providers.base_data_provider import DataProvider
 from jdu.providers.initializers import DataProviderInitializer
+from jdu.support.types import ProductInfo
 from jdu.support.utils import get_request_json
 
 
