@@ -5,16 +5,13 @@ from enum import IntEnum
 from typing import Callable
 
 from jarvis_db.factories.services import create_niche_service, create_category_service, create_marketplace_service, \
-    create_product_card_service, create_warehouse_service
-from jarvis_db.repositores.mappers.market.person import UserTableToJormMapper, AccountTableToJormMapper
-from jarvis_db.repositores.market.person import UserRepository, AccountRepository
-from jarvis_db.services.market.person import UserService, AccountService
-from jdu.providers.wildberries_providers import WildberriesUserMarketDataProvider, WildberriesUserMarketDataProviderImpl
+    create_product_card_service, create_warehouse_service, create_user_service, create_account_service
 from jorm.market.infrastructure import Marketplace, Warehouse, HandlerType, Category, Niche, Address
 from jorm.market.items import Product
 from jorm.market.person import Account, User
 from sqlalchemy.orm import Session
 
+from jdu.providers.wildberries_providers import WildberriesUserMarketDataProvider, WildberriesUserMarketDataProviderImpl
 from tests.db_context import DbContext
 from tests.initializers.wildberries_initializer import WildberriesTestDataProviderInitializer
 
@@ -116,11 +113,11 @@ def __create_test_user() -> User:
 def __add_user(session: Session) -> int:
     account_id = __add_account(session)
     user = __create_test_user()
-    service = UserService(UserRepository(session), UserTableToJormMapper())
-    try:
-        service.find_by_id(user.user_id)
-    except Exception:
+    service = create_user_service(session)
+    found_info = service.find_by_id(user.user_id)
+    if found_info is None:
         service.create(user, account_id)
+        service.find_by_id(user.user_id)
     return user.user_id
 
 
@@ -130,7 +127,7 @@ def __create_test_account() -> Account:
 
 def __add_account(session: Session) -> int:
     account = __create_test_account()
-    service = AccountService(AccountRepository(session), AccountTableToJormMapper())
+    service = create_account_service(session)
     found_info = service.find_by_email_or_phone(account.email, account.phone_number)
     if found_info is None:
         service.create(account)

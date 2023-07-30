@@ -36,6 +36,19 @@ class JormChangerImpl(JORMChanger):
     ) -> int:
         return self.__frequency_service.save(request_info, request, result, user_id)
 
+    # TODO implement us
+    def update_all_categories(self, marketplace_id: int) -> None:
+        pass
+
+    def update_all_niches(self, category_id: int) -> None:
+        pass
+
+    def update_niche(self, niche_id: int) -> Niche:
+        pass
+
+    def update_product(self, product_id: int) -> Product:
+        pass
+
     def delete_unit_economy_request(self, request_id: int, user_id: int) -> None:
         self.__economy_service.remove(request_id)
 
