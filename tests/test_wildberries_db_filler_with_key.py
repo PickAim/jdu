@@ -25,4 +25,4 @@ class WildberriesDBFillerWithKeyTest(BasicDBTest):
         with self.db_context.session() as session:
             warehouse_service = create_warehouse_service(session)
             db_warehouse = warehouse_service.find_all_warehouses(self.marketplace_id)
-            self.assertEqual(10, len(db_warehouse))
+            self.assertEqual(11, len(db_warehouse))  # +1 for default marketplace warehouse
