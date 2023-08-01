@@ -23,8 +23,8 @@ class __InitializableDBFiller(DBFiller):
         self.marketplace_id = self.marketplace_service.find_by_name(self.marketplace_name)[1]
 
     def __try_to_init_default_warehouse(self):
-        default_warehouse = Warehouse(DEFAULT_WAREHOUSE_NAME, 123, HandlerType.MARKETPLACE, Address())
-        if self.warehouse_service.find_by_global_id(self.marketplace_id, 123) is None:
+        default_warehouse = Warehouse(DEFAULT_WAREHOUSE_NAME, 1, HandlerType.MARKETPLACE, Address())
+        if self.warehouse_service.find_by_global_id(self.marketplace_id, 1) is None:
             self.warehouse_service.create_warehouse(default_warehouse, self.marketplace_id)
 
 

@@ -83,7 +83,7 @@ class WildberriesUserMarketDataProviderImplTest(WildberriesUserMarketDataProvide
 
     def get_warehouses(self) -> list[Warehouse]:
         warehouses: list[Warehouse] = []
-        for i in range(10):
+        for i in range(2, 12):
             warehouses.append(
                 Warehouse('warehouse_' + i.__str__(), i, HandlerType.MARKETPLACE, Address('Address_' + i.__str__())))
         return warehouses
