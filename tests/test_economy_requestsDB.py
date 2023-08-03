@@ -1,11 +1,11 @@
 from datetime import datetime
 
-from jarvis_db.factories.services import create_economy_service
+from jarvis_db.factories.services import create_economy_service, create_frequency_service
 from jorm.market.service import RequestInfo, UnitEconomyRequest, UnitEconomyResult
 
 from jdu.db_tools.update.jorm_changer_impl import JormChangerImpl
 from tests.basic_db_test import BasicDBTest, TestDBContextAdditions
-from tests.test_utils import create_frequency_service, create_wb_db_filler
+from tests.test_utils import create_wb_db_filler
 
 
 class AccountServiceTest(BasicDBTest):

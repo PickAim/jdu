@@ -35,9 +35,8 @@ class UserInfoChangerImpl(UserInfoChanger):
         )
 
     def add_marketplace_api_key(self, api_key: str, user_id: int, marketplace_id: int) -> None:
-        # TODO implement me
-        pass
-    
+        self.__user_service.append_api_key(user_id, api_key, marketplace_id)
+
     def save_all_tokens(
             self, access_token: str, update_token: str, imprint_token: str, user_id: int
     ) -> None:
