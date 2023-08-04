@@ -1,14 +1,15 @@
 from abc import abstractmethod
 from typing import Type
 
-from jdu.db_tools.fill.db_fillers import StandardDBFiller, SimpleDBFiller
-from jdu.db_tools.fill.initializers import DBFillerInitializer
-from jdu.providers.wildberries_providers import WildberriesDataProviderWithoutKey, WildberriesUserMarketDataProvider
-from jdu.support.types import ProductInfo
 from jorm.market.infrastructure import Category, Niche, Warehouse, HandlerType, Address
 from jorm.market.items import Product
 from jorm.support.constants import DEFAULT_CATEGORY_NAME
 from sqlalchemy.orm import Session
+
+from jdu.db_tools.fill.db_fillers import StandardDBFiller, SimpleDBFiller
+from jdu.db_tools.fill.initializers import DBFillerInitializer
+from jdu.providers.wildberries_providers import WildberriesDataProviderWithoutKey, WildberriesUserMarketDataProvider
+from jdu.support.types import ProductInfo
 
 
 class WildberriesDBFillerWithKey(SimpleDBFiller):
@@ -55,6 +56,8 @@ class WildberriesDBFillerImpl(StandardDBFiller):
         niches: list[Niche] = self.provider_without_key.get_niches([niche_name])
         loaded_niche = niches[0]
         loaded_products = self.__get_new_products(niche_name, DEFAULT_CATEGORY_NAME, product_num)
+        if len(loaded_products) == 0:
+            return None
         loaded_niche.products = loaded_products
         self.niche_service.create(loaded_niche, default_category_id)
         _, loaded_niche_id = self.niche_service.find_by_name(loaded_niche.name, default_category_id)

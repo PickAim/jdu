@@ -19,6 +19,12 @@ def create_user_info_changer(session: Session) -> UserInfoChanger:
     return UserInfoChangerImpl(user_service, account_service, token_service)
 
 
+def create_real_wb_db_filler(session: Session) -> WildberriesDBFillerImpl:
+    return WildberriesDBFillerImpl(session,
+                                   create_wb_data_provider_without_key(),
+                                   WildberriesTestDBFillerInitializer)
+
+
 def create_wb_db_filler(session: Session) -> WildberriesDBFillerImpl:
     return WildberriesDBFillerImpl(session,
                                    WildBerriesDataProviderWithoutKeyImplTest(WildberriesTestDataProviderInitializer),

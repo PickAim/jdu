@@ -4,7 +4,7 @@ from jorm.support.constants import DEFAULT_CATEGORY_NAME
 
 from jdu.db_tools.fill.db_fillers import StandardDBFiller
 from tests.basic_db_test import BasicDBTest, TestDBContextAdditions
-from tests.test_utils import create_wb_db_filler
+from tests.test_utils import create_wb_db_filler, create_real_wb_db_filler
 
 
 class WildberriesDBFillerImplTest(BasicDBTest):
@@ -71,3 +71,19 @@ class WildberriesDBFillerImplTest(BasicDBTest):
             product_service = create_product_card_service(session)
             db_products = product_service.find_all_in_niche(niche_id)
             self.assertEqual(len(loaded_niche.products), len(db_products))
+
+    def test_non_fill_loaded_niche(self):
+        product_num = 10
+        loaded_niche_name = 'странная aglh ниша adglhagdasf'
+        with self.db_context.session() as session, session.begin():
+            db_filler: StandardDBFiller = create_real_wb_db_filler(session)
+            loaded_niche = db_filler.fill_niche_by_name(loaded_niche_name, product_num)
+            self.assertIsNone(loaded_niche)
+        with self.db_context.session() as session:
+            category_service = create_category_service(session)
+            found_category_info = category_service.find_by_name(DEFAULT_CATEGORY_NAME, self.marketplace_id)
+            self.assertIsNotNone(found_category_info)
+            _, category_id = found_category_info
+            niche_service = create_niche_service(session)
+            found_niche_info = niche_service.find_by_name(loaded_niche_name, category_id)
+            self.assertIsNone(found_niche_info)
