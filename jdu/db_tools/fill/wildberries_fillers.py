@@ -1,4 +1,3 @@
-from abc import abstractmethod
 from typing import Type
 
 from jorm.market.infrastructure import Category, Niche, Warehouse, HandlerType, Address
@@ -6,22 +5,11 @@ from jorm.market.items import Product
 from jorm.support.constants import DEFAULT_CATEGORY_NAME
 from sqlalchemy.orm import Session
 
-from jdu.db_tools.fill.db_fillers import StandardDBFiller, SimpleDBFiller
+from jdu.db_tools.fill.db_fillers import StandardDBFiller
 from jdu.db_tools.fill.initializers import DBFillerInitializer
-from jdu.providers.wildberries_providers import WildberriesDataProviderWithoutKey, WildberriesUserMarketDataProvider
+from jdu.providers.providers import UserMarketDataProvider
+from jdu.providers.wildberries_providers import WildberriesDataProviderWithoutKey
 from jdu.support.types import ProductInfo
-
-
-class WildberriesDBFillerWithKey(SimpleDBFiller):
-    def __init__(self, session: Session,
-                 provider_with_key: WildberriesUserMarketDataProvider,
-                 db_initializer_class: Type[DBFillerInitializer]):
-        super().__init__(session, db_initializer_class)
-        self.provider_with_key: WildberriesUserMarketDataProvider = provider_with_key
-
-    @abstractmethod
-    def fill_warehouse(self) -> None:
-        pass
 
 
 class WildberriesDBFillerImpl(StandardDBFiller):
@@ -127,13 +115,7 @@ class WildberriesDBFillerImpl(StandardDBFiller):
             for global_id in filtered_products_global_ids
         ]
 
-
-class WildberriesDBFillerWithKeyImpl(WildberriesDBFillerWithKey):
-    def __init__(self, session: Session,
-                 provider_with_key: WildberriesUserMarketDataProvider,
-                 db_initializer_class: Type[DBFillerInitializer]):
-        super().__init__(session, provider_with_key, db_initializer_class)
-
-    def fill_warehouse(self):
-        warehouses: list[Warehouse] = self.provider_with_key.get_warehouses()
+    def fill_warehouse(self, provider_with_key: UserMarketDataProvider) -> list[Warehouse]:
+        warehouses: list[Warehouse] = provider_with_key.get_warehouses()
         self.warehouse_service.create_all(warehouses, self.marketplace_id)
+        return warehouses
