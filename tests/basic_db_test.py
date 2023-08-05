@@ -27,6 +27,7 @@ class TestDBContextAdditions(IntEnum):
     PRODUCT = 3
     WAREHOUSES = 4
     USER = 5
+    USER_API_KEY = 6
 
 
 def __create_test_warehouse() -> Warehouse:
@@ -121,6 +122,20 @@ def __add_user(session: Session) -> int:
     return user.user_id
 
 
+def __create_test_api_key() -> str:
+    return "my_key"
+
+
+def __add_api_key(session: Session):
+    marketplace_id = __add_marketplace(session)
+    user_id = __add_user(session)
+    service = create_user_service(session)
+    user = service.find_by_id(user_id)
+    api_key = __create_test_api_key()
+    if marketplace_id not in user.marketplace_keys or api_key not in user.marketplace_keys[marketplace_id]:
+        service.append_api_key(user_id, api_key, marketplace_id)
+
+
 def __create_test_account() -> Account:
     return Account(BasicDBTest.test_user_email, BasicDBTest.test_user_password, BasicDBTest.test_user_phone)
 
@@ -183,6 +198,7 @@ _CREATE_TEST_OBJECT_METHODS: dict[TestDBContextAdditions, Callable[[Session], in
     TestDBContextAdditions.PRODUCT: __add_product,
     TestDBContextAdditions.WAREHOUSES: __add_warehouses,
     TestDBContextAdditions.USER: __add_user,
+    TestDBContextAdditions.USER_API_KEY: __add_api_key,
 }
 
 
