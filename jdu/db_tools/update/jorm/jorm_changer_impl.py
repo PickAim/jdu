@@ -14,7 +14,7 @@ from jorm.market.service import (
 from sqlalchemy.orm import Session
 
 from jdu.db_tools.fill.db_fillers import StandardDBFiller
-from jdu.db_tools.update.jorm.base import JORMChangerBase, ProviderInitInfo
+from jdu.db_tools.update.jorm.base import JORMChangerBase, InitInfo
 from jdu.db_tools.update.jorm.initializers import JORMChangerInitializer
 from jdu.providers.providers import UserMarketDataProvider, DataProviderWithoutKey
 
@@ -113,7 +113,7 @@ class JORMChangerImpl(__InitializableJORMChanger):
                                                data_provider_initializer_class=initializer_class)
 
     def __map_marketplace_to_init_info(self, marketplace_id: int) \
-            -> ProviderInitInfo | None:
+            -> InitInfo | None:
         id_to_marketplace = self.marketplace_service.find_all()
         if marketplace_id not in id_to_marketplace:
             return None

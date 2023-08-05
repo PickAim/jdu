@@ -4,19 +4,19 @@ from jarvis_db.factories.services import create_economy_service, create_frequenc
 from sqlalchemy.orm import Session
 
 from jdu.db_tools.fill.db_fillers_impl import StandardDBFillerImpl
-from jdu.db_tools.update.jorm.base import JORMChangerBase, ProviderInitInfo
+from jdu.db_tools.update.jorm.base import JORMChangerBase, InitInfo
 from jdu.db_tools.update.jorm.initializers import JORMChangerInitializer
 from tests.initializers.wildberries_initializer import WildberriesTestDataProviderInitializer, \
     WildberriesTestDBFillerInitializer
 from tests.providers.wildberries_test_provider import WildberriesUserMarketDataProviderImplTest, \
     WildberriesDataProviderWithoutKeyImplTest
 
-TEST_PROVIDER_INITIALIZER_MAP: dict[str, ProviderInitInfo] = {
-    'wildberries': ProviderInitInfo(WildberriesUserMarketDataProviderImplTest,
-                                    WildberriesDataProviderWithoutKeyImplTest,
-                                    StandardDBFillerImpl,
-                                    WildberriesTestDataProviderInitializer,
-                                    WildberriesTestDBFillerInitializer)
+TEST_PROVIDER_INITIALIZER_MAP: dict[str, InitInfo] = {
+    'wildberries': InitInfo(WildberriesUserMarketDataProviderImplTest,
+                            WildberriesDataProviderWithoutKeyImplTest,
+                            StandardDBFillerImpl,
+                            WildberriesTestDataProviderInitializer,
+                            WildberriesTestDBFillerInitializer)
 }
 
 

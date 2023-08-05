@@ -19,7 +19,7 @@ from jdu.providers.providers import UserMarketDataProvider, DataProviderWithoutK
 
 
 @dataclass
-class ProviderInitInfo:
+class InitInfo:
     user_market_data_provider_class: Type[UserMarketDataProvider]
     data_provider_without_key_class: Type[DataProviderWithoutKey]
     db_filler_class: Type[StandardDBFiller]
@@ -38,4 +38,4 @@ class JORMChangerBase(JORMChanger, ABC):
         self.category_service: CategoryService | None = None
         self.niche_service: NicheService | None = None
         self.product_card_service: ProductCardService | None = None
-        self.initializing_mapping: dict[str, ProviderInitInfo] = {}
+        self.initializing_mapping: dict[str, InitInfo] = {}

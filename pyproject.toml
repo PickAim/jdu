@@ -10,5 +10,5 @@ dependencies = [
     "requests",
     "aiohttp",
     "asyncio",
-    "jarvis_db @ git+https://github.com/PickAim/jarvis_db.git@v.0.1.16",
+    "jarvis_db @ git+https://github.com/PickAim/jarvis_db.git@v.0.1.18",
 ]
