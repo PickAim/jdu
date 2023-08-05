@@ -10,6 +10,7 @@ from jorm.market.service import (
     UnitEconomyRequest,
     UnitEconomyResult,
 )
+from jorm.support.constants import DEFAULT_CATEGORY_NAME, DEFAULT_NICHE_NAME
 from sqlalchemy.orm import Session
 
 from jdu.db_tools.fill.db_fillers import StandardDBFiller
@@ -38,7 +39,9 @@ class JORMChangerImpl(JORMChangerBase):
 
     # TODO implement us
     def update_all_categories(self, marketplace_id: int) -> None:
-        pass
+        categories = self.category_service.find_all_in_marketplace(marketplace_id)
+        for category_id in categories:
+            self.category_service.update(category_id, categories[category_id])
 
     def update_all_niches(self, category_id: int, marketplace_id: int) -> None:
         pass
@@ -64,9 +67,14 @@ class JORMChangerImpl(JORMChangerBase):
                                             self.product_card_service, data_provider_without_key, niche_name)
 
     def load_user_products(self, user_id: int, marketplace_id: int) -> list[Product]:
-        # TODO implement me
-        return [Product("product1", 1000, 124568, 4.0, "brand1", "seller", "niche1", "category1"),
-                Product("product2", 105240, 987654, 2.3, "brand2", "seller", "niche2", "category2")]
+        user_market_data_provider: UserMarketDataProvider = self.__create_user_market_data_provider(user_id,
+                                                                                                    marketplace_id)
+        data_provider_without_key = self.__create_data_provider_without_key(marketplace_id)
+        products_ids: list[int] = user_market_data_provider.get_user_products()
+        # TODO get_niches_category?
+        # TODO product_id?
+        products = data_provider_without_key.get_products(DEFAULT_NICHE_NAME, DEFAULT_CATEGORY_NAME, products_ids)
+        return products
 
     def load_user_warehouse(self, user_id: int, marketplace_id: int) -> list[Warehouse]:
         user_market_data_provider: UserMarketDataProvider = self.__create_user_market_data_provider(user_id,
