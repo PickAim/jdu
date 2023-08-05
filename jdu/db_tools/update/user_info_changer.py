@@ -47,5 +47,11 @@ class UserInfoChangerImpl(UserInfoChanger):
         _, account_id = self.__account_service.find_by_email(account.email)
         self.__user_service.create(user, account_id)
 
+    def delete_marketplace_api_key(self, user_id: int, marketplace_id: int) -> None:
+        pass
+
+    def delete_account(self, user_id: int) -> None:
+        pass
+
     def delete_tokens_for_user(self, user_id: int, imprint_token: str) -> None:
         self.__token_service.delete_by_imprint(user_id, imprint_token)
