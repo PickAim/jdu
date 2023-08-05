@@ -46,5 +46,5 @@ def create_wb_data_provider_without_key() -> WildberriesDataProviderWithoutKey:
     return WildberriesDataProviderWithoutKeyImplTest(WildberriesTestDataProviderInitializer)
 
 
-def create_wb_data_provider_with_key() -> WildberriesUserMarketDataProviderImpl:
+def create_wb__real_data_provider_with_key() -> WildberriesUserMarketDataProviderImpl:
     return WildberriesUserMarketDataProviderImpl(AUTH_KEY, WildberriesTestDataProviderInitializer)
