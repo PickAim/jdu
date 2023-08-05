@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from jdu.db_tools.fill.base import DBFiller
 from jdu.db_tools.fill.initializers import DBFillerInitializer
+from jdu.providers.providers import UserMarketDataProvider
 
 
 class __InitializableDBFiller(DBFiller):
@@ -47,4 +48,8 @@ class StandardDBFiller(__InitializableDBFiller, ABC):
 
     @abstractmethod
     def fill_products(self, products_count: int = -1) -> None:
+        pass
+    
+    @abstractmethod
+    def fill_warehouse(self, provider_with_key: UserMarketDataProvider) -> list[Warehouse]:
         pass

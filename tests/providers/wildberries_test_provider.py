@@ -78,8 +78,8 @@ class WildBerriesDataProviderWithoutKeyImplTest(WildberriesDataProviderWithoutKe
 
 
 class WildberriesUserMarketDataProviderImplTest(WildberriesUserMarketDataProvider):
-    def __init__(self, data_provider_initializer_class: Type[DataProviderInitializer]):
-        super().__init__("api-key", data_provider_initializer_class)
+    def __init__(self, api_key: str, data_provider_initializer_class: Type[DataProviderInitializer]):
+        super().__init__(api_key, data_provider_initializer_class)
 
     def get_warehouses(self) -> list[Warehouse]:
         warehouses: list[Warehouse] = []
