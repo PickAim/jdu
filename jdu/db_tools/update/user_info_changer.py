@@ -2,8 +2,6 @@ from jarvis_db.services.market.person.account_service import AccountService
 from jarvis_db.services.market.person.token_service import TokenService
 from jarvis_db.services.market.person.user_service import UserService
 from jorm.jarvis.db_update import UserInfoChanger
-from jorm.market.infrastructure import Warehouse
-from jorm.market.items import Product
 from jorm.market.person import Account, User
 
 
@@ -57,9 +55,3 @@ class UserInfoChangerImpl(UserInfoChanger):
 
     def delete_tokens_for_user(self, user_id: int, imprint_token: str) -> None:
         self.__token_service.delete_by_imprint(user_id, imprint_token)
-
-    def load_user_products(self, user_id: int, marketplace_id: int) -> list[Product]:
-        return self.__user_service.find_products_by_user_id(user_id)
-
-    def load_user_warehouse(self, user_id: int, marketplace_id: int) -> list[Warehouse]:
-        return self.__user_service.find_by_id(user_id).warehouses

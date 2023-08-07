@@ -1,25 +1,21 @@
-from jarvis_db.factories.services import create_user_service, create_account_service, create_token_service, \
-    create_marketplace_service, create_warehouse_service
+from jarvis_db.factories.services import create_marketplace_service, create_warehouse_service
 from jorm.jarvis.db_update import UserInfoChanger, JORMChanger
 from sqlalchemy.orm import Session
 
 from jdu.db_tools.fill.db_fillers_impl import StandardDBFillerImpl
 from jdu.db_tools.update.jorm.jorm_changer_impl import JORMChangerImpl
-from jdu.db_tools.update.user_info_changer import UserInfoChangerImpl
+from jdu.db_tools.update.user.user_info_changer import UserInfoChangerImpl
 from jdu.providers.wildberries_providers import WildberriesDataProviderWithoutKey, \
     WildberriesDataProviderWithoutKeyImpl, WildberriesUserMarketDataProviderImpl
 from tests.basic_db_test import AUTH_KEY
-from tests.initializers.changers import JORMChangerInitializerTestImpl
+from tests.initializers.changers import JORMChangerInitializerTestImpl, UserInfoChangerInitializerImpl
 from tests.initializers.wildberries_initializer import WildberriesTestDBFillerInitializer, \
     WildberriesTestDataProviderInitializer
 from tests.providers.wildberries_test_provider import WildberriesDataProviderWithoutKeyImplTest
 
 
 def create_user_info_changer(session: Session) -> UserInfoChanger:
-    user_service = create_user_service(session)
-    account_service = create_account_service(session)
-    token_service = create_token_service(session)
-    return UserInfoChangerImpl(user_service, account_service, token_service)
+    return UserInfoChangerImpl(session, UserInfoChangerInitializerImpl)
 
 
 def create_jorm_changer(session: Session) -> JORMChanger:

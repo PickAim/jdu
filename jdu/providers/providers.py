@@ -10,15 +10,10 @@ from jdu.providers.initializers import DataProviderInitializer
 from jdu.support.utils import get_request_json
 
 
-class __InitializableDataProvider(DataProvider):
+class DataProviderWithoutKey(DataProvider, ABC):
     def __init__(self, data_provider_initializer_class: Type[DataProviderInitializer]):
         super().__init__()
-        data_provider_initializer_class().init_data_provider(self)
-
-
-class DataProviderWithoutKey(__InitializableDataProvider, ABC):
-    def __init__(self, data_provider_initializer_class: Type[DataProviderInitializer]):
-        super().__init__(data_provider_initializer_class)
+        data_provider_initializer_class().init_object(self)
 
     @abstractmethod
     def get_products_mapped_info(self, niche: str,
@@ -66,10 +61,11 @@ class DataProviderWithoutKey(__InitializableDataProvider, ABC):
         pass
 
 
-class DataProviderWithKey(__InitializableDataProvider, ABC):
+class DataProviderWithKey(DataProvider, ABC):
     def __init__(self, api_key: str, data_provider_initializer_class: Type[DataProviderInitializer]):
-        super().__init__(data_provider_initializer_class)
+        super().__init__()
         self._api_key: str = api_key
+        data_provider_initializer_class().init_object(self)
 
     def get_authorized_request_json(self, url: str):
         headers = {
