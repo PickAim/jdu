@@ -19,7 +19,7 @@ class __InitializableDBFiller(DBFiller):
     def __init__(self, marketplace_service: MarketplaceService,
                  warehouse_service: WarehouseService, db_initializer_class: Type[DBFillerInitializer]):
         super().__init__(marketplace_service, warehouse_service)
-        db_initializer_class().init_db_filler(self)
+        db_initializer_class().init_object(self)
         self.__try_to_init_marketplace_in_db()
         self.__try_to_init_default_warehouse()
 
