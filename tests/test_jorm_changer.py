@@ -18,7 +18,8 @@ class JORMChangerTest(BasicDBTest):
             'test_unit_economy_request_changes': [TestDBContextAdditions.NICHE,
                                                   TestDBContextAdditions.WAREHOUSES,
                                                   TestDBContextAdditions.USER],
-            'test_frequency_request_changes': [TestDBContextAdditions.NICHE, TestDBContextAdditions.USER]
+            'test_frequency_request_changes': [TestDBContextAdditions.NICHE, TestDBContextAdditions.USER],
+            'test_user_warehouse_loading': [TestDBContextAdditions.MARKETPLACE, TestDBContextAdditions.USER_API_KEY]
         }
 
     def test_fill_warehouses(self):
@@ -80,9 +81,9 @@ class JORMChangerTest(BasicDBTest):
         )
         # endregion
         with self.db_context.session() as session, session.begin():
-            wildberries_changer = create_jorm_changer(session)
-            request_id = wildberries_changer.save_unit_economy_request(request_entity, result_entity,
-                                                                       request_info, self.user_id)
+            jorm_changer = create_jorm_changer(session)
+            request_id = jorm_changer.save_unit_economy_request(request_entity, result_entity,
+                                                                request_info, self.user_id)
 
         with self.db_context.session() as session, session.begin():
             economy_service = create_economy_service(session)
@@ -117,8 +118,8 @@ class JORMChangerTest(BasicDBTest):
             self.assertEqual(result_entity.transit_margin, saved_result.transit_margin)
 
         with self.db_context.session() as session, session.begin():
-            wildberries_changer = create_jorm_changer(session)
-            wildberries_changer.delete_unit_economy_request(request_id, self.user_id)
+            jorm_changer = create_jorm_changer(session)
+            jorm_changer.delete_unit_economy_request(request_id, self.user_id)
 
         with self.db_context.session() as session, session.begin():
             economy_service = create_economy_service(session)
@@ -131,9 +132,9 @@ class JORMChangerTest(BasicDBTest):
         result_entity = FrequencyResult(x=[i for i in range(10)], y=[i for i in range(10)])
 
         with self.db_context.session() as session, session.begin():
-            wildberries_changer = create_jorm_changer(session)
-            request_id = wildberries_changer.save_frequency_request(request_entity, result_entity,
-                                                                    request_info, self.user_id)
+            jorm_changer = create_jorm_changer(session)
+            request_id = jorm_changer.save_frequency_request(request_entity, result_entity,
+                                                             request_info, self.user_id)
 
         with self.db_context.session() as session, session.begin():
             frequency_service = create_frequency_service(session)
@@ -154,13 +155,23 @@ class JORMChangerTest(BasicDBTest):
             self.assertEqual(result_entity.y, saved_result.y)
 
         with self.db_context.session() as session, session.begin():
-            wildberries_changer = create_jorm_changer(session)
-            wildberries_changer.delete_frequency_request(request_id, self.user_id)
+            jorm_changer = create_jorm_changer(session)
+            jorm_changer.delete_frequency_request(request_id, self.user_id)
 
         with self.db_context.session() as session, session.begin():
             frequency_service = create_frequency_service(session)
             id_to_saved_request = frequency_service.find_user_requests(1)
             self.assertEqual(len(id_to_saved_request), 0)
+
+    def test_user_warehouse_loading(self):
+        with self.db_context.session() as session, session.begin():
+            jorm_changer = create_jorm_changer(session)
+            warehouses = jorm_changer.load_user_warehouse(self.user_id, 1)
+            self.assertNotEqual(0, len(warehouses))
+
+        # TODO waiting for [JDB#42](https://github.com/PickAim/jarvis_db/issues/42)
+        # with self.db_context.session() as session, session.begin():
+        #     create_user_service().find_by_id()
 
 
 if __name__ == '__main__':

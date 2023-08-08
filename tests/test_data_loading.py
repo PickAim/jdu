@@ -51,7 +51,7 @@ class LoadingTest(unittest.TestCase):
     def test_get_warehouse(self):
         object_provider: WildberriesUserMarketDataProvider = create_real_wb_data_provider_with_key()
         warehouses = object_provider.get_warehouses()
-        self.assertNotEqual(len(warehouses), 0)
+        self.assertNotEqual(0, len(warehouses))
 
     def test_get_user_products(self):
         object_provider: WildberriesUserMarketDataProvider = create_real_wb_data_provider_with_key()
