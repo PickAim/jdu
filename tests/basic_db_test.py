@@ -12,6 +12,7 @@ from jorm.market.person import Account, User
 from sqlalchemy.orm import Session
 
 from jdu.providers.wildberries_providers import WildberriesUserMarketDataProvider, WildberriesUserMarketDataProviderImpl
+from jdu.support.constant import WILDBERRIES_NAME
 from tests.db_context import DbContext
 from tests.initializers.wildberries_initializer import TestWildberriesDataProviderInitializer
 
@@ -123,7 +124,7 @@ def __add_user(session: Session) -> int:
 
 
 def __create_test_api_key() -> str:
-    return "my_key"
+    return AUTH_KEY
 
 
 def __add_api_key(session: Session):
@@ -151,7 +152,7 @@ def __add_account(session: Session) -> int:
 
 
 def __create_test_marketplace() -> Marketplace:
-    return Marketplace("wildberries")
+    return Marketplace(WILDBERRIES_NAME)
 
 
 def __add_marketplace(session: Session) -> int:
