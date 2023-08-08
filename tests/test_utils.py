@@ -22,12 +22,6 @@ def create_jorm_changer(session: Session) -> JORMChanger:
     return JORMChangerImpl(session, JORMChangerInitializerTestImpl)
 
 
-def create_real_wb_db_filler(session: Session) -> StandardDBFillerImpl:
-    return StandardDBFillerImpl(create_marketplace_service(session),
-                                create_warehouse_service(session),
-                                TestWildberriesDBFillerInitializer)
-
-
 def create_wb_db_filler(session: Session) -> StandardDBFillerImpl:
     return StandardDBFillerImpl(create_marketplace_service(session),
                                 create_warehouse_service(session),
@@ -38,9 +32,9 @@ def create_wb_real_data_provider_without_key() -> WildberriesDataProviderWithout
     return WildberriesDataProviderWithoutKeyImpl(TestWildberriesDataProviderInitializer)
 
 
-def create_wb_data_provider_without_key() -> WildberriesDataProviderWithoutKey:
+def create_test_wb_data_provider_without_key() -> WildberriesDataProviderWithoutKey:
     return TestWildberriesDataProviderWithoutKeyImpl(TestWildberriesDataProviderInitializer)
 
 
-def create_wb_data_provider_with_key() -> WildberriesUserMarketDataProviderImpl:
+def create_real_wb_data_provider_with_key() -> WildberriesUserMarketDataProviderImpl:
     return WildberriesUserMarketDataProviderImpl(AUTH_KEY, TestWildberriesDataProviderInitializer)
