@@ -98,7 +98,7 @@ class JORMChangerImpl(JORMChangerBase):
         if init_info is None:
             return None
         user: User = self.user_service.find_by_id(user_id)
-        if marketplace_id not in user.marketplace_keys:
+        if user is None or marketplace_id not in user.marketplace_keys:
             return None
         marketplace_api_key = user.marketplace_keys[marketplace_id]
         user_market_data_provider_class = init_info.user_market_data_provider_class
