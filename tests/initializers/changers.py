@@ -7,17 +7,18 @@ from jdu.db_tools.update.jorm.base import JORMChangerBase, InitInfo
 from jdu.db_tools.update.jorm.initializers import JORMChangerInitializer
 from jdu.db_tools.update.user.base import UserInfoChangerBase
 from jdu.db_tools.update.user.initializers import UserInfoChangerInitializer
-from tests.initializers.wildberries_initializer import WildberriesTestDataProviderInitializer, \
-    WildberriesTestDBFillerInitializer
-from tests.providers.wildberries_test_provider import WildberriesUserMarketDataProviderImplTest, \
-    WildberriesDataProviderWithoutKeyImplTest
+from jdu.support.constant import WILDBERRIES_NAME
+from tests.initializers.wildberries_initializer import TestWildberriesDataProviderInitializer, \
+    TestWildberriesDBFillerInitializer
+from tests.providers.wildberries_test_provider import TestWildberriesUserMarketDataProviderImpl, \
+    TestWildberriesDataProviderWithoutKeyImpl
 
 TEST_PROVIDER_INITIALIZER_MAP: dict[str, InitInfo] = {
-    'wildberries': InitInfo(WildberriesUserMarketDataProviderImplTest,
-                            WildberriesDataProviderWithoutKeyImplTest,
-                            StandardDBFillerImpl,
-                            WildberriesTestDataProviderInitializer,
-                            WildberriesTestDBFillerInitializer)
+    WILDBERRIES_NAME: InitInfo(TestWildberriesUserMarketDataProviderImpl,
+                               TestWildberriesDataProviderWithoutKeyImpl,
+                               StandardDBFillerImpl,
+                               TestWildberriesDataProviderInitializer,
+                               TestWildberriesDBFillerInitializer)
 }
 
 

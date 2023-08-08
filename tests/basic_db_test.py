@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from jdu.providers.wildberries_providers import WildberriesUserMarketDataProvider, WildberriesUserMarketDataProviderImpl
 from tests.db_context import DbContext
-from tests.initializers.wildberries_initializer import WildberriesTestDataProviderInitializer
+from tests.initializers.wildberries_initializer import TestWildberriesDataProviderInitializer
 
 AUTH_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9' \
            '.eyJhY2Nlc3NJRCI6IjhiMGZkZWEwLWYxYjgtNDVjOS05NmM5LTdiMmRlNjU2N2Q3ZCJ9' \
@@ -52,7 +52,7 @@ LOADED_WAREHOUSES = None
 
 def __add_warehouses(session: Session) -> int:
     object_provider: WildberriesUserMarketDataProvider = \
-        WildberriesUserMarketDataProviderImpl(AUTH_KEY, WildberriesTestDataProviderInitializer)
+        WildberriesUserMarketDataProviderImpl(AUTH_KEY, TestWildberriesDataProviderInitializer)
     marketplace_id = __add_marketplace(session)
     service = create_warehouse_service(session)
     global LOADED_WAREHOUSES

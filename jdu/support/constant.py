@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Final
 
 splitted: list[str] = os.getcwd().split(os.sep)[:-1]
 splitted[0] += os.sep
@@ -13,8 +14,10 @@ def get_path(dir_to_search: str, file_to_search: str):
         return os.path.join(dir_to_search, file_to_search)
 
 
-COMMISSION_WILDBERRIES_JSON: str = get_path(file_dir, 'commission.json')
-COMMISSION_WILDBERRIES_CSV: str = get_path(file_dir, 'commission.csv')
+COMMISSION_WILDBERRIES_JSON: Final[str] = get_path(file_dir, 'commission.json')
+COMMISSION_WILDBERRIES_CSV: Final[str] = get_path(file_dir, 'commission.csv')
 
-COMMISSION_KEY = "commission"
-RETURN_PERCENT_KEY = "return_percent"
+COMMISSION_KEY: Final[str] = "commission"
+RETURN_PERCENT_KEY: Final[str] = "return_percent"
+
+WILDBERRIES_NAME: Final[str] = 'wildberries'
