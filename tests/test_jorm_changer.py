@@ -2,10 +2,11 @@ import unittest
 from datetime import datetime
 
 from jarvis_db.factories.services import create_economy_service
+from jarvis_db.factories.services import create_frequency_service
 from jarvis_db.factories.services import create_warehouse_service
-from jorm.market.service import RequestInfo, UnitEconomyRequest, UnitEconomyResult
+from jorm.market.service import RequestInfo, UnitEconomyRequest, UnitEconomyResult, FrequencyRequest, FrequencyResult
 
-from tests.basic_db_test import TestDBContextAdditions, BasicDBTest
+from tests.basic_db_test import BasicDBTest, TestDBContextAdditions
 from tests.test_utils import create_jorm_changer
 
 
@@ -16,7 +17,8 @@ class JORMChangerTest(BasicDBTest):
             'test_fill_warehouses': [TestDBContextAdditions.USER_API_KEY],
             'test_unit_economy_request_changes': [TestDBContextAdditions.NICHE,
                                                   TestDBContextAdditions.WAREHOUSES,
-                                                  TestDBContextAdditions.USER]
+                                                  TestDBContextAdditions.USER],
+            'test_frequency_request_changes': [TestDBContextAdditions.NICHE, TestDBContextAdditions.USER]
         }
 
     def test_fill_warehouses(self):
@@ -79,15 +81,15 @@ class JORMChangerTest(BasicDBTest):
         # endregion
         with self.db_context.session() as session, session.begin():
             wildberries_changer = create_jorm_changer(session)
-            wildberries_changer.save_unit_economy_request(request_entity, result_entity, request_info, self.user_id)
+            request_id = wildberries_changer.save_unit_economy_request(request_entity, result_entity,
+                                                                       request_info, self.user_id)
 
-        request_id = 1
-        with self.db_context.session() as session:
-            service = create_economy_service(session)
-            id_to_saved_request = service.find_user_requests(self.user_id)
+        with self.db_context.session() as session, session.begin():
+            economy_service = create_economy_service(session)
+            id_to_saved_request = economy_service.find_user_requests(self.user_id)
             self.assertEqual(len(id_to_saved_request), 1)
             self.assertTrue(request_id in id_to_saved_request)
-            saved_request, saved_result, saved_info = id_to_saved_request[1]
+            saved_request, saved_result, saved_info = id_to_saved_request[request_id]
 
             self.assertEqual(request_info.date, saved_info.date)
             self.assertEqual(request_id, saved_info.id)
@@ -117,10 +119,48 @@ class JORMChangerTest(BasicDBTest):
         with self.db_context.session() as session, session.begin():
             wildberries_changer = create_jorm_changer(session)
             wildberries_changer.delete_unit_economy_request(request_id, self.user_id)
-        with self.db_context.session() as session:
-            service = create_economy_service(session)
-            db_economy = service.find_user_requests(1)
-            self.assertEqual(len(db_economy), 0)
+
+        with self.db_context.session() as session, session.begin():
+            economy_service = create_economy_service(session)
+            id_to_saved_request = economy_service.find_user_requests(1)
+            self.assertEqual(len(id_to_saved_request), 0)
+
+    def test_frequency_request_changes(self):
+        request_info = RequestInfo(date=datetime(2020, 2, 2), name="name")
+        request_entity = FrequencyRequest(self.test_niche_name, self.category_id, self.marketplace_id)
+        result_entity = FrequencyResult(x=[i for i in range(10)], y=[i for i in range(10)])
+
+        with self.db_context.session() as session, session.begin():
+            wildberries_changer = create_jorm_changer(session)
+            request_id = wildberries_changer.save_frequency_request(request_entity, result_entity,
+                                                                    request_info, self.user_id)
+
+        with self.db_context.session() as session, session.begin():
+            frequency_service = create_frequency_service(session)
+            id_to_saved_request = frequency_service.find_user_requests(self.user_id)
+            self.assertEqual(len(id_to_saved_request), 1)
+            self.assertTrue(request_id in id_to_saved_request)
+            saved_request, saved_result, saved_info = id_to_saved_request[request_id]
+
+            self.assertEqual(request_info.date, saved_info.date)
+            self.assertEqual(request_id, saved_info.id)
+            self.assertEqual(request_info.name, saved_info.name)
+
+            self.assertEqual(request_entity.marketplace_id, saved_request.marketplace_id)
+            self.assertEqual(request_entity.category_id, saved_request.category_id)
+            self.assertEqual(request_entity.niche, saved_request.niche)
+
+            self.assertEqual(result_entity.x, saved_result.x)
+            self.assertEqual(result_entity.y, saved_result.y)
+
+        with self.db_context.session() as session, session.begin():
+            wildberries_changer = create_jorm_changer(session)
+            wildberries_changer.delete_frequency_request(request_id, self.user_id)
+
+        with self.db_context.session() as session, session.begin():
+            frequency_service = create_frequency_service(session)
+            id_to_saved_request = frequency_service.find_user_requests(1)
+            self.assertEqual(len(id_to_saved_request), 0)
 
 
 if __name__ == '__main__':
