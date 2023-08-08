@@ -20,6 +20,7 @@ class JORMChangerTest(BasicDBTest):
                                                   TestDBContextAdditions.USER],
             'test_frequency_request_changes': [TestDBContextAdditions.NICHE, TestDBContextAdditions.USER],
             'test_user_warehouse_loading': [TestDBContextAdditions.MARKETPLACE, TestDBContextAdditions.USER_API_KEY],
+            'test_user_warehouse_loading_without_api_key_init': [TestDBContextAdditions.MARKETPLACE],
             'test_new_niche_loading': [TestDBContextAdditions.MARKETPLACE]
         }
 
@@ -174,6 +175,18 @@ class JORMChangerTest(BasicDBTest):
         # with self.db_context.session() as session, session.begin():
         #     create_user_service().find_by_id()
 
+    def test_user_warehouse_loading_without_any_init(self):
+        with self.db_context.session() as session, session.begin():
+            jorm_changer = create_jorm_changer(session)
+            warehouses = jorm_changer.load_user_warehouse(self.user_id, 1)
+            self.assertEqual(0, len(warehouses))
+
+    def test_user_warehouse_loading_without_api_key_init(self):
+        with self.db_context.session() as session, session.begin():
+            jorm_changer = create_jorm_changer(session)
+            warehouses = jorm_changer.load_user_warehouse(self.user_id, 1)
+            self.assertEqual(0, len(warehouses))
+
     def test_new_niche_loading(self):
         test_niche_name = "test_niche"
         with self.db_context.session() as session, session.begin():
@@ -192,6 +205,14 @@ class JORMChangerTest(BasicDBTest):
             id_to_existing_niche = niche_service.find_all_in_marketplace(self.marketplace_id)
             niche_names = set(id_to_existing_niche[niche_id].name for niche_id in id_to_existing_niche)
             self.assertTrue(test_niche_name in niche_names)
+
+    def test_new_niche_loading_without_any_init(self):
+        test_niche_name = "test_niche"
+
+        with self.db_context.session() as session, session.begin():
+            jorm_changer = create_jorm_changer(session)
+            loaded_niche = jorm_changer.load_new_niche(test_niche_name, self.marketplace_id)
+            self.assertIsNone(loaded_niche)
 
 
 if __name__ == '__main__':
