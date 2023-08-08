@@ -1,7 +1,7 @@
 import unittest
 from datetime import datetime
 
-from jarvis_db.factories.services import create_economy_service
+from jarvis_db.factories.services import create_economy_service, create_niche_service
 from jarvis_db.factories.services import create_frequency_service
 from jarvis_db.factories.services import create_warehouse_service
 from jorm.market.service import RequestInfo, UnitEconomyRequest, UnitEconomyResult, FrequencyRequest, FrequencyResult
@@ -19,7 +19,8 @@ class JORMChangerTest(BasicDBTest):
                                                   TestDBContextAdditions.WAREHOUSES,
                                                   TestDBContextAdditions.USER],
             'test_frequency_request_changes': [TestDBContextAdditions.NICHE, TestDBContextAdditions.USER],
-            'test_user_warehouse_loading': [TestDBContextAdditions.MARKETPLACE, TestDBContextAdditions.USER_API_KEY]
+            'test_user_warehouse_loading': [TestDBContextAdditions.MARKETPLACE, TestDBContextAdditions.USER_API_KEY],
+            'test_new_niche_loading': [TestDBContextAdditions.MARKETPLACE]
         }
 
     def test_fill_warehouses(self):
@@ -172,6 +173,25 @@ class JORMChangerTest(BasicDBTest):
         # TODO waiting for [JDB#42](https://github.com/PickAim/jarvis_db/issues/42)
         # with self.db_context.session() as session, session.begin():
         #     create_user_service().find_by_id()
+
+    def test_new_niche_loading(self):
+        test_niche_name = "test_niche"
+        with self.db_context.session() as session, session.begin():
+            niche_service = create_niche_service(session)
+            id_to_existing_niche = niche_service.find_all_in_marketplace(self.marketplace_id)
+            niche_names = set(id_to_existing_niche[niche_id].name for niche_id in id_to_existing_niche)
+            self.assertTrue(test_niche_name not in niche_names)
+
+        with self.db_context.session() as session, session.begin():
+            jorm_changer = create_jorm_changer(session)
+            loaded_niche = jorm_changer.load_new_niche(test_niche_name, self.marketplace_id)
+            self.assertIsNotNone(loaded_niche)
+
+        with self.db_context.session() as session, session.begin():
+            niche_service = create_niche_service(session)
+            id_to_existing_niche = niche_service.find_all_in_marketplace(self.marketplace_id)
+            niche_names = set(id_to_existing_niche[niche_id].name for niche_id in id_to_existing_niche)
+            self.assertTrue(test_niche_name in niche_names)
 
 
 if __name__ == '__main__':
