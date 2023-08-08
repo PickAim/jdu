@@ -3,6 +3,7 @@ from jarvis_db.factories.services import create_marketplace_service, create_cate
 from jorm.support.constants import DEFAULT_CATEGORY_NAME
 
 from jdu.db_tools.fill.db_fillers import StandardDBFiller
+from jdu.support.constant import WILDBERRIES_NAME
 from tests.basic_db_test import BasicDBTest, TestDBContextAdditions
 from tests.test_utils import create_wb_db_filler, create_real_wb_db_filler, create_wb_data_provider_without_key, \
     create_wb_real_data_provider_without_key
@@ -22,8 +23,8 @@ class WildberriesDBFillerImplTest(BasicDBTest):
             create_wb_db_filler(session)
         with self.db_context.session() as session:
             service_marketplace = create_marketplace_service(session)
-            marketplace, marketplace_id = service_marketplace.find_by_name('wildberries')
-            self.assertEqual('wildberries', marketplace.name)
+            marketplace, marketplace_id = service_marketplace.find_by_name(WILDBERRIES_NAME)
+            self.assertEqual(WILDBERRIES_NAME, marketplace.name)
 
     def test_fill_categories(self):
         with self.db_context.session() as session, session.begin():
