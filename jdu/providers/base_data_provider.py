@@ -22,6 +22,7 @@ class DataProvider(ABC):
         self.session = requests.Session()
         __adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100)
         self.session.mount('https://', __adapter)
+        self.session.mount('http://', __adapter)
 
     def get_request_json(self, url: str):
         return get_request_json(url, self.session)

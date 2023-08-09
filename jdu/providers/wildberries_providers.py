@@ -16,6 +16,7 @@ from jdu.providers.providers import UserMarketDataProvider, DataProviderWithoutK
 from jdu.support.loggers import LOADING_LOGGER
 from jdu.support.sorters import score_object_names, sort_by_len_alphabet
 from jdu.support.types import ProductInfo
+from jdu.support.utils import split_to_batches
 from jdu.support.wildberries_utils import calculate_basket_domain_part
 
 
@@ -183,23 +184,37 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
     def get_products(self, niche_name: str,
                      category_name: str,
                      products_global_ids: list[int]) -> list[Product]:
-        result_products = []
         self.LOGGER.info("Start products loading.")
         start_time = time.time()
-        for i in range(0, max(len(products_global_ids) - self.THREAD_TASK_COUNT + 1, 1), self.THREAD_TASK_COUNT):
-            loop: AbstractEventLoop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            result_products.extend(
-                loop.run_until_complete(
-                    self.__load_all_product_niche(
-                        products_global_ids[i:i + self.THREAD_TASK_COUNT], niche_name, category_name
-                    )
-                )
-            )
-            loop.close()
-        self.LOGGER.info(f"End products loading. {len(products_global_ids)} "
+        loop: AbstractEventLoop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        result_products = loop.run_until_complete(
+            self.__async_product_batch_gathering(niche_name, category_name, products_info)
+        )
+        loop.run_until_complete(asyncio.sleep(0.25))
+        loop.close()
+        self.LOGGER.info(f"End products loading. {len(products_info)} "
                          f"was loaded in {time.time() - start_time} seconds..")
         return result_products
+
+    async def __async_product_batch_gathering(self,
+                                              niche_name: str,
+                                              category_name: str,
+                                              products_info: list[ProductInfo]) -> list[Product]:
+        tasks = []
+        products_info_batches = split_to_batches(products_info, self.THREAD_TASK_COUNT)
+        for products_info_batch in products_info_batches:
+            tasks.append(
+                self.__load_all_product_niche(
+                    products_info_batch,
+                    niche_name, category_name
+                )
+            )
+        execution_results = await asyncio.gather(*tasks)
+        result: list[Product] = []
+        for result_list in execution_results:
+            result.extend(result_list)
+        return result
 
     async def __load_all_product_niche(self,
                                        products_global_ids: list[int],

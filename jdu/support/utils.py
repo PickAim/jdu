@@ -4,8 +4,8 @@ import aiohttp
 import requests
 
 
-def split_to_chunks(any_list: list[any], chunk_size: int) -> list[any]:
-    return list(__divide_chunks(any_list, chunk_size))
+def split_to_batches(any_list: list[any], batch_size: int) -> list[any]:
+    return list(__divide_chunks(any_list, batch_size))
 
 
 def __divide_chunks(any_list: list[any], chunk_size: int):
