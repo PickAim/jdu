@@ -214,7 +214,7 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
 
     async def __get_product(self, product_id: int, niche_name: str,
                             category_name: str, loop=None, connector=None) -> Product:
-        cost_history_url: str = self.get_product_history_url(product_id)
+        cost_history_url: str = self.__get_product_history_url(product_id)
         storage_url: str = f'https://card.wb.ru/cards/detail?' \
                            f'dest=-1221148,-140294,-1751445,-364763' \
                            f'&nm={product_id}'
@@ -233,7 +233,7 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                        width=0, height=0, depth=0)
 
     def get_product_price_history(self, product_id: int) -> ProductHistory:
-        cost_history_url: str = self.get_product_history_url(product_id)
+        cost_history_url: str = self.__get_product_history_url(product_id)
         storage_url: str = f'https://card.wb.ru/cards/detail?' \
                            f'dest=-1221148,-140294,-1751445,-364763' \
                            f'&nm={product_id}'
@@ -246,7 +246,8 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                 last_item.leftover = self.__resolve_json_to_storage_dict(request_json)
         return ProductHistory(product_history_units)
 
-    def get_product_history_url(self, global_product_id: int) -> str:
+    @staticmethod
+    def __get_product_history_url(global_product_id: int) -> str:
         basket_domain_part = calculate_basket_domain_part(global_product_id)
         return f"https://{basket_domain_part}/info/price-history.json"
 
