@@ -189,24 +189,24 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
         loop: AbstractEventLoop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         result_products = loop.run_until_complete(
-            self.__async_product_batch_gathering(niche_name, category_name, products_info)
+            self.__async_product_batch_gathering(niche_name, category_name, products_global_ids)
         )
         loop.run_until_complete(asyncio.sleep(0.25))
         loop.close()
-        self.LOGGER.info(f"End products loading. {len(products_info)} "
+        self.LOGGER.info(f"End products loading. {len(products_global_ids)} "
                          f"was loaded in {time.time() - start_time} seconds..")
         return result_products
 
     async def __async_product_batch_gathering(self,
                                               niche_name: str,
                                               category_name: str,
-                                              products_info: list[ProductInfo]) -> list[Product]:
+                                              products_global_ids: list[int]) -> list[Product]:
         tasks = []
-        products_info_batches = split_to_batches(products_info, self.THREAD_TASK_COUNT)
-        for products_info_batch in products_info_batches:
+        products_global_ids_batches = split_to_batches(products_global_ids, self.THREAD_TASK_COUNT)
+        for products_global_ids_batch in products_global_ids_batches:
             tasks.append(
                 self.__load_all_product_niche(
-                    products_info_batch,
+                    products_global_ids_batch,
                     niche_name, category_name
                 )
             )
@@ -233,19 +233,23 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
         storage_url: str = f'https://card.wb.ru/cards/detail?' \
                            f'dest=-1221148,-140294,-1751445,-364763' \
                            f'&nm={product_id}'
+        product_info = None
         async with aiohttp.ClientSession() if loop is None or connector is None \
                 else aiohttp.ClientSession(connector=connector, loop=loop) as client_session:
             request_json = await self.get_async_request_json(cost_history_url, client_session)
             product_history_units = self.__resolve_json_to_history_units(request_json)
+
             if len(product_history_units) > 0:
                 last_item = product_history_units[len(product_history_units) - 1]
                 request_json = await self.get_async_request_json(storage_url, client_session)
                 last_item.leftover = self.__resolve_json_to_storage_dict(request_json)
                 product_info = self.__resolve_json_to_product_info(request_json)
         await client_session.close()
-        return Product(product_info.name, product_info.price, product_info.global_id, product_info.rating,
-                       product_info.brand, 'seller', niche_name, category_name, ProductHistory(product_history_units),
-                       width=0, height=0, depth=0)
+        if product_info is not None:
+            return Product(product_info.name, product_info.price, product_info.global_id, product_info.rating,
+                           product_info.brand, 'seller', niche_name, category_name,
+                           ProductHistory(product_history_units),
+                           width=0, height=0, depth=0)
 
     def get_product_price_history(self, product_id: int) -> ProductHistory:
         cost_history_url: str = self.__get_product_history_url(product_id)
@@ -277,7 +281,6 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
 
     @staticmethod
     def __resolve_json_to_product_info(request_json: dict) -> ProductInfo | None:
-
         if 'data' not in request_json \
                 or 'products' not in request_json['data'] or len(request_json['data']['products']) < 1:
             return None
