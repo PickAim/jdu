@@ -62,7 +62,7 @@ def __add_warehouses(session: Session) -> int:
         for warehouse in LOADED_WAREHOUSES:
             service.create_warehouse(warehouse, marketplace_id)
     warehouse = __create_test_warehouse()
-    found_info = service.find_warehouse_by_name(warehouse.name, marketplace_id)
+    found_info: tuple[Warehouse, int] = service.find_warehouse_by_name(warehouse.name, marketplace_id)
     if found_info is None:
         service.create_warehouse(warehouse, marketplace_id)
         found_info = service.find_warehouse_by_name(warehouse.name, marketplace_id)
@@ -86,7 +86,7 @@ def __add_niche(session: Session) -> int:
     category_id = __add_category(session)
     niche = __create_test_niche()
     service = create_niche_service(session)
-    found_info = service.find_by_name(niche.name, category_id)
+    found_info: tuple[Niche, int] = service.find_by_name(niche.name, category_id)
     if found_info is None:
         service.create(niche, category_id)
         found_info = service.find_by_name(niche.name, category_id)
@@ -97,11 +97,11 @@ def __create_test_category() -> Category:
     return Category(BasicDBTest.test_category_name)
 
 
-def __add_category(session: Session):
+def __add_category(session: Session) -> int:
     marketplace_id = __add_marketplace(session)
     category = __create_test_category()
     service = create_category_service(session)
-    found_info = service.find_by_name(category.name, marketplace_id)
+    found_info: tuple[Category, int] = service.find_by_name(category.name, marketplace_id)
     if found_info is None:
         service.create(category, marketplace_id)
         found_info = service.find_by_name(category.name, marketplace_id)
@@ -144,7 +144,7 @@ def __create_test_account() -> Account:
 def __add_account(session: Session) -> int:
     account = __create_test_account()
     service = create_account_service(session)
-    found_info = service.find_by_email_or_phone(account.email, account.phone_number)
+    found_info: tuple[Account, int] = service.find_by_email_or_phone(account.email, account.phone_number)
     if found_info is None:
         service.create(account)
         found_info = service.find_by_email_or_phone(account.email, account.phone_number)
@@ -158,7 +158,7 @@ def __create_test_marketplace() -> Marketplace:
 def __add_marketplace(session: Session) -> int:
     marketplace = __create_test_marketplace()
     service = create_marketplace_service(session)
-    found_info = service.find_by_name(marketplace.name)
+    found_info: tuple[Marketplace, int] = service.find_by_name(marketplace.name)
     if found_info is None:
         service.create(marketplace)
         found_info = service.find_by_name(marketplace.name)
