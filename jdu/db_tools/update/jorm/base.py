@@ -11,6 +11,7 @@ from jarvis_db.services.market.person import UserService
 from jarvis_db.services.market.service.economy_service import EconomyService
 from jarvis_db.services.market.service.frequency_service import FrequencyService
 from jorm.jarvis.db_update import JORMChanger
+from jorm.jarvis.initialization import Initializable
 
 from jdu.db_tools.fill.db_fillers import StandardDBFiller
 from jdu.db_tools.fill.initializers import DBFillerInitializer
@@ -28,7 +29,7 @@ class InitInfo:
     db_filler_initializer_class: Type[DBFillerInitializer]
 
 
-class JORMChangerBase(JORMChanger, ABC):
+class JORMChangerBase(JORMChanger, Initializable, ABC):
     def __init__(self):
         self.economy_service: EconomyService | None = None
         self.frequency_service: FrequencyService | None = None

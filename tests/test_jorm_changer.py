@@ -3,7 +3,7 @@ import unittest
 from jarvis_db.factories.services import create_warehouse_service
 
 from tests.basic_db_test import TestDBContextAdditions, BasicDBTest
-from tests.test_utils import create_jorm_changer
+from tests.test_utils import create_jorm_changer, create_user_info_changer
 
 
 class JORMChangerTest(BasicDBTest):
@@ -22,6 +22,11 @@ class JORMChangerTest(BasicDBTest):
             warehouse_service = create_warehouse_service(session)
             db_warehouse = warehouse_service.find_all_warehouses(self.marketplace_id)
             self.assertEqual(11, len(db_warehouse))  # +1 for default marketplace warehouse
+
+    def test_s(self):
+        with self.db_context.session() as session, session.begin():
+            changer = create_user_info_changer(session)
+            changer = None
 
 
 if __name__ == '__main__':

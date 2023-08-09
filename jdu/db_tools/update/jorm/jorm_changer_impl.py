@@ -1,4 +1,3 @@
-from abc import ABC
 from typing import Type
 
 from jorm.market.infrastructure import Niche, Warehouse
@@ -19,15 +18,10 @@ from jdu.db_tools.update.jorm.initializers import JORMChangerInitializer
 from jdu.providers.providers import UserMarketDataProvider, DataProviderWithoutKey
 
 
-class __InitializableJORMChanger(JORMChangerBase, ABC):
+class JORMChangerImpl(JORMChangerBase):
     def __init__(self, session: Session, initializer_class: Type[JORMChangerInitializer]):
         super().__init__()
-        initializer_class.init_jorm_changer(session, self)
-
-
-class JORMChangerImpl(__InitializableJORMChanger):
-    def __init__(self, session: Session, initializer_class: Type[JORMChangerInitializer]):
-        super().__init__(session, initializer_class)
+        initializer_class(session).init_object(self)
 
     def save_unit_economy_request(self, request: UnitEconomyRequest, result: UnitEconomyResult,
                                   request_info: RequestInfo, user_id: int) -> int:
