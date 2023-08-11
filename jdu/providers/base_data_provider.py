@@ -1,7 +1,6 @@
-from abc import ABC
-
 import requests
 from aiohttp import ClientSession
+from jorm.jarvis.initialization import Initializable
 from requests import Session
 from requests.adapters import HTTPAdapter
 
@@ -9,7 +8,7 @@ from jdu.support.commission.commision_resolver import CommissionResolver
 from jdu.support.utils import get_request_json, get_async_request_json
 
 
-class DataProvider(ABC):
+class DataProvider(Initializable):
     THREAD_TASK_COUNT = 100
 
     def __init__(self):

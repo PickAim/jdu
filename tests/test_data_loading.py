@@ -7,14 +7,15 @@ from jorm.market.items import Product
 
 from jdu.providers.wildberries_providers import WildberriesDataProviderWithoutKey, WildberriesUserMarketDataProvider
 from jdu.support.types import ProductInfo
-from tests.test_utils import create_wb_data_provider_without_key, create_wb_data_provider_with_key
+from tests.test_utils import create_real_wb_data_provider_with_key, \
+    create_wb_real_data_provider_without_key
 
 warnings.filterwarnings(action="ignore", message="ResourceWarning: unclosed")
 
 
 class LoadingTest(unittest.TestCase):
     def test_get_products_by_niche(self):
-        object_provider: WildberriesDataProviderWithoutKey = create_wb_data_provider_without_key()
+        object_provider: WildberriesDataProviderWithoutKey = create_wb_real_data_provider_without_key()
         before = datetime.now()
         product_num = 10
         products_info: set[ProductInfo] = \
@@ -24,7 +25,7 @@ class LoadingTest(unittest.TestCase):
         self.assertEqual(product_num, len(products))
 
     def test_get_niches(self):
-        object_provider: WildberriesDataProviderWithoutKey = create_wb_data_provider_without_key()
+        object_provider: WildberriesDataProviderWithoutKey = create_wb_real_data_provider_without_key()
         before = datetime.now()
         niches_num = 10
         niche_names: list[str] = object_provider.get_niches_names("Автомобильные товары", niches_num)
@@ -33,7 +34,7 @@ class LoadingTest(unittest.TestCase):
         self.assertEqual(niches_num, len(niches))
 
     def test_get_categories(self):
-        object_provider: WildberriesDataProviderWithoutKey = create_wb_data_provider_without_key()
+        object_provider: WildberriesDataProviderWithoutKey = create_wb_real_data_provider_without_key()
         before = datetime.now()
         categories_num = 10
         category_names: list[str] = object_provider.get_categories_names(categories_num)
@@ -43,17 +44,17 @@ class LoadingTest(unittest.TestCase):
 
     def test_sorting(self):
         word = "Кофе"
-        object_provider: WildberriesUserMarketDataProvider = create_wb_data_provider_with_key()
+        object_provider: WildberriesUserMarketDataProvider = create_real_wb_data_provider_with_key()
         result = object_provider.get_nearest_keywords(word)
         self.assertEqual("готовый кофе", result[0])
 
     def test_get_warehouse(self):
-        object_provider: WildberriesUserMarketDataProvider = create_wb_data_provider_with_key()
+        object_provider: WildberriesUserMarketDataProvider = create_real_wb_data_provider_with_key()
         warehouses = object_provider.get_warehouses()
-        self.assertNotEqual(len(warehouses), 0)
+        self.assertNotEqual(0, len(warehouses))
 
     def test_load_storage(self):
-        object_provider: WildberriesDataProviderWithoutKey = create_wb_data_provider_without_key()
+        object_provider: WildberriesDataProviderWithoutKey = create_wb_real_data_provider_without_key()
         storage_data = object_provider.get_storage_dict(18681408)
         self.assertIsNotNone(storage_data)
 

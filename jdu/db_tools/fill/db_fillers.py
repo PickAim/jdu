@@ -19,14 +19,16 @@ class __InitializableDBFiller(DBFiller):
     def __init__(self, marketplace_service: MarketplaceService,
                  warehouse_service: WarehouseService, db_initializer_class: Type[DBFillerInitializer]):
         super().__init__(marketplace_service, warehouse_service)
-        db_initializer_class().init_db_filler(self)
+        db_initializer_class().init_object(self)
         self.__try_to_init_marketplace_in_db()
         self.__try_to_init_default_warehouse()
 
     def __try_to_init_marketplace_in_db(self):
         if not self.marketplace_service.exists_with_name(self.marketplace_name):
             self.marketplace_service.create(Marketplace(self.marketplace_name))
-        self.marketplace_id = self.marketplace_service.find_by_name(self.marketplace_name)[1]
+        found_info: tuple[Marketplace, int] = self.marketplace_service.find_by_name(self.marketplace_name)
+        if found_info is not None:
+            self.marketplace_id: int = found_info[1]
 
     def __try_to_init_default_warehouse(self):
         default_warehouse = Warehouse(DEFAULT_WAREHOUSE_NAME, 1, HandlerType.MARKETPLACE, Address())
