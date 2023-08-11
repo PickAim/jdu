@@ -9,5 +9,5 @@ dependencies = [
     "SQLAlchemy",
     "requests",
     "aiohttp",
-    "jarvis_db @ git+https://github.com/PickAim/jarvis_db.git@v.0.1.19",
+    "jarvis_db @ git+https://github.com/PickAim/jarvis_db.git@v.0.1.20",
 ]
