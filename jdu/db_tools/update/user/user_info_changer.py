@@ -44,10 +44,10 @@ class UserInfoChangerImpl(UserInfoChangerBase):
         self.user_service.create(user, account_id)
 
     def delete_marketplace_api_key(self, user_id: int, marketplace_id: int) -> None:
-        pass
+        self.user_service.remove_api_key(user_id, marketplace_id)
 
     def delete_account(self, user_id: int) -> None:
-        pass
+        self.user_service.delete(user_id)
 
     def delete_tokens_for_user(self, user_id: int, imprint_token: str) -> None:
         self.token_service.delete_by_imprint(user_id, imprint_token)

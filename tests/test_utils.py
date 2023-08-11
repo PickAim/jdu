@@ -9,9 +9,9 @@ from jdu.providers.wildberries_providers import WildberriesDataProviderWithoutKe
     WildberriesDataProviderWithoutKeyImpl, WildberriesUserMarketDataProviderImpl
 from tests.basic_db_test import AUTH_KEY
 from tests.initializers.changers import JORMChangerInitializerTestImpl, UserInfoChangerInitializerImpl
-from tests.initializers.wildberries_initializer import WildberriesTestDBFillerInitializer, \
-    WildberriesTestDataProviderInitializer
-from tests.providers.wildberries_test_provider import WildberriesDataProviderWithoutKeyImplTest
+from tests.initializers.wildberries_initializer import TestWildberriesDBFillerInitializer, \
+    TestWildberriesDataProviderInitializer
+from tests.providers.wildberries_test_provider import TestWildberriesDataProviderWithoutKeyImpl
 
 
 def create_user_info_changer(session: Session) -> UserInfoChanger:
@@ -22,25 +22,19 @@ def create_jorm_changer(session: Session) -> JORMChanger:
     return JORMChangerImpl(session, JORMChangerInitializerTestImpl)
 
 
-def create_real_wb_db_filler(session: Session) -> StandardDBFillerImpl:
-    return StandardDBFillerImpl(create_marketplace_service(session),
-                                create_warehouse_service(session),
-                                WildberriesTestDBFillerInitializer)
-
-
 def create_wb_db_filler(session: Session) -> StandardDBFillerImpl:
     return StandardDBFillerImpl(create_marketplace_service(session),
                                 create_warehouse_service(session),
-                                WildberriesTestDBFillerInitializer)
+                                TestWildberriesDBFillerInitializer)
 
 
 def create_wb_real_data_provider_without_key() -> WildberriesDataProviderWithoutKey:
-    return WildberriesDataProviderWithoutKeyImpl(WildberriesTestDataProviderInitializer)
+    return WildberriesDataProviderWithoutKeyImpl(TestWildberriesDataProviderInitializer)
 
 
-def create_wb_data_provider_without_key() -> WildberriesDataProviderWithoutKey:
-    return WildberriesDataProviderWithoutKeyImplTest(WildberriesTestDataProviderInitializer)
+def create_test_wb_data_provider_without_key() -> WildberriesDataProviderWithoutKey:
+    return TestWildberriesDataProviderWithoutKeyImpl(TestWildberriesDataProviderInitializer)
 
 
-def create_wb_data_provider_with_key() -> WildberriesUserMarketDataProviderImpl:
-    return WildberriesUserMarketDataProviderImpl(AUTH_KEY, WildberriesTestDataProviderInitializer)
+def create_real_wb_data_provider_with_key() -> WildberriesUserMarketDataProviderImpl:
+    return WildberriesUserMarketDataProviderImpl(AUTH_KEY, TestWildberriesDataProviderInitializer)

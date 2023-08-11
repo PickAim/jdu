@@ -10,7 +10,7 @@ from jdu.providers.wildberries_providers import WildberriesDataProviderWithoutKe
 from jdu.support.types import ProductInfo
 
 
-class WildberriesDataProviderWithoutKeyImplTest(WildberriesDataProviderWithoutKey):
+class TestWildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
     def __init__(self, data_provider_initializer_class: Type[DataProviderInitializer]):
         super().__init__(data_provider_initializer_class)
 
@@ -77,7 +77,7 @@ class WildberriesDataProviderWithoutKeyImplTest(WildberriesDataProviderWithoutKe
         return storage_dict
 
 
-class WildberriesUserMarketDataProviderImplTest(WildberriesUserMarketDataProvider):
+class TestWildberriesUserMarketDataProviderImpl(WildberriesUserMarketDataProvider):
     def __init__(self, api_key: str, data_provider_initializer_class: Type[DataProviderInitializer]):
         super().__init__(api_key, data_provider_initializer_class)
 
