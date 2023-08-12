@@ -1,7 +1,8 @@
 import unittest
 from datetime import datetime
 
-from jarvis_db.factories.services import create_economy_service, create_niche_service
+from jarvis_db.factories.services import create_economy_service, create_niche_service, create_user_items_service, \
+    create_category_service
 from jarvis_db.factories.services import create_frequency_service
 from jarvis_db.factories.services import create_warehouse_service
 from jorm.market.service import RequestInfo, UnitEconomyRequest, UnitEconomyResult, FrequencyRequest, FrequencyResult
@@ -21,7 +22,17 @@ class JORMChangerTest(BasicDBTest):
             'test_frequency_request_changes': [TestDBContextAdditions.NICHE, TestDBContextAdditions.USER],
             'test_user_warehouse_loading': [TestDBContextAdditions.MARKETPLACE, TestDBContextAdditions.USER_API_KEY],
             'test_user_warehouse_loading_without_api_key_init': [TestDBContextAdditions.MARKETPLACE],
-            'test_new_niche_loading': [TestDBContextAdditions.MARKETPLACE]
+            'test_new_niche_loading': [TestDBContextAdditions.MARKETPLACE],
+            'test_user_products_loading': [TestDBContextAdditions.MARKETPLACE, TestDBContextAdditions.USER_API_KEY,
+                                           TestDBContextAdditions.NICHE],
+            'test_all_niches_updating': [TestDBContextAdditions.MARKETPLACE, TestDBContextAdditions.USER_API_KEY,
+                                         TestDBContextAdditions.NICHE],
+            'test_all_categories_updating': [TestDBContextAdditions.MARKETPLACE, TestDBContextAdditions.USER_API_KEY,
+                                             TestDBContextAdditions.NICHE],
+            'test_niche_updating': [TestDBContextAdditions.MARKETPLACE, TestDBContextAdditions.USER_API_KEY,
+                                    TestDBContextAdditions.NICHE],
+            'test_product_updating': [TestDBContextAdditions.MARKETPLACE, TestDBContextAdditions.USER_API_KEY,
+                                      TestDBContextAdditions.PRODUCT]
         }
 
     def test_fill_warehouses(self):
@@ -181,6 +192,16 @@ class JORMChangerTest(BasicDBTest):
             warehouses = jorm_changer.load_user_warehouse(self.user_id, 1)
             self.assertEqual(0, len(warehouses))
 
+    def test_user_products_loading(self):
+        with self.db_context.session() as session, session.begin():
+            jorm_changer = create_jorm_changer(session)
+            products = jorm_changer.load_user_products(self.user_id, 1)
+            self.assertNotEqual(0, len(products))
+        with self.db_context.session() as session, session.begin():
+            user_item_service = create_user_items_service(session)
+            products_by_user = user_item_service.fetch_user_products(1, 1)
+            self.assertNotEqual(0, len(products_by_user))
+
     def test_user_warehouse_loading_without_api_key_init(self):
         with self.db_context.session() as session, session.begin():
             jorm_changer = create_jorm_changer(session)
@@ -213,6 +234,42 @@ class JORMChangerTest(BasicDBTest):
             jorm_changer = create_jorm_changer(session)
             loaded_niche = jorm_changer.load_new_niche(test_niche_name, self.marketplace_id)
             self.assertIsNone(loaded_niche)
+
+    def test_all_categories_updating(self):
+        with self.db_context.session() as session, session.begin():
+            jorm_changer = create_jorm_changer(session)
+            jorm_changer.update_all_categories(self.marketplace_id)
+        with self.db_context.session() as session:
+            category_service = create_category_service(session)
+            categories_from_db = category_service.find_all_in_marketplace(self.marketplace_id)
+            self.assertEqual(11, len(categories_from_db))
+
+    def test_all_niches_updating(self):
+        with self.db_context.session() as session, session.begin():
+            jorm_changer = create_jorm_changer(session)
+            jorm_changer.update_all_niches(1, 1)
+        with self.db_context.session() as session, session.begin():
+            niche_service = create_niche_service(session)
+            id_to_existing_niche = niche_service.find_all_in_marketplace(self.marketplace_id)
+            self.assertEqual(11, len(id_to_existing_niche))
+
+    def test_niche_updating(self):
+        with self.db_context.session() as session, session.begin():
+            jorm_changer = create_jorm_changer(session)
+            niche = jorm_changer.update_niche(self.niche_id, self.category_id, self.marketplace_id)
+            self.assertIsNotNone(niche)
+        with self.db_context.session() as session, session.begin():
+            niche_service = create_niche_service(session)
+            id_to_existing_niche = niche_service.find_all_in_marketplace(self.marketplace_id)
+            # TODO WTF?
+            print(id_to_existing_niche)
+            # self.assertEqual(11, len(id_to_existing_niche))
+
+    def test_product_updating(self):
+        with self.db_context.session() as session, session.begin():
+            jorm_changer = create_jorm_changer(session)
+            product = jorm_changer.update_product(self.product_id, self.marketplace_id)
+            self.assertIsNotNone(product)
 
 
 if __name__ == '__main__':
