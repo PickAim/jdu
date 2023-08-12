@@ -12,7 +12,6 @@ from jorm.support.constants import DEFAULT_CATEGORY_NAME
 from jdu.db_tools.fill.db_fillers import StandardDBFiller
 from jdu.db_tools.fill.initializers import DBFillerInitializer
 from jdu.providers.providers import UserMarketDataProvider, DataProviderWithoutKey
-from jdu.support.types import ProductInfo
 
 
 class StandardDBFillerImpl(StandardDBFiller):
@@ -69,24 +68,21 @@ class StandardDBFillerImpl(StandardDBFiller):
                            data_provider_without_key: DataProviderWithoutKey,
                            niche_name: str, category_name: str, product_number: int = -1, niche_id: int = -1) \
             -> list[Product]:
-        products_info: set[ProductInfo] = \
-            data_provider_without_key.get_products_mapped_info(niche_name, product_number)
-        mapped_products_info = {product_info.global_id: product_info for product_info in products_info}
-        filtered_id_name_cost = self.__filter_product_ids(product_card_service, mapped_products_info, niche_id)
-        return data_provider_without_key.get_products(niche_name, category_name, filtered_id_name_cost)
+        products_global_ids: list[int] = \
+            data_provider_without_key.get_products_globals_ids(niche_name, product_number)
+        filtered_products_globals_ids = self.__filter_product_ids(product_card_service, products_global_ids, niche_id)
+        return data_provider_without_key.get_products(niche_name, category_name, filtered_products_globals_ids)
 
     @staticmethod
     def __filter_product_ids(product_card_service: ProductCardService,
-                             mapped_products_info: dict[int, ProductInfo],
-                             niche_id: int = -1) -> list[ProductInfo]:
-        filtered_products_global_ids = list(mapped_products_info.keys())
+                             products_global_ids: list[int],
+                             niche_id: int = -1) -> list[int]:
         if niche_id != -1:
-            filtered_products_global_ids: list[int] = \
-                product_card_service.filter_existing_global_ids(niche_id, filtered_products_global_ids)
-        return [
-            mapped_products_info[global_id]
-            for global_id in filtered_products_global_ids
-        ]
+            filtered_products_global_ids = \
+                product_card_service.filter_existing_global_ids(niche_id, products_global_ids)
+        else:
+            return products_global_ids
+        return filtered_products_global_ids
 
     def __check_warehouse_filled(self, products: list[Product]):
         warehouse_ids: set[int] = set()

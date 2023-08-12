@@ -8,6 +8,7 @@ from jarvis_db.services.market.infrastructure.niche_service import NicheService
 from jarvis_db.services.market.infrastructure.warehouse_service import WarehouseService
 from jarvis_db.services.market.items.product_card_service import ProductCardService
 from jarvis_db.services.market.person import UserService
+from jarvis_db.services.market.person.user_items_service import UserItemsService
 from jarvis_db.services.market.service.economy_service import EconomyService
 from jarvis_db.services.market.service.frequency_service import FrequencyService
 from jorm.jarvis.db_update import JORMChanger
@@ -34,6 +35,7 @@ class JORMChangerBase(JORMChanger, Initializable, ABC):
         self.economy_service: EconomyService | None = None
         self.frequency_service: FrequencyService | None = None
         self.user_service: UserService | None = None
+        self.user_item_service: UserItemsService | None = None
         self.marketplace_service: MarketplaceService | None = None
         self.warehouse_service: WarehouseService | None = None
         self.category_service: CategoryService | None = None
