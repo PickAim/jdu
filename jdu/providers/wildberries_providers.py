@@ -144,14 +144,17 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
 
         return niche_list
 
-    def get_products_mapped_info(self, niche: str, products_count: int = -1) -> list[int]:
+    def get_niche(self, niche_name):
+        return Niche(niche_name, self.commission_resolver.get_commission_for_niche_mapped(niche_name),
+                     self.commission_resolver.get_return_percent_for(niche_name))
+
+    def get_products_globals_ids(self, niche: str, products_count: int = -1) -> list[int]:
         page_iterator: int = 1
         product_counter: int = 0
         products_global_ids: list[int] = []
         self.LOGGER.info("Start products info mapping.")
         start_time = time.time()
         while True:
-            # TODO think about it https://search-goods.wildberries.ru/search?query=
             url: str = f'https://search.wb.ru/exactmatch/ru/common/v4/search' \
                        f'?appType=1' \
                        f'&dest=-1257786' \
@@ -172,7 +175,7 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
             for product in json_code['data']['products']:
                 if products_count != -1 and product_counter >= products_count:
                     return products_global_ids
-                if any(k not in product for k in ["id", "name", "priceU"]):
+                if any(k not in product for k in ["id", "name", "salePriceU"]):
                     continue
                 products_global_ids.append(product['id'])
                 product_counter += 1
@@ -285,7 +288,7 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                 or 'products' not in request_json['data'] or len(request_json['data']['products']) < 1:
             return None
         product_data = request_json['data']['products'][0]
-        product_info = ProductInfo(product_data['id'], product_data['name'], product_data['priceU'],
+        product_info = ProductInfo(product_data['id'], product_data['name'], product_data['salePriceU'],
                                    product_data['brand'], product_data['rating'])
         return product_info
 
