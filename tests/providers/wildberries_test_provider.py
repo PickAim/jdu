@@ -7,12 +7,12 @@ from jorm.support.types import StorageDict, SpecifiedLeftover
 
 from jdu.providers.initializers import DataProviderInitializer
 from jdu.providers.wildberries_providers import WildberriesDataProviderWithoutKey, WildberriesUserMarketDataProvider
-from jdu.support.types import ProductInfo
 
 
-class WildberriesDataProviderWithoutKeyImplTest(WildberriesDataProviderWithoutKey):
+class TestWildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
+
     def get_category_and_niche(self, product_id: int) -> tuple[str, str] | None:
-        pass
+        return f'category', f'niche'
 
     def get_top_request_by_marketplace_query(self, search_period: str = 'month', number_top: int = 1000,
                                              search_query: str = '') -> dict[str, int] | None:
@@ -26,7 +26,7 @@ class WildberriesDataProviderWithoutKeyImplTest(WildberriesDataProviderWithoutKe
 
     def get_categories_names(self, category_num=-1) -> list[str]:
         category_names_list: list[str] = []
-        for i in range(category_num):
+        for i in range(10):
             category_names_list.append('Category_' + i.__str__())
         return category_names_list
 
@@ -38,7 +38,7 @@ class WildberriesDataProviderWithoutKeyImplTest(WildberriesDataProviderWithoutKe
 
     def get_niches_names(self, category, niche_num=-1) -> list[str]:
         niche_names_list: list[str] = []
-        for i in range(niche_num):
+        for i in range(10):
             niche_names_list.append('Niche_' + i.__str__())
         return niche_names_list
 
@@ -51,21 +51,23 @@ class WildberriesDataProviderWithoutKeyImplTest(WildberriesDataProviderWithoutKe
                 HandlerType.CLIENT: 0}, 0))
         return niche_list
 
-    def get_products_mapped_info(self, niche: str, products_count: int = -1) -> set[ProductInfo]:
-        products_info: set[ProductInfo] = set()
-        for i in range(10):
-            products_info.add(ProductInfo(i, 'Product_' + i.__str__(), i, 'Brand_' + i.__str__(), i))
-        return products_info
+    def get_niche(self, niche_name: str) -> Niche:
+        return Niche(f'{niche_name}_test_jorm', {
+            HandlerType.MARKETPLACE: 0,
+            HandlerType.PARTIAL_CLIENT: 0,
+            HandlerType.CLIENT: 0}, 0)
+
+    def get_products_globals_ids(self, niche: str, products_count: int = -1) -> list[int]:
+        pass
 
     async def load_all_product_niche(self) -> list[Product]:
         pass
 
-    def get_products(self, niche_name: str, category_name: str,
-                     products_info: list[ProductInfo]) -> list[Product]:
+    def get_products(self, niche_name: str, category_name: str, products_global_ids: list[int]) -> list[Product]:
         products_list: list[Product] = []
-        for product_info in products_info:
+        for product_id in range(0, 10):
             products_list.append(
-                Product(product_info.name, product_info.price, product_info.global_id, 0,
+                Product(f"Name#{product_id}", product_id, product_id, 0,
                         "brand", "seller", niche_name, category_name, ProductHistory())
             )
         return products_list
@@ -84,9 +86,9 @@ class WildberriesDataProviderWithoutKeyImplTest(WildberriesDataProviderWithoutKe
         return storage_dict
 
 
-class WildberriesUserMarketDataProviderImplTest(WildberriesUserMarketDataProvider):
+class TestWildberriesUserMarketDataProviderImpl(WildberriesUserMarketDataProvider):
     def get_user_products(self) -> list[int]:
-        pass
+        return [i for i in range(0, 10)]
 
     def __init__(self, api_key: str, data_provider_initializer_class: Type[DataProviderInitializer]):
         super().__init__(api_key, data_provider_initializer_class)

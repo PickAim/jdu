@@ -21,7 +21,7 @@ class DataProviderWithoutKey(__InitializableDataProvider, ABC):
         super().__init__(data_provider_initializer_class)
 
     @abstractmethod
-    def get_products_mapped_info(self, niche: str,
+    def get_products_globals_ids(self, niche: str,
                                  products_count: int = -1) -> list[int]:
         pass
 
@@ -41,6 +41,10 @@ class DataProviderWithoutKey(__InitializableDataProvider, ABC):
 
     @abstractmethod
     def get_niches(self, niche_names_list: list[str]) -> list[Niche]:
+        pass
+
+    @abstractmethod
+    def get_niche(self, niche_name: str) -> Niche:
         pass
 
     @abstractmethod

@@ -19,7 +19,7 @@ class LoadingTest(unittest.TestCase):
         before = datetime.now()
         product_num = 10
         products_info = \
-            object_provider.get_products_mapped_info('Кофе зерновой', product_num)
+            object_provider.get_products_globals_ids('Кофе зерновой', product_num)
         products: list[Product] = object_provider.get_products("Кофе зерновой", 'xuita', list(products_info))
         print(f"products receiving time: {datetime.now() - before}")
         self.assertEqual(product_num, len(products))
