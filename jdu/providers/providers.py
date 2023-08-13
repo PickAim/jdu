@@ -13,7 +13,7 @@ from jdu.support.utils import get_request_json
 class __InitializableDataProvider(DataProvider):
     def __init__(self, data_provider_initializer_class: Type[DataProviderInitializer]):
         super().__init__()
-        data_provider_initializer_class().init_data_provider(self)
+        data_provider_initializer_class().init_object(self)
 
 
 class DataProviderWithoutKey(__InitializableDataProvider, ABC):

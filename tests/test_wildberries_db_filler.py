@@ -5,7 +5,7 @@ from jorm.support.constants import DEFAULT_CATEGORY_NAME
 from jdu.db_tools.fill.db_fillers import StandardDBFiller
 from jdu.support.constant import WILDBERRIES_NAME
 from tests.basic_db_test import BasicDBTest, TestDBContextAdditions
-from tests.test_utils import create_wb_db_filler, create_test_wb_data_provider_without_key, \
+from tests.test_utils import create_wb_db_filler, create_wb_data_provider_without_key, \
     create_wb_real_data_provider_without_key
 
 
@@ -29,7 +29,7 @@ class WildberriesDBFillerImplTest(BasicDBTest):
     def test_fill_categories(self):
         with self.db_context.session() as session, session.begin():
             wildberries_db_filler: StandardDBFiller = create_wb_db_filler(session)
-            provider = create_test_wb_data_provider_without_key()
+            provider = create_wb_data_provider_without_key()
             category_service = create_category_service(session)
             wildberries_db_filler.fill_categories(category_service, provider, 10)
         with self.db_context.session() as session:
@@ -40,7 +40,7 @@ class WildberriesDBFillerImplTest(BasicDBTest):
     def test_fill_niches(self):
         with self.db_context.session() as session, session.begin():
             db_filler: StandardDBFiller = create_wb_db_filler(session)
-            provider = create_test_wb_data_provider_without_key()
+            provider = create_wb_data_provider_without_key()
             category_service = create_category_service(session)
             niche_service = create_niche_service(session)
             db_filler.fill_niches(category_service, niche_service, provider, 10)
@@ -54,7 +54,7 @@ class WildberriesDBFillerImplTest(BasicDBTest):
         loaded_niche_name = 'Кофе'
         with self.db_context.session() as session, session.begin():
             db_filler: StandardDBFiller = create_wb_db_filler(session)
-            provider = create_test_wb_data_provider_without_key()
+            provider = create_wb_data_provider_without_key()
             category_service = create_category_service(session)
             niche_service = create_niche_service(session)
             product_card_service = create_product_card_service(session)
@@ -85,6 +85,7 @@ class WildberriesDBFillerImplTest(BasicDBTest):
             product_card_service = create_product_card_service(session)
             loaded_niche = db_filler.fill_niche_by_name(category_service, niche_service,
                                                         product_card_service, provider, loaded_niche_name, product_num)
+            print(loaded_niche)
             self.assertIsNone(loaded_niche)
         with self.db_context.session() as session:
             category_service = create_category_service(session)

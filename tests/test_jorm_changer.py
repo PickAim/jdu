@@ -261,14 +261,14 @@ class JORMChangerTest(BasicDBTest):
         with self.db_context.session() as session, session.begin():
             niche_service = create_niche_service(session)
             id_to_existing_niche = niche_service.find_all_in_marketplace(self.marketplace_id)
-            # TODO WTF?
-            print(id_to_existing_niche)
-            # self.assertEqual(11, len(id_to_existing_niche))
+            # TODO Improve this test
+            self.assertEqual(1, len(id_to_existing_niche))
 
     def test_product_updating(self):
         with self.db_context.session() as session, session.begin():
             jorm_changer = create_jorm_changer(session)
             product = jorm_changer.update_product(self.product_id, self.marketplace_id)
+            # TODO Improve this test
             self.assertIsNotNone(product)
 
 
