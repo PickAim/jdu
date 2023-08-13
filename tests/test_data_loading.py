@@ -6,7 +6,6 @@ from jorm.market.infrastructure import Niche, Category
 from jorm.market.items import Product
 
 from jdu.providers.wildberries_providers import WildberriesDataProviderWithoutKey, WildberriesUserMarketDataProvider
-from jdu.support.types import ProductInfo
 from tests.test_utils import create_real_wb_data_provider_with_key, \
     create_wb_real_data_provider_without_key
 
@@ -18,7 +17,7 @@ class LoadingTest(unittest.TestCase):
         object_provider: WildberriesDataProviderWithoutKey = create_wb_real_data_provider_without_key()
         before = datetime.now()
         product_num = 10
-        products_info: set[ProductInfo] = \
+        products_info: list[int] = \
             object_provider.get_products_mapped_info('Кофе зерновой', product_num)
         products: list[Product] = object_provider.get_products("Кофе зерновой", 'xuita', list(products_info))
         print(f"products receiving time: {datetime.now() - before}")
@@ -51,11 +50,21 @@ class LoadingTest(unittest.TestCase):
     def test_get_warehouse(self):
         object_provider: WildberriesUserMarketDataProvider = create_real_wb_data_provider_with_key()
         warehouses = object_provider.get_warehouses()
-        self.assertNotEqual(0, len(warehouses))
+        self.assertNotEqual(len(warehouses), 0)
+
+    def test_get_user_products(self):
+        object_provider: WildberriesUserMarketDataProvider = create_real_wb_data_provider_with_key()
+        products_ids = object_provider.get_user_products()
+        self.assertNotEqual(len(products_ids), 0)
 
     def test_load_storage(self):
         object_provider: WildberriesDataProviderWithoutKey = create_wb_real_data_provider_without_key()
         storage_data = object_provider.get_storage_dict(18681408)
+        self.assertIsNotNone(storage_data)
+
+    def test_load_top_request(self):
+        object_provider: WildberriesDataProviderWithoutKey = create_wb_real_data_provider_without_key()
+        storage_data = object_provider.get_top_request_by_marketplace_query('month', 1000)
         self.assertIsNotNone(storage_data)
 
 

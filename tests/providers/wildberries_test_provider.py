@@ -11,6 +11,13 @@ from jdu.support.types import ProductInfo
 
 
 class TestWildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
+    def get_category_and_niche(self, product_id: int) -> tuple[str, str] | None:
+        pass
+
+    def get_top_request_by_marketplace_query(self, search_period: str = 'month', number_top: int = 1000,
+                                             search_query: str = '') -> dict[str, int] | None:
+        pass
+
     def __init__(self, data_provider_initializer_class: Type[DataProviderInitializer]):
         super().__init__(data_provider_initializer_class)
 
@@ -47,7 +54,7 @@ class TestWildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKe
     def get_products_mapped_info(self, niche: str, products_count: int = -1) -> set[ProductInfo]:
         products_info: set[ProductInfo] = set()
         for i in range(10):
-            products_info.add(ProductInfo(i, 'Product_' + i.__str__(), i))
+            products_info.add(ProductInfo(i, 'Product_' + i.__str__(), i, 'Brand_' + i.__str__(), i))
         return products_info
 
     async def load_all_product_niche(self) -> list[Product]:
@@ -78,6 +85,9 @@ class TestWildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKe
 
 
 class TestWildberriesUserMarketDataProviderImpl(WildberriesUserMarketDataProvider):
+    def get_user_products(self) -> list[int]:
+        pass
+
     def __init__(self, api_key: str, data_provider_initializer_class: Type[DataProviderInitializer]):
         super().__init__(api_key, data_provider_initializer_class)
 
