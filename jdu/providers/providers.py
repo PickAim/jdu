@@ -7,7 +7,6 @@ from jorm.support.types import StorageDict
 
 from jdu.providers.base_data_provider import DataProvider
 from jdu.providers.initializers import DataProviderInitializer
-from jdu.support.types import ProductInfo
 from jdu.support.utils import get_request_json
 
 
@@ -18,12 +17,13 @@ class DataProviderWithoutKey(DataProvider, ABC):
 
     @abstractmethod
     def get_products_mapped_info(self, niche: str,
-                                 products_count: int = -1) -> set[ProductInfo]:
+                                 products_count: int = -1) -> list[int]:
         pass
 
     @abstractmethod
-    def get_products(self, niche_name: str, category_name: str,
-                     id_to_name_cost_dict: list[ProductInfo]) -> list[Product]:
+    def get_products(self, niche_name: str,
+                     category_name: str,
+                     products_global_ids: list[int]) -> list[Product]:
         pass
 
     @abstractmethod
@@ -36,6 +36,15 @@ class DataProviderWithoutKey(DataProvider, ABC):
 
     @abstractmethod
     def get_niches(self, niche_names_list: list[str]) -> list[Niche]:
+        pass
+
+    @abstractmethod
+    def get_top_request_by_marketplace_query(self, search_period: str = 'month', number_top: int = 1000,
+                                             search_query: str = '') -> dict[str, int] | None:
+        pass
+
+    @abstractmethod
+    def get_category_and_niche(self, product_id: int) -> tuple[str, str] | None:
         pass
 
     @abstractmethod
@@ -71,6 +80,10 @@ class UserMarketDataProvider(DataProviderWithKey, ABC):
 
     @abstractmethod
     def get_warehouses(self) -> list[Warehouse]:
+        pass
+
+    @abstractmethod
+    def get_user_products(self) -> list[int]:
         pass
 
     @abstractmethod
