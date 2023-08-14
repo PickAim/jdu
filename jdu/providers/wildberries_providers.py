@@ -236,17 +236,18 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
         storage_url: str = f'https://card.wb.ru/cards/detail?' \
                            f'dest=-1221148,-140294,-1751445,-364763' \
                            f'&nm={product_id}'
-        product_info = None
         async with aiohttp.ClientSession() if loop is None or connector is None \
                 else aiohttp.ClientSession(connector=connector, loop=loop) as client_session:
             request_json = await self.get_async_request_json(cost_history_url, client_session)
             product_history_units = self.__resolve_json_to_history_units(request_json)
+            request_json = await self.get_async_request_json(storage_url, client_session)
+            product_info = self.__resolve_json_to_product_info(request_json)
+            if len(product_history_units) == 0:
+                product_history_units = [ProductHistoryUnit(product_info.price, datetime.utcnow(), StorageDict())]
 
-            if len(product_history_units) > 0:
-                last_item = product_history_units[len(product_history_units) - 1]
-                request_json = await self.get_async_request_json(storage_url, client_session)
-                last_item.leftover = self.__resolve_json_to_storage_dict(request_json)
-                product_info = self.__resolve_json_to_product_info(request_json)
+            last_item = product_history_units[len(product_history_units) - 1]
+            last_item.leftover = self.__resolve_json_to_storage_dict(request_json)
+
         await client_session.close()
         if product_info is not None:
             return Product(product_info.name, product_info.price, product_info.global_id, product_info.rating,
@@ -255,6 +256,7 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                            width=0, height=0, depth=0)
 
     def get_product_price_history(self, product_id: int) -> ProductHistory:
+        # TODO try to extract common parts for get_product and this method
         cost_history_url: str = self.__get_product_history_url(product_id)
         storage_url: str = f'https://card.wb.ru/cards/detail?' \
                            f'dest=-1221148,-140294,-1751445,-364763' \
@@ -347,4 +349,4 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
     def get_category_and_niche(self, product_id: int) -> tuple[str, str] | None:
         url = calculate_basket_domain_part(product_id) + '/info/ru/card.json'
         json_data = self.get_request_json(url)
-        return (json_data['subj_root_name'], json_data['subj_name'])
+        return json_data['subj_root_name'], json_data['subj_name']
