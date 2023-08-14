@@ -78,11 +78,8 @@ class StandardDBFillerImpl(StandardDBFiller):
                              products_global_ids: list[int],
                              niche_id: int = -1) -> list[int]:
         if niche_id != -1:
-            filtered_products_global_ids = \
-                product_card_service.filter_existing_global_ids(niche_id, products_global_ids)
-        else:
-            return products_global_ids
-        return filtered_products_global_ids
+            return product_card_service.filter_existing_global_ids(niche_id, products_global_ids)
+        return products_global_ids
 
     def __check_warehouse_filled(self, products: list[Product]):
         warehouse_ids: set[int] = set()

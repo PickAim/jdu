@@ -57,14 +57,14 @@ class TestWildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKe
             HandlerType.CLIENT: 0}, 0)
 
     def get_products_globals_ids(self, niche: str, products_count: int = -1) -> list[int]:
-        pass
+        return [product_global_id for product_global_id in range(2, 11)]
 
     async def load_all_product_niche(self) -> list[Product]:
         pass
 
     def get_products(self, niche_name: str, category_name: str, products_global_ids: list[int]) -> list[Product]:
         products_list: list[Product] = []
-        for product_id in range(0, 10):
+        for product_id in range(2, 11):
             products_list.append(
                 Product(f"Name#{product_id}", product_id, product_id, 0,
                         "brand", "seller", niche_name, category_name, ProductHistory())

@@ -38,44 +38,71 @@ class JORMChangerImpl(JORMChangerBase):
 
     def update_all_categories(self, marketplace_id: int) -> None:
         data_provider_without_key: DataProviderWithoutKey = self.__create_data_provider_without_key(marketplace_id)
+        if data_provider_without_key is None:
+            return None
         categories_names: list[str] = data_provider_without_key.get_categories_names()
         filtered_categories_names: list[str] = self.category_service.filter_existing_names(categories_names,
                                                                                            marketplace_id)
         filtered_categories: list[Category] = data_provider_without_key.get_categories(filtered_categories_names)
-        self.category_service.create_all(filtered_categories, marketplace_id)
-        all_categories = data_provider_without_key.get_categories(categories_names)
-        for category in all_categories:
-            category_id: int = self.category_service.find_by_name(category.name, marketplace_id)[1]
-            self.category_service.update(category_id, category)
+        if len(filtered_categories) != 0:
+            self.category_service.create_all(filtered_categories, marketplace_id)
 
     def update_all_niches(self, category_id: int, marketplace_id: int) -> None:
         data_provider_without_key: DataProviderWithoutKey = self.__create_data_provider_without_key(marketplace_id)
-        categories = self.category_service.find_all_in_marketplace(marketplace_id)
-        niches_names: list[str] = data_provider_without_key.get_niches_names(categories[category_id].name)
+        if data_provider_without_key is None:
+            return None
+        found_category = self.category_service.find_by_id(category_id)
+        if found_category is None or data_provider_without_key is None:
+            return None
+        niches_names: list[str] = data_provider_without_key.get_niches_names(found_category.name)
         filtered_niches_names: list[str] = self.niche_service.filter_existing_names(niches_names, category_id)
         filtered_niches: list[Niche] = data_provider_without_key.get_niches(filtered_niches_names)
-        self.niche_service.create_all(filtered_niches, category_id)
+        if len(filtered_niches) != 0:
+            self.niche_service.create_all(filtered_niches, category_id)
         all_niches_in_category: list[Niche] = data_provider_without_key.get_niches(niches_names)
         for niche in all_niches_in_category:
-            niche_id: int = self.niche_service.find_by_name(niche.name, category_id)[1]
-            self.niche_service.update(niche_id, niche)
+            found_niche_info: tuple[Niche, int] = self.niche_service.find_by_name(niche.name, category_id)
+            if found_niche_info is None:
+                return None
+            products = self.__update_or_create_products_by_niche(data_provider_without_key, found_niche_info[1],
+                                                                 niche.name, found_category.name, marketplace_id)
+            if products is None:
+                return None
+            self.niche_service.update(found_niche_info[1], niche)
 
-    # TODO return Niche|None (Function fetch_by_id_atomic returned Niche or None)?
-    def update_niche(self, niche_id: int, category_id: int, marketplace_id: int) -> Niche:
+    def update_niche(self, niche_id: int, category_id: int, marketplace_id: int) -> Niche | None:
         data_provider_without_key: DataProviderWithoutKey = self.__create_data_provider_without_key(marketplace_id)
-        niche_name_from_db: str = self.niche_service.fetch_by_id_atomic(niche_id).name
-        new_data_from_niche: Niche = data_provider_without_key.get_niche(niche_name_from_db)
-        self.niche_service.update(niche_id, new_data_from_niche)
-        return new_data_from_niche
+        found_niche: Niche = self.niche_service.find_by_id(niche_id)
+        found_category = self.category_service.find_by_id(category_id)
+        if (found_niche is None or found_category is None or data_provider_without_key is None
+                or data_provider_without_key is None):
+            return None
+        products = self.__update_or_create_products_by_niche(data_provider_without_key, niche_id,
+                                                             found_niche.name, found_category.name, marketplace_id)
+        if products is None:
+            return None
+        return found_niche
 
-    def update_product(self, product_id: int, marketplace_id: int) -> Product:
+    def update_product(self, product_id: int, marketplace_id: int) -> Product | None:
         data_provider_without_key: DataProviderWithoutKey = self.__create_data_provider_without_key(marketplace_id)
         product_from_db: Product = self.product_card_service.find_by_id(product_id)
-        product: Product = \
-            data_provider_without_key.get_products(product_from_db.niche_name, product_from_db.category_name,
-                                                   [product_from_db.global_id])[0]
-        self.product_card_service.update(product_id, product)
-        return product
+        if product_from_db is None:
+            return None
+        niche_name = product_from_db.niche_name
+        category_name = product_from_db.category_name
+        found_category_info = self.category_service.find_by_name(category_name, marketplace_id)
+        if product_from_db is None or data_provider_without_key is None or found_category_info is None:
+            return None
+
+        found_info_niche: tuple[Niche, int] = self.niche_service.find_by_name(niche_name, found_category_info[1])
+        if found_info_niche is None:
+            return None
+        products = self.__update_or_create_products_by_niche(data_provider_without_key, found_info_niche[1],
+                                                             niche_name, category_name, marketplace_id,
+                                                             [product_from_db.global_id])
+        if len(products) == 0:
+            return None
+        return products[0]
 
     def delete_unit_economy_request(self, request_id: int, user_id: int) -> None:
         self.economy_service.remove(request_id)
@@ -91,56 +118,18 @@ class JORMChangerImpl(JORMChangerBase):
         return db_filler.fill_niche_by_name(self.category_service, self.niche_service,
                                             self.product_card_service, data_provider_without_key, niche_name)
 
-    def load_user_products(self, user_id: int, marketplace_id: int) -> list[Product]:
+    def load_user_products(self, user_id: int, marketplace_id: int) -> list[Product] | None:
         user_market_data_provider: UserMarketDataProvider = self.__create_user_market_data_provider(user_id,
                                                                                                     marketplace_id)
         data_provider_without_key: DataProviderWithoutKey = self.__create_data_provider_without_key(marketplace_id)
         if user_market_data_provider is None or data_provider_without_key is None:
-            return []
+            return None
         products_global_ids: list[int] = user_market_data_provider.get_user_products()
         category_niche_dict: dict[str, dict[str, list[int]]] = self.__get_mapping_category_and_niche_names(
             products_global_ids, data_provider_without_key)
-        products: list[Product] = []
-        for category_name in category_niche_dict:
-            category_id: int = self.category_service.find_by_name(category_name, marketplace_id)[1]
-            if category_id is None:
-                self.update_all_categories(marketplace_id)
-            for niche_name in category_niche_dict[category_name]:
-                products.extend(data_provider_without_key.get_products(niche_name, category_name,
-                                                                       category_niche_dict[category_name][niche_name]))
-                niche_id_by_name: int = self.niche_service.find_by_name(niche_name, category_id)[1]
-                if niche_id_by_name is None:
-                    self.load_new_niche(niche_name, marketplace_id)
-
-                filtered_products_ids = self.product_card_service.filter_existing_global_ids(niche_id_by_name,
-                                                                                             category_niche_dict[
-                                                                                                 category_name][
-                                                                                                 niche_name])
-                if filtered_products_ids is not None:
-                    products_filtered = data_provider_without_key.get_products(niche_name, category_name,
-                                                                               filtered_products_ids)
-                    self.product_card_service.create_products(products_filtered, niche_id_by_name)
-                products_ids = self.product_card_service.find_all_in_niche(niche_id_by_name)
-                for product_id in products_ids:
-                    user_products = self.user_item_service.fetch_user_products(user_id, marketplace_id)
-                    if product_id not in user_products:
-                        self.user_item_service.append_product(user_id, product_id)
-
+        products: list[Product] = self.__create_or_update_user_products(data_provider_without_key, category_niche_dict,
+                                                                        marketplace_id, user_id)
         return products
-
-    @staticmethod
-    def __get_mapping_category_and_niche_names(products_global_ids: list[int],
-                                               data_provider_without_key: DataProviderWithoutKey):
-        category_niche_dict: dict[str, dict[str, list[int]]] = {}
-        for product_global_id in products_global_ids:
-            category_name: [str, str] = data_provider_without_key.get_category_and_niche(product_global_id)
-            if category_name[0] not in category_niche_dict:
-                category_niche_dict[category_name[0]] = {}
-            niche_dict = category_niche_dict[category_name[0]]
-            if category_name[1] not in niche_dict:
-                niche_dict[category_name[1]] = []
-            niche_dict[category_name[1]].append(product_global_id)
-        return category_niche_dict
 
     def load_user_warehouse(self, user_id: int, marketplace_id: int) -> list[Warehouse]:
         user_market_data_provider: UserMarketDataProvider = self.__create_user_market_data_provider(user_id,
@@ -189,3 +178,77 @@ class JORMChangerImpl(JORMChangerBase):
         if marketplace_name not in self.initializing_mapping:
             return None
         return self.initializing_mapping[marketplace_name]
+
+    def __update_or_create_products_by_niche(self, data_provider_without_key: DataProviderWithoutKey,
+                                             niche_id: int, niche_name: str, category_name: str, marketplace_id: int,
+                                             products_global_ids: list[int] = None) -> \
+            list[Product] | None:
+        if products_global_ids is None:
+            products_global_ids = data_provider_without_key.get_products_globals_ids(niche_name)
+        filtering_global_ids: list[int] = self.product_card_service.filter_existing_global_ids(niche_id,
+                                                                                               products_global_ids)
+        filtering_products: list[Product] = data_provider_without_key.get_products(niche_name,
+                                                                                   category_name,
+                                                                                   filtering_global_ids)
+        if len(filtering_products) != 0:
+            self.product_card_service.create_products(filtering_products, niche_id)
+        products = data_provider_without_key.get_products(niche_name, category_name, products_global_ids)
+        products_list_without_filtering = [x for x in products if x not in filtering_products]
+        for product in products_list_without_filtering:
+            found_info_product = self.product_card_service.find_by_gloabal_id(product.global_id, marketplace_id)
+            if found_info_product is None:
+                return None
+            self.product_card_service.update(found_info_product[1], product)
+        return products
+
+    @staticmethod
+    def __get_mapping_category_and_niche_names(products_global_ids: list[int],
+                                               data_provider_without_key: DataProviderWithoutKey):
+        category_niche_dict: dict[str, dict[str, list[int]]] = {}
+        for product_global_id in products_global_ids:
+            category_niche_name: [str, str] = data_provider_without_key.get_category_and_niche(product_global_id)
+            if category_niche_name[0] not in category_niche_dict:
+                category_niche_dict[category_niche_name[0]] = {}
+            niche_dict = category_niche_dict[category_niche_name[0]]
+            if category_niche_name[1] not in niche_dict:
+                niche_dict[category_niche_name[1]] = []
+            niche_dict[category_niche_name[1]].append(product_global_id)
+        return category_niche_dict
+
+    def __create_or_update_user_products(self, data_provider_without_key: DataProviderWithoutKey,
+                                         category_niche_dict: dict[str, dict[str, list[int]]],
+                                         marketplace_id: int, user_id) -> list[
+        Product]:
+        products: list[Product] = []
+        for category_name in category_niche_dict:
+            found_category_info: tuple[Category, int] = self.category_service.find_by_name(category_name,
+                                                                                           marketplace_id)
+            if found_category_info is None:
+                categories = data_provider_without_key.get_categories([category_name])
+                if len(categories) != 0:
+                    self.category_service.create(categories[0], marketplace_id)
+            found_category_info = self.category_service.find_by_name(category_name,
+                                                                     marketplace_id)
+            for niche_name in category_niche_dict[category_name]:
+                products.extend(data_provider_without_key.get_products(niche_name, category_name,
+                                                                       category_niche_dict[category_name][niche_name]))
+                found_niche_info: tuple[Niche, int] = self.niche_service.find_by_name(niche_name,
+                                                                                      found_category_info[1])
+                if found_niche_info is None:
+                    self.load_new_niche(niche_name, marketplace_id)
+                found_niche_info: tuple[Niche, int] = self.niche_service.find_by_name(niche_name,
+                                                                                      found_category_info[1])
+                filtered_products_ids = self.product_card_service.filter_existing_global_ids(found_niche_info[1],
+                                                                                             category_niche_dict[
+                                                                                                 category_name][
+                                                                                                 niche_name])
+                if filtered_products_ids is not None:
+                    self.__update_or_create_products_by_niche(data_provider_without_key, found_niche_info[1],
+                                                              niche_name, category_name, marketplace_id,
+                                                              filtered_products_ids)
+                products_ids = self.product_card_service.find_all_in_niche(found_niche_info[1])
+                user_products = self.user_item_service.fetch_user_products(user_id, marketplace_id)
+                for product_id in products_ids:
+                    if product_id not in user_products:
+                        self.user_item_service.append_product(user_id, product_id)
+        return products

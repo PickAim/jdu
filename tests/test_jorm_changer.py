@@ -2,7 +2,7 @@ import unittest
 from datetime import datetime
 
 from jarvis_db.factories.services import create_economy_service, create_niche_service, create_user_items_service, \
-    create_category_service
+    create_category_service, create_product_card_service
 from jarvis_db.factories.services import create_frequency_service
 from jarvis_db.factories.services import create_warehouse_service
 from jorm.market.service import RequestInfo, UnitEconomyRequest, UnitEconomyResult, FrequencyRequest, FrequencyResult
@@ -30,9 +30,9 @@ class JORMChangerTest(BasicDBTest):
             'test_all_categories_updating': [TestDBContextAdditions.MARKETPLACE, TestDBContextAdditions.USER_API_KEY,
                                              TestDBContextAdditions.NICHE],
             'test_niche_updating': [TestDBContextAdditions.MARKETPLACE, TestDBContextAdditions.USER_API_KEY,
-                                    TestDBContextAdditions.NICHE],
+                                    TestDBContextAdditions.PRODUCT],
             'test_product_updating': [TestDBContextAdditions.MARKETPLACE, TestDBContextAdditions.USER_API_KEY,
-                                      TestDBContextAdditions.PRODUCT]
+                                      TestDBContextAdditions.PRODUCT],
         }
 
     def test_fill_warehouses(self):
@@ -260,10 +260,11 @@ class JORMChangerTest(BasicDBTest):
             self.assertIsNotNone(niche)
         with self.db_context.session() as session, session.begin():
             niche_service = create_niche_service(session)
+            product_service = create_product_card_service(session)
+            products = product_service.find_all_in_niche(1)
             id_to_existing_niche = niche_service.find_all_in_marketplace(self.marketplace_id)
-            # TODO WTF?
-            print(id_to_existing_niche)
-            # self.assertEqual(11, len(id_to_existing_niche))
+            self.assertNotEqual(0, len(id_to_existing_niche))
+            self.assertEqual(10, len(products))
 
     def test_product_updating(self):
         with self.db_context.session() as session, session.begin():

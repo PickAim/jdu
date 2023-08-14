@@ -144,10 +144,6 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
 
         return niche_list
 
-    def get_niche(self, niche_name):
-        return Niche(niche_name, self.commission_resolver.get_commission_for_niche_mapped(niche_name),
-                     self.commission_resolver.get_return_percent_for(niche_name))
-
     def get_products_globals_ids(self, niche: str, products_count: int = -1) -> list[int]:
         page_iterator: int = 1
         product_counter: int = 0
