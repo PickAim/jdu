@@ -144,10 +144,10 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
 
         return niche_list
 
-    def get_products_globals_ids(self, niche: str, products_count: int = -1) -> list[int]:
+    def get_products_globals_ids(self, niche: str, products_count: int = -1) -> set[int]:
         page_iterator: int = 1
         product_counter: int = 0
-        products_global_ids: list[int] = []
+        products_global_ids: set[int] = set()
         self.LOGGER.info("Start products info mapping.")
         start_time = time.time()
         while True:
@@ -173,7 +173,7 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                     return products_global_ids
                 if any(k not in product for k in ["id", "name", "salePriceU"]):
                     continue
-                products_global_ids.append(product['id'])
+                products_global_ids.add(product['id'])
                 product_counter += 1
             page_iterator += 1
         self.LOGGER.info(f"End mapping products info. {len(products_global_ids)} "

@@ -56,8 +56,8 @@ class TestWildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKe
             HandlerType.PARTIAL_CLIENT: 0,
             HandlerType.CLIENT: 0}, 0)
 
-    def get_products_globals_ids(self, niche: str, products_count: int = -1) -> list[int]:
-        return [product_global_id for product_global_id in range(2, 11)]
+    def get_products_globals_ids(self, niche: str, products_count: int = -1) -> set[int]:
+        return {product_global_id for product_global_id in range(2, 11)}
 
     async def load_all_product_niche(self) -> list[Product]:
         pass

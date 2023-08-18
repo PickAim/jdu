@@ -17,9 +17,8 @@ class LoadingTest(unittest.TestCase):
         object_provider: WildberriesDataProviderWithoutKey = create_wb_real_data_provider_without_key()
         before = datetime.now()
         product_num = 10
-        products_info = \
-            object_provider.get_products_globals_ids('Кофе зерновой', product_num)
-        products: list[Product] = object_provider.get_products("Кофе зерновой", 'xuita', list(products_info))
+        products_ids = object_provider.get_products_globals_ids('Кофе зерновой', product_num)
+        products: list[Product] = object_provider.get_products("Кофе зерновой", 'xuita', list(products_ids))
         print(f"products receiving time: {datetime.now() - before}")
         self.assertEqual(product_num, len(products))
 

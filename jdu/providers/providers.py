@@ -17,7 +17,7 @@ class DataProviderWithoutKey(DataProvider, ABC):
 
     @abstractmethod
     def get_products_globals_ids(self, niche: str,
-                                 products_count: int = -1) -> list[int]:
+                                 products_count: int = -1) -> set[int]:
         pass
 
     @abstractmethod
