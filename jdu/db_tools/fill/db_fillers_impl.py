@@ -86,6 +86,7 @@ class StandardDBFillerImpl(StandardDBFiller):
             -> list[Product]:
         products_global_ids: set[int] = \
             data_provider_without_key.get_products_globals_ids(niche_name, product_number)
+        print(f"{len(products_global_ids)} products in {niche_name} niche")
         filtered_products_globals_ids = self.__filter_product_ids(product_card_service, products_global_ids, niche_id)
         return data_provider_without_key.get_products(niche_name, category_name, filtered_products_globals_ids)
 

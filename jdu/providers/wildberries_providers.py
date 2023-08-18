@@ -4,7 +4,7 @@ import time
 from abc import ABC
 from asyncio import AbstractEventLoop, Task
 from datetime import datetime
-from typing import Type
+from typing import Type, Iterable
 
 import aiohttp
 from jorm.market.infrastructure import Product, Category, Niche, HandlerType, Warehouse
@@ -180,15 +180,21 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                          f"was mapped in {time.time() - start_time} seconds.")
         return products_global_ids
 
-    def get_products(self, niche_name: str,
-                     category_name: str,
-                     products_global_ids: list[int]) -> list[Product]:
+    def get_products(self, niche_name: str, category_name: str, products_global_ids: list[int]) -> list[Product]:
+        base_products = self.get_base_products(products_global_ids)
+        for product in base_products:
+            product.niche_name = niche_name
+            product.category_name = category_name
+        return base_products
+
+    def get_base_products(self, products_global_ids: Iterable[int]) -> list[Product]:
         self.LOGGER.info("Start products loading.")
         start_time = time.time()
         loop: AbstractEventLoop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
+        products_global_ids = list(products_global_ids)
         result_products = loop.run_until_complete(
-            self.__async_product_batch_gathering(niche_name, category_name, products_global_ids)
+            self.__async_product_batch_gathering(products_global_ids)
         )
         loop.run_until_complete(asyncio.sleep(0.25))
         loop.close()
@@ -196,17 +202,13 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                          f"was loaded in {time.time() - start_time} seconds..")
         return result_products
 
-    async def __async_product_batch_gathering(self,
-                                              niche_name: str,
-                                              category_name: str,
-                                              products_global_ids: list[int]) -> list[Product]:
+    async def __async_product_batch_gathering(self, products_global_ids: list[int]) -> list[Product]:
         tasks = []
         products_global_ids_batches = split_to_batches(products_global_ids, self.THREAD_TASK_COUNT)
         for products_global_ids_batch in products_global_ids_batches:
             tasks.append(
                 self.__load_all_product_niche(
-                    products_global_ids_batch,
-                    niche_name, category_name
+                    products_global_ids_batch
                 )
             )
         execution_results = await asyncio.gather(*tasks)
@@ -215,19 +217,15 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
             result.extend(result_list)
         return result
 
-    async def __load_all_product_niche(self,
-                                       products_global_ids: list[int],
-                                       niche_name: str,
-                                       category_name: str) -> any:
+    async def __load_all_product_niche(self, products_global_ids: list[int]) -> any:
         tasks: list[Task] = []
         for product_id in products_global_ids:
-            task = asyncio.create_task(self.__get_product(product_id, niche_name, category_name))
+            task = asyncio.create_task(self.__get_product(product_id))
             tasks.append(task)
         products = await asyncio.gather(*tasks)
         return products
 
-    async def __get_product(self, product_id: int, niche_name: str,
-                            category_name: str, loop=None, connector=None) -> Product:
+    async def __get_product(self, product_id: int, loop=None, connector=None) -> Product:
         cost_history_url: str = self.__get_product_history_url(product_id)
         storage_url: str = f'https://card.wb.ru/cards/detail?' \
                            f'dest=-1221148,-140294,-1751445,-364763' \
@@ -247,7 +245,7 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
         await client_session.close()
         if product_info is not None:
             return Product(product_info.name, product_info.price, product_info.global_id, product_info.rating,
-                           product_info.brand, 'seller', niche_name, category_name,
+                           product_info.brand, 'seller', 'niche_name', 'category_name',
                            ProductHistory(product_history_units),
                            width=0, height=0, depth=0)
 

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Type
+from typing import Type, Iterable
 
 from jorm.market.infrastructure import Category, Niche, Product, Warehouse
 from jorm.market.items import ProductHistory
@@ -24,6 +24,10 @@ class DataProviderWithoutKey(DataProvider, ABC):
     def get_products(self, niche_name: str,
                      category_name: str,
                      products_global_ids: list[int]) -> list[Product]:
+        pass
+
+    @abstractmethod
+    def get_base_products(self, products_global_ids: Iterable[int]) -> list[Product]:
         pass
 
     @abstractmethod
