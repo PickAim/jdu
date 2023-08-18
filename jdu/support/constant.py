@@ -14,6 +14,7 @@ def get_path(dir_to_search: str, file_to_search: str):
         return os.path.join(dir_to_search, file_to_search)
 
 
+NICHE_TO_CATEGORY: Final[str] = get_path(file_dir, 'niche_to_category.paim')
 COMMISSION_WILDBERRIES_JSON: Final[str] = get_path(file_dir, 'commission.json')
 COMMISSION_WILDBERRIES_CSV: Final[str] = get_path(file_dir, 'commission.csv')
 
