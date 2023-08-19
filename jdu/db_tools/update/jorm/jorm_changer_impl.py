@@ -100,6 +100,10 @@ class JORMChangerImpl(JORMChangerBase):
         new_history = new_product.history.get_history()
         if len(new_history) > 0:
             into.history.add(new_history[-1])
+        into.name = new_product.name
+        into.width = new_product.width
+        into.height = new_product.height
+        into.depth = new_product.depth
         into.cost = new_product.cost
         into.brand = new_product.brand
         into.seller = new_product.seller

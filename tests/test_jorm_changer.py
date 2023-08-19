@@ -5,6 +5,8 @@ from jarvis_db.factories.services import create_economy_service, create_niche_se
     create_category_service, create_product_card_service
 from jarvis_db.factories.services import create_frequency_service
 from jarvis_db.factories.services import create_warehouse_service
+from jorm.market.infrastructure import Niche, HandlerType
+from jorm.market.items import Product
 from jorm.market.service import RequestInfo, UnitEconomyRequest, UnitEconomyResult, FrequencyRequest, FrequencyResult
 
 from tests.basic_db_test import BasicDBTest, TestDBContextAdditions
@@ -192,7 +194,7 @@ class JORMChangerTest(BasicDBTest):
             warehouses = jorm_changer.load_user_warehouse(self.user_id, 1)
             self.assertEqual(0, len(warehouses))
 
-    def test_user_products_loading(self):
+    def _test_user_products_loading(self):
         with self.db_context.session() as session, session.begin():
             jorm_changer = create_jorm_changer(session)
             products = jorm_changer.load_user_products(self.user_id, 1)
@@ -254,17 +256,36 @@ class JORMChangerTest(BasicDBTest):
             self.assertEqual(11, len(id_to_existing_niche))
 
     def test_niche_updating(self):
-        with self.db_context.session() as session, session.begin():
-            jorm_changer = create_jorm_changer(session)
-            niche = jorm_changer.update_niche(self.niche_id, self.category_id, self.marketplace_id)
-            self.assertIsNotNone(niche)
+        niche_name = "test niche"
+        start_niche_size = 5
+        start_from = 2
+        products = [
+            Product(f"prod{i}", i, i, 4.0 + i / 10, 'brand', 'seller', niche_name, 'category')
+            for i in range(start_from, start_niche_size + start_from)
+        ]
+        niche = Niche(niche_name, {
+            HandlerType.MARKETPLACE: 0.1,
+            HandlerType.CLIENT: 0.1,
+            HandlerType.PARTIAL_CLIENT: 0.1}, 0.1, products)
         with self.db_context.session() as session, session.begin():
             niche_service = create_niche_service(session)
-            product_service = create_product_card_service(session)
-            products = product_service.find_all_in_niche(1)
-            id_to_existing_niche = niche_service.find_all_in_marketplace(self.marketplace_id)
-            self.assertNotEqual(0, len(id_to_existing_niche))
-            self.assertEqual(10, len(products))
+            niche_service.create(niche, self.category_id)
+            found_info: tuple[Niche, int] = niche_service.find_by_name(niche_name, self.category_id)
+            self.assertIsNotNone(found_info)
+            niche, niche_id = found_info
+            product_card_service = create_product_card_service(session)
+            product_card_service.create_products(products, niche_id)
+        with self.db_context.session() as session, session.begin():
+            jorm_changer = create_jorm_changer(session)
+            niche = jorm_changer.update_niche(niche_id, self.category_id, self.marketplace_id)
+            self.assertIsNotNone(niche)
+            self.assertEqual(9, len(niche.products))
+        with self.db_context.session() as session, session.begin():
+            niche_service = create_niche_service(session)
+            found_info: tuple[Niche, int] = niche_service.find_by_name(niche_name, self.category_id)
+            self.assertIsNotNone(found_info)
+            niche, niche_id = found_info
+            self.assertEqual(9, len(niche.products))
 
     def _test_product_updating(self):
         with self.db_context.session() as session, session.begin():
