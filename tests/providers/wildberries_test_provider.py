@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Type
+from typing import Type, Iterable
 
 from jorm.market.infrastructure import Niche, Product, HandlerType, Category, Warehouse, Address
 from jorm.market.items import ProductHistoryUnit, ProductHistory
@@ -62,7 +62,7 @@ class TestWildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKe
     async def load_all_product_niche(self) -> list[Product]:
         pass
 
-    def get_products(self, niche_name: str, category_name: str, products_global_ids: list[int]) -> list[Product]:
+    def get_products(self, niche_name: str, category_name: str, products_global_ids: Iterable[int]) -> list[Product]:
         products_list: list[Product] = []
         for product_id in range(2, 11):
             products_list.append(

@@ -23,7 +23,7 @@ class DataProviderWithoutKey(DataProvider, ABC):
     @abstractmethod
     def get_products(self, niche_name: str,
                      category_name: str,
-                     products_global_ids: list[int]) -> list[Product]:
+                     products_global_ids: Iterable[int]) -> list[Product]:
         pass
 
     @abstractmethod

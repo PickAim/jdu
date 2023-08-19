@@ -1,6 +1,6 @@
-from typing import Type
+from typing import Type, Callable
 
-from jorm.market.infrastructure import Niche, Warehouse
+from jorm.market.infrastructure import Niche, Warehouse, Category
 from jorm.market.items import Product
 from jorm.market.person import User
 from jorm.market.service import (
@@ -16,6 +16,7 @@ from jdu.db_tools.fill.db_fillers import StandardDBFiller
 from jdu.db_tools.update.jorm.base import JORMChangerBase, InitInfo
 from jdu.db_tools.update.jorm.initializers import JORMChangerInitializer
 from jdu.providers.providers import UserMarketDataProvider, DataProviderWithoutKey
+from jdu.support.utils import map_to_dict
 
 
 class JORMChangerImpl(JORMChangerBase):
@@ -48,20 +49,62 @@ class JORMChangerImpl(JORMChangerBase):
         data_provider_without_key: DataProviderWithoutKey = self.__create_data_provider_without_key(marketplace_id)
         if data_provider_without_key is None:
             return None
-        found_info = self.niche_service.find_by_id(niche_id)
+        found_info: Niche = self.niche_service.find_by_id(niche_id)
         if found_info is None:
             return None
         niche = found_info
-        found_info = self.category_service.find_by_id(category_id)
+        found_info: Category = self.category_service.find_by_id(category_id)
         if found_info is None:
             return None
         category = found_info
+        found_info: tuple[Niche, int] = self.niche_service.find_by_name_atomic(niche.name, category_id)
+        if found_info is None:
+            return None
+        niche, _ = found_info
+        return self.__update_niche((niche, niche_id), category, marketplace_id, data_provider_without_key)
+
+    def __update_niche(self, niche_info: tuple[Niche, int], category: Category,
+                       marketplace_id: int, data_provider_without_key: DataProviderWithoutKey) -> Niche:
+        niche, niche_id = niche_info
         all_products_ids = data_provider_without_key.get_products_globals_ids(niche.name)
-        all_base_products = data_provider_without_key.get_base_products(all_products_ids)
+        new_products = data_provider_without_key.get_products(niche.name, category.name, all_products_ids)
+        to_create, to_update = self.__split_products_to_create_and_update(niche.products, new_products)
+        self.product_card_service.create_products(to_create, niche_id)
+        for product in to_update:
+            _, product_id = self.product_card_service.find_by_gloabal_id(product.global_id, marketplace_id)
+            self.product_card_service.update(product_id, product)
+        all_updated_products = [*to_update, *to_create]
+        niche.products = all_updated_products
+        return niche
 
-        return None
+    def __split_products_to_create_and_update(self,
+                                              existing_products: list[Product],
+                                              new_products: list[Product]) -> tuple[list[Product], list[Product]]:
+        get_global_id: Callable[[Product], int] = lambda product: product.global_id
+        get_product: Callable[[Product], Product] = lambda product: product
+        global_id_to_existing_product = map_to_dict(get_global_id, get_product, existing_products)
+        global_id_to_new_product = map_to_dict(get_global_id, get_product, new_products)
+        to_create: list[Product] = []
+        to_update: list[Product] = []
+        for global_id in global_id_to_new_product:
+            if global_id in global_id_to_existing_product:
+                product_to_update = self.__merge_products(global_id_to_new_product[global_id],
+                                                          global_id_to_existing_product[global_id])
+                to_update.append(product_to_update)
+            else:
+                to_create.append(global_id_to_new_product[global_id])
+        return to_create, to_update
 
-    # def __update_products(self):
+    @staticmethod
+    def __merge_products(into: Product, new_product: Product) -> Product:
+        new_history = new_product.history.get_history()
+        if len(new_history) > 0:
+            into.history.add(new_history[-1])
+        into.cost = new_product.cost
+        into.brand = new_product.brand
+        into.seller = new_product.seller
+        into.rating = new_product.rating
+        return into
 
     def update_product(self, product_id: int, marketplace_id: int) -> Product | None:
         # TODO do not merge me

@@ -180,7 +180,7 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                          f"was mapped in {time.time() - start_time} seconds.")
         return products_global_ids
 
-    def get_products(self, niche_name: str, category_name: str, products_global_ids: list[int]) -> list[Product]:
+    def get_products(self, niche_name: str, category_name: str, products_global_ids: Iterable[int]) -> list[Product]:
         base_products = self.get_base_products(products_global_ids)
         for product in base_products:
             product.niche_name = niche_name
