@@ -1,6 +1,7 @@
 from jarvis_db.factories.services import create_economy_service, create_frequency_service, create_user_service, \
     create_marketplace_service, create_warehouse_service, create_category_service, create_niche_service, \
-    create_token_service, create_account_service, create_product_card_service, create_user_items_service
+    create_token_service, create_account_service, create_product_card_service, create_user_items_service, \
+    create_product_history_service
 
 from jdu.db_tools.fill.db_fillers_impl import StandardDBFillerImpl
 from jdu.db_tools.update.jorm.base import JORMChangerBase, InitInfo
@@ -33,6 +34,7 @@ class JORMChangerInitializerTestImpl(JORMChangerInitializer):
         jorm_changer.category_service = create_category_service(session)
         jorm_changer.niche_service = create_niche_service(session)
         jorm_changer.product_card_service = create_product_card_service(session)
+        jorm_changer.product_history_service = create_product_history_service(session)
         jorm_changer.user_item_service = create_user_items_service(session)
         jorm_changer.initializing_mapping = TEST_PROVIDER_INITIALIZER_MAP
 

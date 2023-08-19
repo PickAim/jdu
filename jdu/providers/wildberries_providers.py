@@ -236,11 +236,8 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
             product_history_units = self.__resolve_json_to_history_units(request_json)
             request_json = await self.get_async_request_json(storage_url, client_session)
             product_info = self.__resolve_json_to_product_info(request_json)
-            if len(product_history_units) == 0:
-                product_history_units = [ProductHistoryUnit(product_info.price, datetime.utcnow(), StorageDict())]
-
-            last_item = product_history_units[len(product_history_units) - 1]
-            last_item.leftover = self.__resolve_json_to_storage_dict(request_json)
+            storage_dict = self.__resolve_json_to_storage_dict(request_json)
+            product_history_units.append(ProductHistoryUnit(product_info.price, datetime.utcnow(), storage_dict))
 
         await client_session.close()
         if product_info is not None:

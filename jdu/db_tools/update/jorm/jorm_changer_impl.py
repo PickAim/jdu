@@ -1,7 +1,7 @@
 from typing import Type, Callable
 
 from jorm.market.infrastructure import Niche, Warehouse, Category
-from jorm.market.items import Product
+from jorm.market.items import Product, ProductHistory
 from jorm.market.person import User
 from jorm.market.service import (
     FrequencyRequest,
@@ -71,8 +71,9 @@ class JORMChangerImpl(JORMChangerBase):
         to_create, to_update = self.__split_products_to_create_and_update(niche.products, new_products)
         self.product_card_service.create_products(to_create, niche_id)
         for product in to_update:
-            _, product_id = self.product_card_service.find_by_gloabal_id(product.global_id, marketplace_id)
+            _, product_id = self.product_card_service.find_by_global_id(product.global_id, marketplace_id)
             self.product_card_service.update(product_id, product)
+            self.product_history_service.create(product.history, product_id)
         all_updated_products = [*to_update, *to_create]
         niche.products = all_updated_products
         return niche
@@ -88,18 +89,17 @@ class JORMChangerImpl(JORMChangerBase):
         to_update: list[Product] = []
         for global_id in global_id_to_new_product:
             if global_id in global_id_to_existing_product:
-                product_to_update = self.__merge_products(global_id_to_new_product[global_id],
-                                                          global_id_to_existing_product[global_id])
+                product_to_update = self.__merge_products(global_id_to_existing_product[global_id],
+                                                          global_id_to_new_product[global_id])
                 to_update.append(product_to_update)
             else:
                 to_create.append(global_id_to_new_product[global_id])
         return to_create, to_update
 
-    @staticmethod
-    def __merge_products(into: Product, new_product: Product) -> Product:
+    def __merge_products(self, into: Product, new_product: Product) -> Product:
         new_history = new_product.history.get_history()
         if len(new_history) > 0:
-            into.history.add(new_history[-1])
+            into.history = self.__extract_only_new_histories(into.history, new_product.history)
         into.name = new_product.name
         into.width = new_product.width
         into.height = new_product.height
@@ -109,6 +109,17 @@ class JORMChangerImpl(JORMChangerBase):
         into.seller = new_product.seller
         into.rating = new_product.rating
         return into
+
+    @staticmethod
+    def __extract_only_new_histories(old_history: ProductHistory, new_history: ProductHistory) -> ProductHistory:
+        old_units = old_history.get_history()
+        new_units = new_history.get_history()
+        existing_dates = {unit.unit_date for unit in old_units}
+        result_units = []
+        for unit in new_units:
+            if unit.unit_date not in existing_dates:
+                result_units.append(unit)
+        return ProductHistory(result_units)
 
     def update_product(self, product_id: int, marketplace_id: int) -> Product | None:
         # TODO do not merge me

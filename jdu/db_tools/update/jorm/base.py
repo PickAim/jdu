@@ -7,6 +7,7 @@ from jarvis_db.services.market.infrastructure.marketplace_service import Marketp
 from jarvis_db.services.market.infrastructure.niche_service import NicheService
 from jarvis_db.services.market.infrastructure.warehouse_service import WarehouseService
 from jarvis_db.services.market.items.product_card_service import ProductCardService
+from jarvis_db.services.market.items.product_history_service import ProductHistoryService
 from jarvis_db.services.market.person import UserService
 from jarvis_db.services.market.person.user_items_service import UserItemsService
 from jarvis_db.services.market.service.economy_service import EconomyService
@@ -41,4 +42,5 @@ class JORMChangerBase(JORMChanger, Initializable, ABC):
         self.category_service: CategoryService | None = None
         self.niche_service: NicheService | None = None
         self.product_card_service: ProductCardService | None = None
+        self.product_history_service: ProductHistoryService | None = None
         self.initializing_mapping: dict[str, InitInfo] = {}
