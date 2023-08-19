@@ -258,7 +258,7 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
         request_json = self.get_request_json(cost_history_url)
         product_history_units = self.__resolve_json_to_history_units(request_json)
         if len(product_history_units) > 0:
-            last_item = product_history_units[len(product_history_units) - 1]
+            last_item = product_history_units[-1]
             request_json = self.get_request_json(storage_url)
             if isinstance(request_json, dict):
                 last_item.leftover = self.__resolve_json_to_storage_dict(request_json)

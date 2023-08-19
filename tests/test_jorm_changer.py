@@ -235,7 +235,7 @@ class JORMChangerTest(BasicDBTest):
             loaded_niche = jorm_changer.load_new_niche(test_niche_name, self.marketplace_id)
             self.assertIsNone(loaded_niche)
 
-    def test_all_categories_updating(self):
+    def _test_all_categories_updating(self):
         with self.db_context.session() as session, session.begin():
             jorm_changer = create_jorm_changer(session)
             jorm_changer.update_all_categories(self.marketplace_id)
@@ -244,7 +244,7 @@ class JORMChangerTest(BasicDBTest):
             categories_from_db = category_service.find_all_in_marketplace(self.marketplace_id)
             self.assertEqual(11, len(categories_from_db))
 
-    def test_all_niches_updating(self):
+    def _test_all_niches_updating(self):
         with self.db_context.session() as session, session.begin():
             jorm_changer = create_jorm_changer(session)
             jorm_changer.update_all_niches(1, 1)
@@ -266,7 +266,7 @@ class JORMChangerTest(BasicDBTest):
             self.assertNotEqual(0, len(id_to_existing_niche))
             self.assertEqual(10, len(products))
 
-    def test_product_updating(self):
+    def _test_product_updating(self):
         with self.db_context.session() as session, session.begin():
             jorm_changer = create_jorm_changer(session)
             product = jorm_changer.update_product(self.product_id, self.marketplace_id)

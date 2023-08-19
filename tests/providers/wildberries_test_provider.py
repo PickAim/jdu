@@ -63,11 +63,18 @@ class TestWildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKe
         pass
 
     def get_products(self, niche_name: str, category_name: str, products_global_ids: Iterable[int]) -> list[Product]:
+        products_base = self.get_base_products(products_global_ids)
+        for product in products_base:
+            product.niche_name = niche_name
+            product.category_name = category_name
+        return products_base
+
+    def get_base_products(self, products_global_ids: Iterable[int]) -> list[Product]:
         products_list: list[Product] = []
         for product_id in range(2, 11):
             products_list.append(
                 Product(f"Name#{product_id}", product_id, product_id, 0,
-                        "brand", "seller", niche_name, category_name, ProductHistory())
+                        "brand", "seller", "niche name", "category name", ProductHistory())
             )
         return products_list
 
