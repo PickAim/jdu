@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jdu"
-version = "0.1.17-techno"
+version = "0.1.18-techno"
 dependencies = [
     "SQLAlchemy",
     "requests",
     "aiohttp",
-    "jarvis_db @ git+https://github.com/PickAim/jarvis_db.git@v.0.1.22",
+    "jarvis_db @ git+https://github.com/PickAim/jarvis_db.git@v.0.1.23",
 ]
