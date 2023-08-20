@@ -282,7 +282,7 @@ class JORMChangerTest(BasicDBTest):
             self.assertEqual(9, len(niche.products))
         with self.db_context.session() as session, session.begin():
             niche_service = create_niche_service(session)
-            found_info: tuple[Niche, int] = niche_service.find_by_name(niche_name, self.category_id)
+            found_info: tuple[Niche, int] = niche_service.find_by_name_atomic(niche_name, self.category_id)
             self.assertIsNotNone(found_info)
             niche, niche_id = found_info
             self.assertEqual(9, len(niche.products))

@@ -61,17 +61,17 @@ class JORMChangerImpl(JORMChangerBase):
         if found_info is None:
             return None
         niche, _ = found_info
-        return self.__update_niche((niche, niche_id), category, marketplace_id, data_provider_without_key)
+        return self.__update_niche((niche, niche_id), category, data_provider_without_key)
 
     def __update_niche(self, niche_info: tuple[Niche, int], category: Category,
-                       marketplace_id: int, data_provider_without_key: DataProviderWithoutKey) -> Niche:
+                       data_provider_without_key: DataProviderWithoutKey) -> Niche:
         niche, niche_id = niche_info
         all_products_ids = data_provider_without_key.get_products_globals_ids(niche.name)
         new_products = data_provider_without_key.get_products(niche.name, category.name, all_products_ids)
         to_create, to_update = self.__split_products_to_create_and_update(niche.products, new_products)
         self.product_card_service.create_products(to_create, niche_id)
         for product in to_update:
-            _, product_id = self.product_card_service.find_by_global_id(product.global_id, marketplace_id)
+            _, product_id = self.product_card_service.find_by_global_id(product.global_id, niche_id)
             self.product_card_service.update(product_id, product)
             self.product_history_service.create(product.history, product_id)
         all_updated_products = [*to_update, *to_create]
