@@ -119,10 +119,10 @@ class JORMChangerImpl(JORMChangerBase):
         return ProductHistory(result_units)
 
     def delete_unit_economy_request(self, request_id: int, user_id: int) -> None:
-        self.economy_service.remove(request_id)
+        self.economy_service.delete(request_id)
 
     def delete_frequency_request(self, request_id: int, user_id: int) -> None:
-        self.frequency_service.remove(request_id)
+        self.frequency_service.delete(request_id)
 
     def load_new_niche(self, niche_name: str, marketplace_id: int) -> Niche | None:
         data_provider_without_key = self.__create_data_provider_without_key(marketplace_id)
