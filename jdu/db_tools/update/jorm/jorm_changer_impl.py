@@ -37,13 +37,10 @@ class JORMChangerImpl(JORMChangerBase):
     ) -> int:
         return self.frequency_service.save(request_info, request, result, user_id)
 
-    def update_all_categories(self, marketplace_id: int) -> None:
-        # TODO do not merge me
-        return None
-
-    def update_all_niches(self, category_id: int, marketplace_id: int) -> None:
-        # TODO do not merge me
-        return
+    # def update_all_niches(self, category_id: int, marketplace_id: int) -> None:
+    #     # TODO it will be necessary to implement this method to update niche commissions as example
+    #     https://github.com/PickAim/jdu/issues/55
+    #     return
 
     def update_niche(self, niche_id: int, category_id: int, marketplace_id: int) -> Niche | None:
         data_provider_without_key: DataProviderWithoutKey = self.__create_data_provider_without_key(marketplace_id)
@@ -120,10 +117,6 @@ class JORMChangerImpl(JORMChangerBase):
             if unit.unit_date not in existing_dates:
                 result_units.append(unit)
         return ProductHistory(result_units)
-
-    def update_product(self, product_id: int, marketplace_id: int) -> Product | None:
-        # TODO do not merge me
-        return None
 
     def delete_unit_economy_request(self, request_id: int, user_id: int) -> None:
         self.economy_service.remove(request_id)

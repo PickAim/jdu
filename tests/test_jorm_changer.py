@@ -2,7 +2,7 @@ import unittest
 from datetime import datetime
 
 from jarvis_db.factories.services import create_economy_service, create_niche_service, create_user_items_service, \
-    create_category_service, create_product_card_service
+    create_product_card_service
 from jarvis_db.factories.services import create_frequency_service
 from jarvis_db.factories.services import create_warehouse_service
 from jorm.market.infrastructure import Niche, HandlerType
@@ -237,24 +237,6 @@ class JORMChangerTest(BasicDBTest):
             loaded_niche = jorm_changer.load_new_niche(test_niche_name, self.marketplace_id)
             self.assertIsNone(loaded_niche)
 
-    def _test_all_categories_updating(self):
-        with self.db_context.session() as session, session.begin():
-            jorm_changer = create_jorm_changer(session)
-            jorm_changer.update_all_categories(self.marketplace_id)
-        with self.db_context.session() as session:
-            category_service = create_category_service(session)
-            categories_from_db = category_service.find_all_in_marketplace(self.marketplace_id)
-            self.assertEqual(11, len(categories_from_db))
-
-    def _test_all_niches_updating(self):
-        with self.db_context.session() as session, session.begin():
-            jorm_changer = create_jorm_changer(session)
-            jorm_changer.update_all_niches(1, 1)
-        with self.db_context.session() as session, session.begin():
-            niche_service = create_niche_service(session)
-            id_to_existing_niche = niche_service.find_all_in_marketplace(self.marketplace_id)
-            self.assertEqual(11, len(id_to_existing_niche))
-
     def test_niche_updating(self):
         niche_name = "test niche"
         start_niche_size = 5
@@ -286,12 +268,6 @@ class JORMChangerTest(BasicDBTest):
             self.assertIsNotNone(found_info)
             niche, niche_id = found_info
             self.assertEqual(9, len(niche.products))
-
-    def _test_product_updating(self):
-        with self.db_context.session() as session, session.begin():
-            jorm_changer = create_jorm_changer(session)
-            product = jorm_changer.update_product(self.product_id, self.marketplace_id)
-            self.assertIsNotNone(product)
 
 
 if __name__ == '__main__':
