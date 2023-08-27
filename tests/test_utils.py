@@ -22,7 +22,7 @@ def create_jorm_changer(session: Session) -> JORMChanger:
     return JORMChangerImpl(session, JORMChangerInitializerTestImpl)
 
 
-def create_real_wb_db_filler(session: Session) -> StandardDBFillerImpl:
+def create_real_db_filler(session: Session) -> StandardDBFillerImpl:
     return StandardDBFillerImpl(create_marketplace_service(session),
                                 create_warehouse_service(session),
                                 TestWildberriesDBFillerInitializer)

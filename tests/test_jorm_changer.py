@@ -195,11 +195,11 @@ class JORMChangerTest(BasicDBTest):
     def test_user_products_loading(self):
         with self.db_context.session() as session, session.begin():
             jorm_changer = create_jorm_changer(session)
-            products = jorm_changer.load_user_products(self.user_id, 1)
+            products = jorm_changer.load_user_products(self.user_id, self.marketplace_id)
             self.assertNotEqual(0, len(products))
         with self.db_context.session() as session, session.begin():
             user_item_service = create_user_items_service(session)
-            products_by_user = user_item_service.fetch_user_products(1, 1)
+            products_by_user = user_item_service.fetch_user_products(self.user_id, self.marketplace_id)
             self.assertNotEqual(0, len(products_by_user))
 
     def test_user_warehouse_loading_without_api_key_init(self):
