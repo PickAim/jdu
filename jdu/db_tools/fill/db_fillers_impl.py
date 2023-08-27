@@ -1,4 +1,3 @@
-import pickle
 from typing import Type, Iterable
 
 from jarvis_db.services.market.infrastructure.category_service import CategoryService
@@ -8,11 +7,11 @@ from jarvis_db.services.market.infrastructure.warehouse_service import Warehouse
 from jarvis_db.services.market.items.product_card_service import ProductCardService
 from jorm.market.infrastructure import Category, Niche, Warehouse, HandlerType, Address
 from jorm.market.items import Product
+from jorm.server.providers.providers import DataProviderWithoutKey, UserMarketDataProvider
 from jorm.support.constants import DEFAULT_CATEGORY_NAME
 
 from jdu.db_tools.fill.db_fillers import StandardDBFiller
 from jdu.db_tools.fill.initializers import DBFillerInitializer
-from jdu.providers.providers import UserMarketDataProvider, DataProviderWithoutKey
 from jdu.support.constant import NICHE_TO_CATEGORY
 
 
@@ -48,10 +47,8 @@ class StandardDBFillerImpl(StandardDBFiller):
                            data_provider_without_key: DataProviderWithoutKey,
                            niche_name: str, product_num: int = -1) -> Niche | None:
         category_name = DEFAULT_CATEGORY_NAME
-        with open(NICHE_TO_CATEGORY, 'rb') as file:
-            niche_to_category = pickle.load(file)
-            if niche_name in niche_to_category:
-                category_name = niche_to_category[niche_name]
+        if niche_name in NICHE_TO_CATEGORY:
+            category_name = NICHE_TO_CATEGORY[niche_name]
         if not category_service.exists_with_name(category_name, self.marketplace_id):
             category_service.create(Category(category_name), self.marketplace_id)
         category_search_result = \

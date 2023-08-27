@@ -1,5 +1,6 @@
+from jorm.server.providers.initializers import DataProviderInitializer
+
 from jdu.db_tools.fill.initializers import DBFillerInitializer
-from jdu.providers.initializers import DataProviderInitializer
 from jdu.support.commission.wildberries_commission_resolver import WildberriesCommissionResolver
 from jdu.support.constant import WILDBERRIES_NAME
 

@@ -10,12 +10,12 @@ from jorm.market.service import (
     UnitEconomyRequest,
     UnitEconomyResult,
 )
+from jorm.server.providers.providers import DataProviderWithoutKey, UserMarketDataProvider
 from sqlalchemy.orm import Session
 
 from jdu.db_tools.fill.db_fillers import StandardDBFiller
 from jdu.db_tools.update.jorm.base import JORMChangerBase, InitInfo
 from jdu.db_tools.update.jorm.initializers import JORMChangerInitializer
-from jdu.providers.providers import UserMarketDataProvider, DataProviderWithoutKey
 from jdu.support.utils import map_to_dict
 
 

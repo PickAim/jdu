@@ -3,15 +3,15 @@ from typing import Type, Iterable
 
 from jorm.market.infrastructure import Niche, Product, HandlerType, Category, Warehouse, Address
 from jorm.market.items import ProductHistoryUnit, ProductHistory
+from jorm.server.providers.initializers import DataProviderInitializer
 from jorm.support.types import StorageDict, SpecifiedLeftover
 
-from jdu.providers.initializers import DataProviderInitializer
 from jdu.providers.wildberries_providers import WildberriesDataProviderWithoutKey, WildberriesUserMarketDataProvider
 
 
 class TestWildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
     def get_category_and_niche(self, product_id: int) -> tuple[str, str] | None:
-        return f'category', f'niche'
+        return f'category{product_id}', f'niche{product_id}'
 
     def get_top_request_by_marketplace_query(self, search_period: str = 'month', number_top: int = 1000,
                                              search_query: str = '') -> dict[str, int] | None:
@@ -23,9 +23,9 @@ class TestWildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKe
     def __del__(self):
         self.session.close()
 
-    def get_categories_names(self, category_num=-1) -> list[str]:
+    def get_categories_names(self, category_num=10) -> list[str]:
         category_names_list: list[str] = []
-        for i in range(10):
+        for i in range(category_num):
             category_names_list.append('Category_' + i.__str__())
         return category_names_list
 
@@ -35,10 +35,10 @@ class TestWildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKe
             category_list.append(Category(category_name))
         return category_list
 
-    def get_niches_names(self, category, niche_num=-1) -> list[str]:
+    def get_niches_names(self, category: str, niche_num: int = 10) -> list[str]:
         niche_names_list: list[str] = []
-        for i in range(10):
-            niche_names_list.append('Niche_' + i.__str__())
+        for i in range(niche_num):
+            niche_names_list.append(f'Niche_{i.__str__()} in {category}')
         return niche_names_list
 
     def get_niches(self, niche_names_list) -> list[Niche]:

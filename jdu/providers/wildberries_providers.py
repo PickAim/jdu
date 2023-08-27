@@ -9,10 +9,10 @@ from typing import Type, Iterable
 import aiohttp
 from jorm.market.infrastructure import Product, Category, Niche, HandlerType, Warehouse
 from jorm.market.items import ProductHistoryUnit, ProductHistory
+from jorm.server.providers.initializers import DataProviderInitializer
+from jorm.server.providers.providers import UserMarketDataProvider, DataProviderWithKey, DataProviderWithoutKey
 from jorm.support.types import StorageDict, SpecifiedLeftover
 
-from jdu.providers.initializers import DataProviderInitializer
-from jdu.providers.providers import UserMarketDataProvider, DataProviderWithoutKey, DataProviderWithKey
 from jdu.support.loggers import LOADING_LOGGER
 from jdu.support.sorters import score_object_names, sort_by_len_alphabet
 from jdu.support.types import ProductInfo

@@ -14,11 +14,11 @@ from jarvis_db.services.market.service.economy_service import EconomyService
 from jarvis_db.services.market.service.frequency_service import FrequencyService
 from jorm.jarvis.db_update import JORMChanger
 from jorm.jarvis.initialization import Initializable
+from jorm.server.providers.initializers import DataProviderInitializer
+from jorm.server.providers.providers import UserMarketDataProvider, DataProviderWithoutKey
 
 from jdu.db_tools.fill.db_fillers import StandardDBFiller
 from jdu.db_tools.fill.initializers import DBFillerInitializer
-from jdu.providers.initializers import DataProviderInitializer
-from jdu.providers.providers import UserMarketDataProvider, DataProviderWithoutKey
 
 
 @dataclass
