@@ -8,11 +8,11 @@ from jarvis_db.services.market.infrastructure.niche_service import NicheService
 from jarvis_db.services.market.infrastructure.warehouse_service import WarehouseService
 from jarvis_db.services.market.items.product_card_service import ProductCardService
 from jorm.market.infrastructure import Niche, Marketplace, Warehouse, Address, HandlerType
+from jorm.server.providers.providers import DataProviderWithoutKey, UserMarketDataProvider
 from jorm.support.constants import DEFAULT_WAREHOUSE_NAME
 
 from jdu.db_tools.fill.base import DBFiller
 from jdu.db_tools.fill.initializers import DBFillerInitializer
-from jdu.providers.providers import UserMarketDataProvider, DataProviderWithoutKey
 
 
 class __InitializableDBFiller(DBFiller):

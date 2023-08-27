@@ -1,8 +1,8 @@
 import json
 
 from jorm.market.infrastructure import HandlerType
+from jorm.server.providers.commision_resolver import CommissionResolver
 
-from jdu.support.commission.commision_resolver import CommissionResolver
 from jdu.support.constant import COMMISSION_KEY, RETURN_PERCENT_KEY, COMMISSION_WILDBERRIES_JSON, \
     COMMISSION_WILDBERRIES_CSV
 

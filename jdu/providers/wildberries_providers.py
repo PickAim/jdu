@@ -1,22 +1,23 @@
 import asyncio
 import logging
-import math
 import time
 from abc import ABC
 from asyncio import AbstractEventLoop, Task
 from datetime import datetime
-from typing import Type
+from typing import Type, Iterable
 
 import aiohttp
 from jorm.market.infrastructure import Product, Category, Niche, HandlerType, Warehouse
 from jorm.market.items import ProductHistoryUnit, ProductHistory
+from jorm.server.providers.initializers import DataProviderInitializer
+from jorm.server.providers.providers import UserMarketDataProvider, DataProviderWithKey, DataProviderWithoutKey
 from jorm.support.types import StorageDict, SpecifiedLeftover
 
-from jdu.providers.initializers import DataProviderInitializer
-from jdu.providers.providers import UserMarketDataProvider, DataProviderWithoutKey, DataProviderWithKey
 from jdu.support.loggers import LOADING_LOGGER
 from jdu.support.sorters import score_object_names, sort_by_len_alphabet
 from jdu.support.types import ProductInfo
+from jdu.support.utils import split_to_batches
+from jdu.support.wildberries_utils import calculate_basket_domain_part
 
 
 class WildberriesUserMarketDataProvider(UserMarketDataProvider, ABC):
@@ -56,6 +57,16 @@ class WildberriesUserMarketDataProviderImpl(WildberriesUserMarketDataProvider):
             object_name_list.append(data['objectName'])
         return object_name_list
 
+    def get_user_products(self) -> list[int]:
+        products_globals_ids: list[int] = []
+        url_api = f'https://suppliers-api.wildberries.ru/public/api/v1/info?quantity=0'
+
+        json_code_from_api = self.get_authorized_request_json(url_api)
+        for data in json_code_from_api:
+            products_globals_ids.append(data['nmId'])
+
+        return products_globals_ids
+
 
 class WildberriesDataProviderWithKey(DataProviderWithKey):
     def __init__(self, api_key: str, data_provider_initializer_class: Type[DataProviderInitializer]):
@@ -86,25 +97,10 @@ class WildberriesDataProviderWithoutKey(DataProviderWithoutKey, ABC):
 
 
 class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
+
     def __init__(self, data_provider_initializer_class: Type[DataProviderInitializer]):
         super().__init__(data_provider_initializer_class)
         self.LOGGER = logging.getLogger(LOADING_LOGGER)
-
-    __VOL_HOST_PARTS: dict[str, tuple[int, int]] = {
-        "01": (0, 143),
-        "02": (144, 287),
-        "03": (288, 431),
-        "04": (431, 719),
-        "05": (720, 1007),
-        "06": (1008, 1061),
-        "07": (1062, 1115),
-        "08": (1116, 1169),
-        "09": (1170, 1313),
-        "10": (1314, 1601),
-        "11": (1602, 1655),
-        "12": (1656, 1919),
-        "13": (1920, 10000)
-    }
 
     def get_categories_names(self, category_num=-1) -> list[str]:
         category_names_list: list[str] = []
@@ -148,14 +144,13 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
 
         return niche_list
 
-    def get_products_mapped_info(self, niche: str, products_count: int = -1) -> set[ProductInfo]:
+    def get_products_globals_ids(self, niche: str, products_count: int = -1) -> set[int]:
         page_iterator: int = 1
         product_counter: int = 0
-        products_info: set[ProductInfo] = set()
+        products_global_ids: set[int] = set()
         self.LOGGER.info("Start products info mapping.")
         start_time = time.time()
         while True:
-            # TODO think about it https://search-goods.wildberries.ru/search?query=
             url: str = f'https://search.wb.ru/exactmatch/ru/common/v4/search' \
                        f'?appType=1' \
                        f'&dest=-1257786' \
@@ -175,57 +170,64 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                 break
             for product in json_code['data']['products']:
                 if products_count != -1 and product_counter >= products_count:
-                    return products_info
-                if any(k not in product for k in ["id", "name", "priceU"]):
+                    return products_global_ids
+                if any(k not in product for k in ["id", "name", "salePriceU"]):
                     continue
-                product_info = ProductInfo(product['id'], product['name'], product['priceU'])
-                products_info.add(product_info)
+                products_global_ids.add(product['id'])
                 product_counter += 1
             page_iterator += 1
-        self.LOGGER.info(f"End mapping products info. {len(products_info)} "
+        self.LOGGER.info(f"End mapping products info. {len(products_global_ids)} "
                          f"was mapped in {time.time() - start_time} seconds.")
-        return products_info
+        return products_global_ids
 
-    def get_products(self, niche_name: str,
-                     category_name: str,
-                     products_info: list[ProductInfo]) -> list[Product]:
-        result_products = []
+    def get_products(self, niche_name: str, category_name: str, products_global_ids: Iterable[int]) -> list[Product]:
+        base_products = self.get_base_products(products_global_ids)
+        for product in base_products:
+            product.niche_name = niche_name
+            product.category_name = category_name
+        return base_products
+
+    def get_base_products(self, products_global_ids: Iterable[int]) -> list[Product]:
         self.LOGGER.info("Start products loading.")
         start_time = time.time()
-        for i in range(0, max(len(products_info) - self.THREAD_TASK_COUNT + 1, 1), self.THREAD_TASK_COUNT):
-            loop: AbstractEventLoop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            result_products.extend(
-                loop.run_until_complete(
-                    self.__load_all_product_niche(
-                        products_info[i:i + self.THREAD_TASK_COUNT],
-                        niche_name, category_name
-                    )
-                )
-            )
-            loop.close()
-        self.LOGGER.info(f"End products loading. {len(products_info)} "
+        loop: AbstractEventLoop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        products_global_ids = list(products_global_ids)
+        result_products = loop.run_until_complete(
+            self.__async_product_batch_gathering(products_global_ids)
+        )
+        loop.run_until_complete(asyncio.sleep(0.25))
+        loop.close()
+        self.LOGGER.info(f"End products loading. {len(products_global_ids)} "
                          f"was loaded in {time.time() - start_time} seconds..")
         return result_products
 
-    async def __load_all_product_niche(self,
-                                       products_info: list[ProductInfo],
-                                       niche_name: str,
-                                       category_name: str) -> list[Product]:
-        products: list[Product] = []
+    async def __async_product_batch_gathering(self, products_global_ids: list[int]) -> list[Product]:
+        tasks = []
+        products_global_ids_batches = split_to_batches(products_global_ids, self.THREAD_TASK_COUNT)
+        for products_global_ids_batch in products_global_ids_batches:
+            tasks.append(
+                self.__load_all_product_niche(
+                    products_global_ids_batch
+                )
+            )
+        execution_results = await asyncio.gather(*tasks)
+        result: list[Product] = []
+        for result_list in execution_results:
+            result.extend(result_list)
+        return result
+
+    async def __load_all_product_niche(self, products_global_ids: list[int]) -> list[Product]:
         tasks: list[Task] = []
-        for product_info in products_info:
-            task = asyncio.create_task(self.__get_product_price_history(product_info.global_id))
+        for product_id in products_global_ids:
+            task = asyncio.create_task(self.__get_product(product_id))
             tasks.append(task)
-        product_price_histories = await asyncio.gather(*tasks)
-        for i, product_info in enumerate(products_info):
-            products.append(Product(product_info.name, product_info.price, product_info.global_id, 0,
-                                    "brand", "seller", niche_name, category_name,
-                                    history=product_price_histories[i], width=0, height=0, depth=0))
+        products = await asyncio.gather(*tasks)
+        products = [product for product in products if product is not None]
         return products
 
-    async def __get_product_price_history(self, product_id: int, loop=None, connector=None) -> ProductHistory:
-        cost_history_url: str = self.get_product_history_url(product_id)
+    async def __get_product(self, product_id: int, loop=None, connector=None) -> Product | None:
+        cost_history_url: str = self.__get_product_history_url(product_id)
         storage_url: str = f'https://card.wb.ru/cards/detail?' \
                            f'dest=-1221148,-140294,-1751445,-364763' \
                            f'&nm={product_id}'
@@ -233,47 +235,38 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                 else aiohttp.ClientSession(connector=connector, loop=loop) as client_session:
             request_json = await self.get_async_request_json(cost_history_url, client_session)
             product_history_units = self.__resolve_json_to_history_units(request_json)
-            if len(product_history_units) > 0:
-                last_item = product_history_units[len(product_history_units) - 1]
-                request_json = await self.get_async_request_json(storage_url, client_session)
-                last_item.leftover = self.__resolve_json_to_storage_dict(request_json)
+            request_json = await self.get_async_request_json(storage_url, client_session)
+            product_info = self.__resolve_json_to_product_info(request_json)
+            storage_dict = self.__resolve_json_to_storage_dict(request_json)
+            product_history_units.append(ProductHistoryUnit(product_info.price, datetime.utcnow(), storage_dict))
+
         await client_session.close()
-        return ProductHistory(product_history_units)
+        if product_info is not None:
+            return Product(product_info.name, product_info.price, product_info.global_id, product_info.rating,
+                           product_info.brand, 'seller', 'niche_name', 'category_name',
+                           ProductHistory(product_history_units),
+                           width=0, height=0, depth=0)
+        return None
 
     def get_product_price_history(self, product_id: int) -> ProductHistory:
-        cost_history_url: str = self.get_product_history_url(product_id)
+        # TODO try to extract common parts for get_product and this method
+        cost_history_url: str = self.__get_product_history_url(product_id)
         storage_url: str = f'https://card.wb.ru/cards/detail?' \
                            f'dest=-1221148,-140294,-1751445,-364763' \
                            f'&nm={product_id}'
         request_json = self.get_request_json(cost_history_url)
         product_history_units = self.__resolve_json_to_history_units(request_json)
         if len(product_history_units) > 0:
-            last_item = product_history_units[len(product_history_units) - 1]
+            last_item = product_history_units[-1]
             request_json = self.get_request_json(storage_url)
             if isinstance(request_json, dict):
                 last_item.leftover = self.__resolve_json_to_storage_dict(request_json)
         return ProductHistory(product_history_units)
 
-    def get_product_history_url(self, global_product_id: int) -> str:
-        basket_domain_part = self.__calculate_basket_domain_part(global_product_id)
-        return f"https://{basket_domain_part}/info/price-history.json"
-
-    def __calculate_basket_domain_part(self, global_product_id: int) -> str:
-        vol_number = math.floor(global_product_id / 1e5)
-        basket_url_part = self.__get_basket_host_part(vol_number)
-        part_number = math.floor(global_product_id / 1e3)
-        return f"{basket_url_part}/vol{vol_number}/part{part_number}/{global_product_id}"
-
     @staticmethod
-    def __get_basket_host_part(basket_number: int) -> str:
-        result_basket_idx = "13"
-        for basket_idx in WildberriesDataProviderWithoutKeyImpl.__VOL_HOST_PARTS:
-            lower_basket_frontier, upper_basket_frontier = WildberriesDataProviderWithoutKeyImpl.__VOL_HOST_PARTS[
-                basket_idx]
-            if lower_basket_frontier <= basket_number <= upper_basket_frontier:
-                result_basket_idx = basket_idx
-                break
-        return f"basket-{result_basket_idx}.wb.ru"
+    def __get_product_history_url(global_product_id: int) -> str:
+        basket_domain_part = calculate_basket_domain_part(global_product_id)
+        return f"https://{basket_domain_part}/info/price-history.json"
 
     def get_storage_dict(self, product_id: int) -> StorageDict:
         storage_url: str = f'https://card.wb.ru/cards/detail?' \
@@ -283,6 +276,16 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
         if isinstance(request_json, dict):
             return self.__resolve_json_to_storage_dict(request_json)
         return StorageDict()
+
+    @staticmethod
+    def __resolve_json_to_product_info(request_json: dict) -> ProductInfo | None:
+        if 'data' not in request_json \
+                or 'products' not in request_json['data'] or len(request_json['data']['products']) < 1:
+            return None
+        product_data = request_json['data']['products'][0]
+        product_info = ProductInfo(product_data['id'], product_data['name'], product_data['salePriceU'],
+                                   product_data['brand'], product_data['rating'])
+        return product_info
 
     @staticmethod
     def __resolve_json_to_history_units(request_json: dict) -> list[ProductHistoryUnit]:
@@ -322,3 +325,23 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                 specified_leftover_list.append(SpecifiedLeftover(specify_name, int(stock['qty'])))
                 storage_dict[wh_id] = specified_leftover_list
         return storage_dict
+
+    def get_top_request_by_marketplace_query(self, search_period: str = 'month', number_top: int = 1000,
+                                             search_query: str = '') -> dict[str, int] | None:
+        self.LOGGER.info("Start top-request loading.")
+        name_and_request_count_dict: dict[str, int] = {}
+        url = f'https://trending-searches.wb.ru/api?itemsPerPage={number_top}' \
+              f'&offset=0&period={search_period}&query={search_query}&sort=desc'
+        json_data = self.get_request_json(url)
+        if json_data['data']['count'] == 0:
+            return None
+        for query_from_top in json_data['data']['list']:
+            name_and_request_count_dict[query_from_top['text']] = query_from_top['requestCount']
+        return name_and_request_count_dict
+
+    def get_category_and_niche(self, product_id: int) -> tuple[str, str] | None:
+        url = f'https://{calculate_basket_domain_part(product_id)}/info/ru/card.json'
+        json_data = self.get_request_json(url)
+        if 'subj_root_name' not in json_data or 'subj_name' not in json_data:
+            return None
+        return json_data['subj_root_name'], json_data['subj_name']

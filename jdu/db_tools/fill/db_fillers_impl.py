@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Type, Iterable
 
 from jarvis_db.services.market.infrastructure.category_service import CategoryService
 from jarvis_db.services.market.infrastructure.marketplace_service import MarketplaceService
@@ -7,12 +7,12 @@ from jarvis_db.services.market.infrastructure.warehouse_service import Warehouse
 from jarvis_db.services.market.items.product_card_service import ProductCardService
 from jorm.market.infrastructure import Category, Niche, Warehouse, HandlerType, Address
 from jorm.market.items import Product
+from jorm.server.providers.providers import DataProviderWithoutKey, UserMarketDataProvider
 from jorm.support.constants import DEFAULT_CATEGORY_NAME
 
 from jdu.db_tools.fill.db_fillers import StandardDBFiller
 from jdu.db_tools.fill.initializers import DBFillerInitializer
-from jdu.providers.providers import UserMarketDataProvider, DataProviderWithoutKey
-from jdu.support.types import ProductInfo
+from jdu.support.constant import NICHE_TO_CATEGORY
 
 
 class StandardDBFillerImpl(StandardDBFiller):
@@ -46,11 +46,23 @@ class StandardDBFillerImpl(StandardDBFiller):
                            product_card_service: ProductCardService,
                            data_provider_without_key: DataProviderWithoutKey,
                            niche_name: str, product_num: int = -1) -> Niche | None:
-        if not category_service.exists_with_name(DEFAULT_CATEGORY_NAME, self.marketplace_id):
-            category_service.create(Category(DEFAULT_CATEGORY_NAME), self.marketplace_id)
-        default_category_search_result = \
-            category_service.find_by_name(DEFAULT_CATEGORY_NAME, self.marketplace_id)
-        _, default_category_id = default_category_search_result
+        category_name = DEFAULT_CATEGORY_NAME
+        if niche_name in NICHE_TO_CATEGORY:
+            category_name = NICHE_TO_CATEGORY[niche_name]
+        if not category_service.exists_with_name(category_name, self.marketplace_id):
+            category_service.create(Category(category_name), self.marketplace_id)
+        category_search_result = \
+            category_service.find_by_name(category_name, self.marketplace_id)
+        _, category_id = category_search_result
+        return self.__get_niche(category_id, niche_service,
+                                product_card_service, data_provider_without_key, niche_name, product_num)
+
+    def __get_niche(self,
+                    category_id: int,
+                    niche_service: NicheService,
+                    product_card_service: ProductCardService,
+                    data_provider_without_key: DataProviderWithoutKey,
+                    niche_name: str, product_num: int = -1) -> Niche | None:
         niches: list[Niche] = data_provider_without_key.get_niches([niche_name])
         loaded_niche = niches[0]
         loaded_products = self.__get_new_products(product_card_service, data_provider_without_key,
@@ -58,8 +70,8 @@ class StandardDBFillerImpl(StandardDBFiller):
         if len(loaded_products) == 0:
             return None
         loaded_niche.products = loaded_products
-        niche_service.create(loaded_niche, default_category_id)
-        _, loaded_niche_id = niche_service.find_by_name(loaded_niche.name, default_category_id)
+        niche_service.create(loaded_niche, category_id)
+        _, loaded_niche_id = niche_service.find_by_name(loaded_niche.name, category_id)
         self.__check_warehouse_filled(loaded_niche.products)
         product_card_service.create_products(loaded_niche.products, loaded_niche_id)
         return loaded_niche
@@ -69,24 +81,19 @@ class StandardDBFillerImpl(StandardDBFiller):
                            data_provider_without_key: DataProviderWithoutKey,
                            niche_name: str, category_name: str, product_number: int = -1, niche_id: int = -1) \
             -> list[Product]:
-        products_info: set[ProductInfo] = \
-            data_provider_without_key.get_products_mapped_info(niche_name, product_number)
-        mapped_products_info = {product_info.global_id: product_info for product_info in products_info}
-        filtered_id_name_cost = self.__filter_product_ids(product_card_service, mapped_products_info, niche_id)
-        return data_provider_without_key.get_products(niche_name, category_name, filtered_id_name_cost)
+        products_global_ids: set[int] = \
+            data_provider_without_key.get_products_globals_ids(niche_name, product_number)
+        print(f"{len(products_global_ids)} products in {niche_name} niche")
+        filtered_products_globals_ids = self.__filter_product_ids(product_card_service, products_global_ids, niche_id)
+        return data_provider_without_key.get_products(niche_name, category_name, filtered_products_globals_ids)
 
     @staticmethod
     def __filter_product_ids(product_card_service: ProductCardService,
-                             mapped_products_info: dict[int, ProductInfo],
-                             niche_id: int = -1) -> list[ProductInfo]:
-        filtered_products_global_ids = list(mapped_products_info.keys())
+                             products_global_ids: Iterable[int],
+                             niche_id: int = -1) -> list[int]:
         if niche_id != -1:
-            filtered_products_global_ids: list[int] = \
-                product_card_service.filter_existing_global_ids(niche_id, filtered_products_global_ids)
-        return [
-            mapped_products_info[global_id]
-            for global_id in filtered_products_global_ids
-        ]
+            return product_card_service.filter_existing_global_ids(niche_id, products_global_ids)
+        return list(products_global_ids)
 
     def __check_warehouse_filled(self, products: list[Product]):
         warehouse_ids: set[int] = set()
