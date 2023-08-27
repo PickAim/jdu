@@ -194,7 +194,7 @@ class JORMChangerTest(BasicDBTest):
             warehouses = jorm_changer.load_user_warehouse(self.user_id, 1)
             self.assertEqual(0, len(warehouses))
 
-    def _test_user_products_loading(self):
+    def test_user_products_loading(self):
         with self.db_context.session() as session, session.begin():
             jorm_changer = create_jorm_changer(session)
             products = jorm_changer.load_user_products(self.user_id, 1)

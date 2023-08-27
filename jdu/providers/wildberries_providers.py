@@ -217,15 +217,16 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
             result.extend(result_list)
         return result
 
-    async def __load_all_product_niche(self, products_global_ids: list[int]) -> any:
+    async def __load_all_product_niche(self, products_global_ids: list[int]) -> list[Product]:
         tasks: list[Task] = []
         for product_id in products_global_ids:
             task = asyncio.create_task(self.__get_product(product_id))
             tasks.append(task)
         products = await asyncio.gather(*tasks)
+        products = [product for product in products if product is not None]
         return products
 
-    async def __get_product(self, product_id: int, loop=None, connector=None) -> Product:
+    async def __get_product(self, product_id: int, loop=None, connector=None) -> Product | None:
         cost_history_url: str = self.__get_product_history_url(product_id)
         storage_url: str = f'https://card.wb.ru/cards/detail?' \
                            f'dest=-1221148,-140294,-1751445,-364763' \
@@ -245,6 +246,7 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                            product_info.brand, 'seller', 'niche_name', 'category_name',
                            ProductHistory(product_history_units),
                            width=0, height=0, depth=0)
+        return None
 
     def get_product_price_history(self, product_id: int) -> ProductHistory:
         # TODO try to extract common parts for get_product and this method
@@ -338,6 +340,8 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
         return name_and_request_count_dict
 
     def get_category_and_niche(self, product_id: int) -> tuple[str, str] | None:
-        url = calculate_basket_domain_part(product_id) + '/info/ru/card.json'
+        url = f'https://{calculate_basket_domain_part(product_id)}/info/ru/card.json'
         json_data = self.get_request_json(url)
+        if 'subj_root_name' not in json_data or 'subj_name' not in json_data:
+            return None
         return json_data['subj_root_name'], json_data['subj_name']

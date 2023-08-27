@@ -7,11 +7,12 @@ from jorm.server.providers.initializers import DataProviderInitializer
 from jorm.support.types import StorageDict, SpecifiedLeftover
 
 from jdu.providers.wildberries_providers import WildberriesDataProviderWithoutKey, WildberriesUserMarketDataProvider
+from tests.basic_db_test import BasicDBTest
 
 
 class TestWildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
     def get_category_and_niche(self, product_id: int) -> tuple[str, str] | None:
-        return f'category{product_id}', f'niche{product_id}'
+        return BasicDBTest.test_category_name, BasicDBTest.test_niche_name
 
     def get_top_request_by_marketplace_query(self, search_period: str = 'month', number_top: int = 1000,
                                              search_query: str = '') -> dict[str, int] | None:
@@ -74,7 +75,8 @@ class TestWildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKe
         for product_id in range(2, 11):
             products_list.append(
                 Product(f"Name#{product_id}", product_id, product_id, 0,
-                        "brand", "seller", "niche name", "category name", ProductHistory())
+                        "brand", "seller", BasicDBTest.test_niche_name,
+                        BasicDBTest.test_category_name, ProductHistory())
             )
         return products_list
 
