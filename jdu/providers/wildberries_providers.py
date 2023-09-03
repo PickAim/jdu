@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Type, Iterable
 
 import aiohttp
-from jorm.market.infrastructure import Product, Category, Niche, HandlerType, Warehouse
+from jorm.market.infrastructure import Product, Category, Niche, HandlerType, Warehouse, Address
 from jorm.market.items import ProductHistoryUnit, ProductHistory
 from jorm.server.providers.initializers import DataProviderInitializer
 from jorm.server.providers.providers import UserMarketDataProvider, DataProviderWithKey, DataProviderWithoutKey
@@ -36,7 +36,8 @@ class WildberriesUserMarketDataProviderImpl(WildberriesUserMarketDataProvider):
         for warehouse in json_code:
             if any(k not in warehouse for k in ("name", "id", "address")):
                 continue
-            warehouses.append(Warehouse(warehouse['name'], warehouse['id'], HandlerType.CLIENT, warehouse['address']))
+            warehouses.append(
+                Warehouse(warehouse['name'], warehouse['id'], HandlerType.MARKETPLACE, warehouse['address']))
         return warehouses
 
     def get_nearest_keywords(self, word: str) -> list[str]:
@@ -66,6 +67,16 @@ class WildberriesUserMarketDataProviderImpl(WildberriesUserMarketDataProvider):
             products_globals_ids.append(data['nmId'])
 
         return products_globals_ids
+
+    def get_user_warehouses(self) -> list[Warehouse]:
+        warehouses: list[Warehouse] = []
+        url = f'https://suppliers-api.wildberries.ru/api/v3/warehouses'
+        json_code = self.get_authorized_request_json(url)
+        for warehouse in json_code:
+            if any(k not in warehouse for k in ("name", "id")):
+                continue
+            warehouses.append(Warehouse(warehouse['name'], warehouse['id'], HandlerType.CLIENT, Address('')))
+        return warehouses
 
 
 class WildberriesDataProviderWithKey(DataProviderWithKey):
@@ -352,3 +363,12 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
         if 'subj_root_name' not in json_data or 'subj_name' not in json_data:
             return None
         return json_data['subj_root_name'], json_data['subj_name']
+
+    def get_delivery_address(self) -> dict[id, str]:
+        url = 'https://static-basket-01.wb.ru/vol0/data/all-poo-fr-v6.json'
+        json_data = self.get_request_json(url)
+        deliveries_addresses_list: dict[id, str] = {}
+        for delivery_addresses in json_data:
+            for delivery_address in delivery_addresses['items']:
+                deliveries_addresses_list[delivery_address['id']] = delivery_address['address']
+        return deliveries_addresses_list
