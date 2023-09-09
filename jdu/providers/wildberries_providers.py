@@ -26,6 +26,7 @@ class WildberriesUserMarketDataProvider(UserMarketDataProvider, ABC):
 
 
 class WildberriesUserMarketDataProviderImpl(WildberriesUserMarketDataProvider):
+    # TODO Research https://static-basket-01.wb.ru/vol0/data/stores-data.json
     def __init__(self, api_key: str, data_provider_initializer_class: Type[DataProviderInitializer]):
         super().__init__(api_key, data_provider_initializer_class)
 
