@@ -66,6 +66,11 @@ class LoadingTest(unittest.TestCase):
         storage_data = object_provider.get_top_request_by_marketplace_query('month', 1000)
         self.assertIsNotNone(storage_data)
 
+    def test_commision_resolver(self):
+        object_provider: WildberriesDataProviderWithoutKey = create_wb_data_provider_without_key()
+        storage_data = object_provider.commission_resolver.get_commision_for_warehouse("1")
+        print(storage_data)
+
 
 if __name__ == '__main__':
     unittest.main()

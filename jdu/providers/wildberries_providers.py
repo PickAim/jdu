@@ -150,8 +150,9 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
     def get_niches(self, niche_names_list):
         niche_list: list[Niche] = []
         for niche_name in niche_names_list:
-            niche_list.append(Niche(niche_name, self.commission_resolver.get_commission_for_niche_mapped(niche_name),
-                                    self.commission_resolver.get_return_percent_for(niche_name)))
+            niche_list.append(
+                Niche(niche_name, self.commission_resolver.get_commission_for_niche_mapped(niche_name.lower()),
+                      self.commission_resolver.get_return_percent_for(niche_name)))
 
         return niche_list
 
