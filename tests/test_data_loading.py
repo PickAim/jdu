@@ -6,7 +6,7 @@ from jorm.market.infrastructure import Niche, Category
 from jorm.market.items import Product
 
 from jdu.providers.wildberries_providers import WildberriesDataProviderWithoutKey, WildberriesUserMarketDataProvider
-from tests.test_utils import create_wb_data_provider_with_key, \
+from test_utils import create_wb_data_provider_with_key, \
     create_wb_data_provider_without_key
 
 warnings.filterwarnings(action="ignore", message="ResourceWarning: unclosed")
@@ -68,8 +68,9 @@ class LoadingTest(unittest.TestCase):
 
     def test_commision_resolver(self):
         object_provider: WildberriesDataProviderWithoutKey = create_wb_data_provider_without_key()
-        storage_data = object_provider.commission_resolver.get_commision_for_warehouse("1")
-        print(storage_data)
+        commission_data = object_provider.commission_resolver.get_data_for_warehouse(23)
+        self.assertIsNotNone(commission_data)
+        self.assertEqual(1, len(commission_data))
 
 
 if __name__ == '__main__':

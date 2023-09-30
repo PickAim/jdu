@@ -1,16 +1,11 @@
-import ast
-import json
-import pickle
-from typing import Any
-
 from jorm.market.infrastructure import HandlerType
 from jorm.server.providers.commision_resolver import CommissionResolver
+from jser.niche.commission.serialize_niche_commission import get_commission_data
+from jser.warehouse.commision.serialize_warehouse_commision import get_warehouse_data
 
 from jdu.support.constant import (
-    COMMISSION_KEY,
     RETURN_PERCENT_KEY,
-    COMMISSION_WILDBERRIES_BINARY,
-    COMMISSION_WILDBERRIES_CSV, WAREHOUSE_WILDBERRIES_JSON, WAREHOUSE_WILDBERRIES_BINARY, )
+)
 
 
 class WildberriesCommissionResolver(CommissionResolver):
@@ -18,40 +13,9 @@ class WildberriesCommissionResolver(CommissionResolver):
     def __init__(self):
         super().__init__()
 
-    def get_commision_csv_path(self) -> str:
-        return COMMISSION_WILDBERRIES_CSV
-
-    def get_commision_binary_path(self) -> str:
-        return COMMISSION_WILDBERRIES_BINARY
-
-    def get_warehouse_file_path(self) -> str:
-        return WAREHOUSE_WILDBERRIES_JSON
-
-    def get_warehouse_binary_path(self) -> str:
-        return WAREHOUSE_WILDBERRIES_BINARY
-
-    def _get_commission_data(self, binary_path: str) -> dict[str, Any]:
-        with open(binary_path, 'rb') as f:
-            return ast.literal_eval(pickle.load(f))
-
-    def update_commission_file(self, filepath: str) -> None:
-        with open(filepath, "r", encoding="cp1251") as file:
-            commission_dict: dict = {}
-            lines: list[str] = file.readlines()
-            for line in lines:
-                splitted: list[str] = line.split(";")
-                commission_dict[splitted[1].lower()] = {
-                    COMMISSION_KEY: {
-                        HandlerType.MARKETPLACE.value: float(splitted[2]) / 100,
-                        HandlerType.PARTIAL_CLIENT.value: float(splitted[3]) / 100,
-                        HandlerType.CLIENT.value: float(splitted[4]) / 100,
-                    }
-                }
-            json_string: str = json.dumps(commission_dict, indent=4, ensure_ascii=False)
-            with open(COMMISSION_WILDBERRIES_BINARY, 'wb') as out_file:
-                pickle.dump(json_string, out_file)
-
     def _get_commission_for_niche(self, niche_name: str) -> dict[str, float]:
+        # TODO Yeah, i didn't want to make jorm dependent on jser
+        self._commission_data = get_commission_data()
         if niche_name not in self._commission_data:
             return {
                 HandlerType.MARKETPLACE.value: 0,
@@ -77,17 +41,9 @@ class WildberriesCommissionResolver(CommissionResolver):
             return 0.0
         return self._commission_data[niche_name][RETURN_PERCENT_KEY] / 100
 
-    def update_warehouse_file(self, filepath: str):
-        with open(filepath, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        with open('warehouse_data.pickle', 'wb') as f:
-            pickle.dump(data, f)
-
-    def _get_warehouse_data(self, binary_path: str):
-        with open(binary_path, 'rb') as f:
-            return pickle.load(f)
-
-    def serealize_warehouse_data(self):
+    def mapping_warehouse_data(self):
+        # TODO Yeah, i didn't want to make jorm dependent on jser
+        self._warehouse_data = get_warehouse_data()
         warehouses_data = self._warehouse_data['result']['resp']['data']
         warehouse_dict: dict[int, any] = {}
         for data in warehouses_data:
@@ -104,5 +60,6 @@ class WildberriesCommissionResolver(CommissionResolver):
             warehouse_dict[data['id']] = template_dict
         return warehouse_dict
 
-    def get_commision_for_warehouse(self, id: str):
-        return self.serealize_warehouse_data()
+    def get_data_for_warehouse(self, id: int):
+        mapping_warehouse = self.mapping_warehouse_data()
+        return {id: mapping_warehouse[id]}
