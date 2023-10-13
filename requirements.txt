@@ -1,4 +1,3 @@
-jorm@ git+https://github.com/PickAim/jorm.git@v.0.1.25
+jorm@ git+https://github.com/PickAim/jorm.git@v.0.1.26
 requests>=2.31.0
 aiohttp>=3.8.5
-SQLAlchemy>=2.0.0
