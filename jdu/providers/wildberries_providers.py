@@ -289,6 +289,8 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
 
     @staticmethod
     def __resolve_json_to_history_units(request_json: dict) -> list[ProductHistoryUnit]:
+        if request_json is None:
+            return []
         result_units: list[ProductHistoryUnit] = []
         for item in request_json:
             if 'price' not in item \
