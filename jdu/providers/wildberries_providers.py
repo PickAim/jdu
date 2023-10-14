@@ -13,10 +13,12 @@ from jorm.server.providers.initializers import DataProviderInitializer
 from jorm.server.providers.providers import UserMarketDataProvider, DataProviderWithKey, DataProviderWithoutKey
 from jorm.support.types import StorageDict, SpecifiedLeftover
 
+from jdu.support.commission.wildberries_commission_resolver import WildberriesCommissionResolver
+from jdu.support.commission.wildberries_data_resolver import WildberriesDataResolver
 from jdu.support.loggers import LOADING_LOGGER
 from jdu.support.sorters import score_object_names, sort_by_len_alphabet
 from jdu.support.types import ProductInfo
-from jdu.support.utils import split_to_batches
+from jdu.support.utils import split_to_batches, parsing_attribute_address
 from jdu.support.wildberries_utils import calculate_basket_domain_part
 
 
@@ -112,6 +114,8 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
     def __init__(self, data_provider_initializer_class: Type[DataProviderInitializer]):
         super().__init__(data_provider_initializer_class)
         self.LOGGER = logging.getLogger(LOADING_LOGGER)
+        self.jser__commission_resolver = WildberriesCommissionResolver()
+        self.jser_data_resolver = WildberriesDataResolver()
 
     def get_categories_names(self, category_num=-1) -> list[str]:
         category_names_list: list[str] = []
@@ -146,6 +150,15 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                 niche_names.append(niche['name'])
                 niche_counter += 1
         return niche_names
+
+    def get_warehouses(self) -> list[Warehouse]:
+        warehouses: list[Warehouse] = []
+        warehouses_data = self.jser_data_resolver.mapping_warehouse_data()
+        for warehouse_data in warehouses_data:
+            address = parsing_attribute_address(warehouses_data[warehouse_data]['address'])
+            warehouses.append(
+                Warehouse(warehouses_data[warehouse_data]['name'], warehouse_data, HandlerType.MARKETPLACE, address))
+        return warehouses
 
     def get_niches(self, niche_names_list):
         niche_list: list[Niche] = []

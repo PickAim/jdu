@@ -47,7 +47,7 @@ class LoadingTest(unittest.TestCase):
         self.assertEqual("готовый кофе", result[0])
 
     def test_get_warehouse(self):
-        object_provider: WildberriesUserMarketDataProvider = create_wb_data_provider_with_key()
+        object_provider: WildberriesDataProviderWithoutKey = create_wb_data_provider_without_key()
         warehouses = object_provider.get_warehouses()
         self.assertNotEqual(0, len(warehouses))
 
@@ -68,9 +68,10 @@ class LoadingTest(unittest.TestCase):
 
     def test_commision_resolver(self):
         object_provider: WildberriesDataProviderWithoutKey = create_wb_data_provider_without_key()
-        commission_data = object_provider.commission_resolver.get_data_for_warehouse(23)
+        commission_data = object_provider.jser_data_resolver.get_data_for_warehouse(23)
         self.assertIsNotNone(commission_data)
         self.assertEqual(1, len(commission_data))
+        print(commission_data)
 
 
 if __name__ == '__main__':
