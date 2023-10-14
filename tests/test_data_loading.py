@@ -71,7 +71,6 @@ class LoadingTest(unittest.TestCase):
         commission_data = object_provider.jser_data_resolver.get_data_for_warehouse(23)
         self.assertIsNotNone(commission_data)
         self.assertEqual(1, len(commission_data))
-        print(commission_data)
 
 
 if __name__ == '__main__':

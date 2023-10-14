@@ -12,7 +12,6 @@ class WildberriesCommissionResolver(JserCommissionResolver):
         super().__init__()
 
     def _get_commission_for_niche(self, niche_name: str) -> dict[str, float]:
-        # TODO Yeah, i didn't want to make jorm dependent on jser
         if niche_name not in self._niche_commission_data:
             return {
                 HandlerType.MARKETPLACE.value: 0,
