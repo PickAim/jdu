@@ -222,9 +222,14 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
         for product_id in products_global_ids:
             task = asyncio.create_task(self.__get_product(product_id))
             tasks.append(task)
-        products = await asyncio.gather(*tasks)
-        products = [product for product in products if product is not None]
-        return products
+        try:
+            products = await asyncio.gather(*tasks)
+            products = [product for product in products if product is not None]
+            return products
+        except Exception as e:
+            for task in tasks:
+                task.cancel()
+            raise e
 
     async def __get_product(self, product_id: int, loop=None, connector=None) -> Product | None:
         cost_history_url: str = self.__get_product_history_url(product_id)
