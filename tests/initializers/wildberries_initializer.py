@@ -1,8 +1,6 @@
 from jorm.server.providers.initializers import DataProviderInitializer
+from jser.niche.commission.Wildberries.wildberries_niche_commission_resolver import WildberriesCommissionResolver
 
-from jdu.support.commission.wildberries_commission_resolver import (
-    WildberriesCommissionResolver,
-)
 from jdu.support.constant import WILDBERRIES_NAME
 
 

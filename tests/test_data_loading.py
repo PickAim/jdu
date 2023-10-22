@@ -48,7 +48,7 @@ class LoadingTest(unittest.TestCase):
 
     def test_get_warehouse(self):
         object_provider: WildberriesDataProviderWithoutKey = create_wb_data_provider_without_key()
-        warehouses = object_provider.get_warehouses()
+        warehouses = object_provider.get_warehouses_from_file()
         self.assertNotEqual(0, len(warehouses))
 
     def test_get_user_products(self):
@@ -65,12 +65,6 @@ class LoadingTest(unittest.TestCase):
         object_provider: WildberriesDataProviderWithoutKey = create_wb_data_provider_without_key()
         storage_data = object_provider.get_top_request_by_marketplace_query('month', 1000)
         self.assertIsNotNone(storage_data)
-
-    def test_commision_resolver(self):
-        object_provider: WildberriesDataProviderWithoutKey = create_wb_data_provider_without_key()
-        commission_data = object_provider.jser_data_resolver.get_data_for_warehouse(23)
-        self.assertIsNotNone(commission_data)
-        self.assertEqual(1, len(commission_data))
 
 
 if __name__ == '__main__':

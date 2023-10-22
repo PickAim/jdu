@@ -1,4 +1,4 @@
-jser@ git+https://github.com/PickAim/jser.git@v.0.0.1
-jorm@ git+https://github.com/PickAim/jorm.git@v.0.1.26
+jser@ git+https://github.com/PickAim/jser.git@v.0.0.2
+jorm@ git+https://github.com/PickAim/jorm.git@v.0.1.28
 requests>=2.31.0
 aiohttp>=3.8.5

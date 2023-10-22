@@ -14,14 +14,6 @@ def get_path(dir_to_search: str, file_to_search: str):
         return os.path.join(dir_to_search, file_to_search)
 
 
-# __NICHE_TO_CATEGORY: Final[str] = get_path(file_dir, 'niche_to_category.paim')
-# with open(__NICHE_TO_CATEGORY, 'rb') as file:
-#     NICHE_TO_CATEGORY: Final[dict[str, str]] = pickle.load(file)
-COMMISSION_WILDBERRIES_BINARY: Final[str] = get_path(file_dir, 'commission.pickle')
-COMMISSION_WILDBERRIES_CSV: Final[str] = get_path(file_dir, 'commission.csv')
-WAREHOUSE_WILDBERRIES_JSON: Final[str] = get_path(file_dir, '../../data_warehouse.txt')
-WAREHOUSE_WILDBERRIES_BINARY: Final[str] = get_path(file_dir, 'warehouse_data.pickle')
-
 COMMISSION_KEY: Final[str] = "commission"
 RETURN_PERCENT_KEY: Final[str] = "return_percent"
 
