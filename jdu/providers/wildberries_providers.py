@@ -13,7 +13,8 @@ from jorm.server.providers.initializers import DataProviderInitializer
 from jorm.server.providers.providers import UserMarketDataProvider, DataProviderWithKey, DataProviderWithoutKey
 from jorm.support.types import StorageDict, SpecifiedLeftover
 from jser.niche.commission.Wildberries.wildberries_niche_commission_resolver import WildberriesCommissionResolver
-from jser.warehouse.information.Wildberries.wildberries_warehouse_information_resolver import WildberriesDataResolver
+from jser.warehouse.information.Wildberries.wildberries_warehouse_information_resolver import \
+    WildberriesInformationResolver
 
 from jdu.support.loggers import LOADING_LOGGER
 from jdu.support.sorters import score_object_names, sort_by_len_alphabet
@@ -114,8 +115,8 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
     def __init__(self, data_provider_initializer_class: Type[DataProviderInitializer]):
         super().__init__(data_provider_initializer_class)
         self.LOGGER = logging.getLogger(LOADING_LOGGER)
-        self.jser_commission_resolver = WildberriesCommissionResolver()
-        self.jser_data_resolver = WildberriesDataResolver()
+        self.niche_commission_resolver = WildberriesCommissionResolver()
+        self.warehouse_information_resolver = WildberriesInformationResolver()
 
     def get_categories_names(self, category_num=-1) -> list[str]:
         category_names_list: list[str] = []
@@ -153,7 +154,7 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
 
     def get_warehouses_from_file(self) -> list[Warehouse]:
         warehouses: list[Warehouse] = []
-        warehouses_data = self.jser_data_resolver._warehouse_data
+        warehouses_data = self.warehouse_information_resolver.get_warehouses_data()
         for warehouse_data in warehouses_data:
             address = parsing_attribute_address(warehouses_data[warehouse_data]['address'])
             warehouses.append(
@@ -168,8 +169,8 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
         niche_list: list[Niche] = []
         for niche_name in niche_names_list:
             niche_list.append(
-                Niche(niche_name, self.jser_commission_resolver.get_commission_for_niche_mapped(niche_name.lower()),
-                      self.jser_commission_resolver.get_return_percent_for(niche_name)))
+                Niche(niche_name, self.niche_commission_resolver.get_commission_for_niche_mapped(niche_name),
+                      self.niche_commission_resolver.get_return_percent_for(niche_name)))
 
         return niche_list
 
