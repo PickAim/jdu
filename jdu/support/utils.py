@@ -6,6 +6,7 @@ from jorm.market.infrastructure import Address
 T = TypeVar("T")
 V = TypeVar("V")
 K = TypeVar("K")
+pattern = re.compile("")
 
 
 def split_to_batches(any_list: list[Any], batch_size: int) -> list[Any]:
@@ -25,7 +26,7 @@ def map_to_dict(
     return {key_generator(item): value_generator(item) for item in items}
 
 
-def parsing_attribute_address(address: str) -> Address:
+def parsing_address(address: str) -> Address:
     attributes_address: dict[str, str] = {}
     pattern = re.compile(r'(Респ\.[А-Яа-я\-\s]+)|([А-Яа-я\-\s]+(обл\.|область|край))', re.I)
     region = pattern.search(address)

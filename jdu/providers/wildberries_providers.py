@@ -19,7 +19,7 @@ from jser.warehouse.information.Wildberries.wildberries_warehouse_information_re
 from jdu.support.loggers import LOADING_LOGGER
 from jdu.support.sorters import score_object_names, sort_by_len_alphabet
 from jdu.support.types import ProductInfo
-from jdu.support.utils import split_to_batches, parsing_attribute_address
+from jdu.support.utils import split_to_batches, parsing_address
 from jdu.support.wildberries_utils import calculate_basket_domain_part
 
 
@@ -39,8 +39,9 @@ class WildberriesUserMarketDataProviderImpl(WildberriesUserMarketDataProvider):
         for warehouse in json_code:
             if any(k not in warehouse for k in ("name", "id", "address")):
                 continue
+            address = parsing_address(warehouse['address'])
             warehouses.append(
-                Warehouse(warehouse['name'], warehouse['id'], HandlerType.MARKETPLACE, warehouse['address']))
+                Warehouse(warehouse['name'], warehouse['id'], HandlerType.MARKETPLACE, address))
         return warehouses
 
     def get_nearest_keywords(self, word: str) -> list[str]:
@@ -155,10 +156,10 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
     def get_warehouses_from_file(self) -> list[Warehouse]:
         warehouses: list[Warehouse] = []
         warehouses_data = self.warehouse_information_resolver.get_warehouses_data()
-        for warehouse_data in warehouses_data:
-            address = parsing_attribute_address(warehouses_data[warehouse_data]['address'])
+        for warehouse_id in warehouses_data:
+            address = parsing_address(warehouses_data[warehouse_id]['address'])
             warehouses.append(
-                Warehouse(warehouses_data[warehouse_data]['name'], warehouse_data, HandlerType.MARKETPLACE, address))
+                Warehouse(warehouses_data[warehouse_id]['name'], warehouse_id, HandlerType.MARKETPLACE, address))
         return warehouses
 
     def get_warehouses(self) -> list[Warehouse]:
