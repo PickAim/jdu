@@ -40,11 +40,11 @@ class LoadingTest(unittest.TestCase):
         print(f"categories names receiving time: {datetime.now() - before}")
         self.assertEqual(categories_num, len(categories))
 
-    def test_sorting(self):
+    def test_keywords_loading(self):
         word = "Кофе"
         object_provider: WildberriesUserMarketDataProvider = create_wb_data_provider_with_key()
         result = object_provider.get_nearest_keywords(word)
-        self.assertEqual("готовый кофе", result[0])
+        self.assertNotEqual(0, len(result))
 
     def test_get_warehouse(self):
         object_provider: WildberriesUserMarketDataProvider = create_wb_data_provider_with_key()

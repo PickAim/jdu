@@ -14,7 +14,6 @@ from jorm.server.providers.providers import UserMarketDataProvider, DataProvider
 from jorm.support.types import StorageDict, SpecifiedLeftover
 
 from jdu.support.loggers import LOADING_LOGGER
-from jdu.support.sorters import score_object_names, sort_by_len_alphabet
 from jdu.support.types import ProductInfo
 from jdu.support.utils import split_to_batches
 from jdu.support.wildberries_utils import calculate_basket_domain_part
@@ -40,16 +39,9 @@ class WildberriesUserMarketDataProviderImpl(WildberriesUserMarketDataProvider):
         return warehouses
 
     def get_nearest_keywords(self, word: str) -> list[str]:
-        names: list[str] = self.__get_nearest_names(word)
-        scored_dict: dict[float, list[str]] = score_object_names(word, names)
-        result: list[str] = []
-        for score in scored_dict.keys():
-            result.extend(sort_by_len_alphabet(scored_dict[score]))
-        return result
-
-    def __get_nearest_names(self, text: str) -> list[str]:
+        # TODO think about parallel loading for list of input words and dict[str, list[str]] as output
         object_name_list: list[str] = []
-        url = f'https://suppliers-api.wildberries.ru/content/v1/object/all?name={text}&top=100'
+        url = f'https://suppliers-api.wildberries.ru/content/v1/object/all?name={word}&top=100'
         json_code = self.get_authorized_request_json(url)
         for data in json_code['data']:
             if 'objectName' not in data:
