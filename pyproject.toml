@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jdu"
-version = "0.1.20"
+version = "0.1.22"
 dependencies = [
-    "SQLAlchemy",
     "requests",
     "aiohttp",
-    "jorm @ git+https://github.com/PickAim/jorm.git@v.0.1.24",
+    "jser@ git+https://github.com/PickAim/jser.git@v.0.0.6",
+    "jorm @ git+https://github.com/PickAim/jorm.git@v.0.1.28",
 ]

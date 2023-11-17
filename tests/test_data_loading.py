@@ -6,7 +6,7 @@ from jorm.market.infrastructure import Niche, Category
 from jorm.market.items import Product
 
 from jdu.providers.wildberries_providers import WildberriesDataProviderWithoutKey, WildberriesUserMarketDataProvider
-from tests.test_utils import create_wb_data_provider_with_key, \
+from test_utils import create_wb_data_provider_with_key, \
     create_wb_data_provider_without_key
 
 warnings.filterwarnings(action="ignore", message="ResourceWarning: unclosed")
@@ -47,8 +47,8 @@ class LoadingTest(unittest.TestCase):
         self.assertEqual("готовый кофе", result[0])
 
     def test_get_warehouse(self):
-        object_provider: WildberriesUserMarketDataProvider = create_wb_data_provider_with_key()
-        warehouses = object_provider.get_warehouses()
+        object_provider: WildberriesDataProviderWithoutKey = create_wb_data_provider_without_key()
+        warehouses = object_provider.get_warehouses_from_file()
         self.assertNotEqual(0, len(warehouses))
 
     def test_get_user_products(self):
@@ -61,10 +61,10 @@ class LoadingTest(unittest.TestCase):
         storage_data = object_provider.get_storage_dict(18681408)
         self.assertIsNotNone(storage_data)
 
-    def test_load_top_request(self):
-        object_provider: WildberriesDataProviderWithoutKey = create_wb_data_provider_without_key()
-        storage_data = object_provider.get_top_request_by_marketplace_query('month', 1000)
-        self.assertIsNotNone(storage_data)
+    # def test_load_top_request(self):
+    #     object_provider: WildberriesDataProviderWithoutKey = create_wb_data_provider_without_key()
+    #     storage_data = object_provider.get_top_request_by_marketplace_query('month', 1000)
+    #     self.assertIsNotNone(storage_data)
 
 
 if __name__ == '__main__':

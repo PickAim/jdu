@@ -1,10 +1,10 @@
+from initializers.wildberries_initializer import (
+    TestWildberriesDataProviderInitializer,
+)
 from jdu.providers.wildberries_providers import (
     WildberriesDataProviderWithoutKey,
     WildberriesDataProviderWithoutKeyImpl,
     WildberriesUserMarketDataProviderImpl,
-)
-from tests.initializers.wildberries_initializer import (
-    TestWildberriesDataProviderInitializer,
 )
 
 AUTH_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9' \

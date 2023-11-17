@@ -7,16 +7,19 @@ from datetime import datetime
 from typing import Type, Iterable
 
 import aiohttp
-from jorm.market.infrastructure import Product, Category, Niche, HandlerType, Warehouse
+from jorm.market.infrastructure import Product, Category, Niche, HandlerType, Warehouse, Address
 from jorm.market.items import ProductHistoryUnit, ProductHistory
 from jorm.server.providers.initializers import DataProviderInitializer
 from jorm.server.providers.providers import UserMarketDataProvider, DataProviderWithKey, DataProviderWithoutKey
 from jorm.support.types import StorageDict, SpecifiedLeftover
+from jser.niche.commission.Wildberries.wildberries_niche_commission_resolver import WildberriesCommissionResolver
+from jser.warehouse.information.Wildberries.wildberries_warehouse_information_resolver import \
+    WildberriesInformationResolver
 
 from jdu.support.loggers import LOADING_LOGGER
 from jdu.support.sorters import score_object_names, sort_by_len_alphabet
 from jdu.support.types import ProductInfo
-from jdu.support.utils import split_to_batches
+from jdu.support.utils import split_to_batches, parsing_address
 from jdu.support.wildberries_utils import calculate_basket_domain_part
 
 
@@ -36,7 +39,9 @@ class WildberriesUserMarketDataProviderImpl(WildberriesUserMarketDataProvider):
         for warehouse in json_code:
             if any(k not in warehouse for k in ("name", "id", "address")):
                 continue
-            warehouses.append(Warehouse(warehouse['name'], warehouse['id'], HandlerType.CLIENT, warehouse['address']))
+            address = parsing_address(warehouse['address'])
+            warehouses.append(
+                Warehouse(warehouse['name'], warehouse['id'], HandlerType.MARKETPLACE, address))
         return warehouses
 
     def get_nearest_keywords(self, word: str) -> list[str]:
@@ -66,6 +71,16 @@ class WildberriesUserMarketDataProviderImpl(WildberriesUserMarketDataProvider):
             products_globals_ids.append(data['nmId'])
 
         return products_globals_ids
+
+    def get_user_warehouses(self) -> list[Warehouse]:
+        warehouses: list[Warehouse] = []
+        url = f'https://suppliers-api.wildberries.ru/api/v3/warehouses'
+        json_code = self.get_authorized_request_json(url)
+        for warehouse in json_code:
+            if any(k not in warehouse for k in ("name", "id")):
+                continue
+            warehouses.append(Warehouse(warehouse['name'], warehouse['id'], HandlerType.CLIENT, Address('', '')))
+        return warehouses
 
 
 class WildberriesDataProviderWithKey(DataProviderWithKey):
@@ -101,6 +116,8 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
     def __init__(self, data_provider_initializer_class: Type[DataProviderInitializer]):
         super().__init__(data_provider_initializer_class)
         self.LOGGER = logging.getLogger(LOADING_LOGGER)
+        self.niche_commission_resolver = WildberriesCommissionResolver()
+        self.warehouse_information_resolver = WildberriesInformationResolver()
 
     def get_categories_names(self, category_num=-1) -> list[str]:
         category_names_list: list[str] = []
@@ -136,11 +153,25 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                 niche_counter += 1
         return niche_names
 
+    def get_warehouses_from_file(self) -> list[Warehouse]:
+        warehouses: list[Warehouse] = []
+        warehouses_data = self.warehouse_information_resolver.get_warehouses_data()
+        for warehouse_id in warehouses_data:
+            address = parsing_address(warehouses_data[warehouse_id]['address'])
+            warehouses.append(
+                Warehouse(warehouses_data[warehouse_id]['name'], warehouse_id, HandlerType.MARKETPLACE, address))
+        return warehouses
+
+    def get_warehouses(self) -> list[Warehouse]:
+        # TODO non-essential information in the request
+        pass
+
     def get_niches(self, niche_names_list):
         niche_list: list[Niche] = []
         for niche_name in niche_names_list:
-            niche_list.append(Niche(niche_name, self.commission_resolver.get_commission_for_niche_mapped(niche_name),
-                                    self.commission_resolver.get_return_percent_for(niche_name)))
+            niche_list.append(
+                Niche(niche_name, self.niche_commission_resolver.get_commission_for_niche_mapped(niche_name),
+                      self.niche_commission_resolver.get_return_percent_for(niche_name)))
 
         return niche_list
 
@@ -222,9 +253,14 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
         for product_id in products_global_ids:
             task = asyncio.create_task(self.__get_product(product_id))
             tasks.append(task)
-        products = await asyncio.gather(*tasks)
-        products = [product for product in products if product is not None]
-        return products
+        try:
+            products = await asyncio.gather(*tasks)
+            products = [product for product in products if product is not None]
+            return products
+        except Exception as e:
+            for task in tasks:
+                task.cancel()
+            raise e
 
     async def __get_product(self, product_id: int, loop=None, connector=None) -> Product | None:
         cost_history_url: str = self.__get_product_history_url(product_id)
@@ -249,7 +285,6 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
         return None
 
     def get_product_price_history(self, product_id: int) -> ProductHistory:
-        # TODO try to extract common parts for get_product and this method
         cost_history_url: str = self.__get_product_history_url(product_id)
         storage_url: str = f'https://card.wb.ru/cards/detail?' \
                            f'dest=-1221148,-140294,-1751445,-364763' \
@@ -289,6 +324,8 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
 
     @staticmethod
     def __resolve_json_to_history_units(request_json: dict) -> list[ProductHistoryUnit]:
+        if request_json is None:
+            return []
         result_units: list[ProductHistoryUnit] = []
         for item in request_json:
             if 'price' not in item \
@@ -345,3 +382,12 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
         if 'subj_root_name' not in json_data or 'subj_name' not in json_data:
             return None
         return json_data['subj_root_name'], json_data['subj_name']
+
+    def get_delivery_address(self) -> dict[id, str]:
+        url = 'https://static-basket-01.wb.ru/vol0/data/all-poo-fr-v6.json'
+        json_data = self.get_request_json(url)
+        deliveries_addresses_list: dict[id, str] = {}
+        for delivery_addresses in json_data:
+            for delivery_address in delivery_addresses['items']:
+                deliveries_addresses_list[delivery_address['id']] = delivery_address['address']
+        return deliveries_addresses_list
