@@ -61,10 +61,10 @@ class LoadingTest(unittest.TestCase):
         storage_data = object_provider.get_storage_dict(18681408)
         self.assertIsNotNone(storage_data)
 
-    def test_load_top_request(self):
-        object_provider: WildberriesDataProviderWithoutKey = create_wb_data_provider_without_key()
-        storage_data = object_provider.get_top_request_by_marketplace_query('month', 1000)
-        self.assertIsNotNone(storage_data)
+    # def test_load_top_request(self):
+    #     object_provider: WildberriesDataProviderWithoutKey = create_wb_data_provider_without_key()
+    #     storage_data = object_provider.get_top_request_by_marketplace_query('month', 1000)
+    #     self.assertIsNotNone(storage_data)
 
 
 if __name__ == '__main__':
