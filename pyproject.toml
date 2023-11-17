@@ -8,6 +8,6 @@ version = "0.1.22"
 dependencies = [
     "requests",
     "aiohttp",
-    "jser@ git+https://github.com/PickAim/jser.git@v.0.0.5",
+    "jser@ git+https://github.com/PickAim/jser.git@v.0.0.6",
     "jorm @ git+https://github.com/PickAim/jorm.git@v.0.1.28",
 ]
