@@ -17,7 +17,6 @@ from jser.warehouse.information.Wildberries.wildberries_warehouse_information_re
     WildberriesInformationResolver
 
 from jdu.support.loggers import LOADING_LOGGER
-from jdu.support.sorters import score_object_names, sort_by_len_alphabet
 from jdu.support.types import ProductInfo
 from jdu.support.utils import split_to_batches, parsing_address
 from jdu.support.wildberries_utils import calculate_basket_domain_part
@@ -45,16 +44,9 @@ class WildberriesUserMarketDataProviderImpl(WildberriesUserMarketDataProvider):
         return warehouses
 
     def get_nearest_keywords(self, word: str) -> list[str]:
-        names: list[str] = self.__get_nearest_names(word)
-        scored_dict: dict[float, list[str]] = score_object_names(word, names)
-        result: list[str] = []
-        for score in scored_dict.keys():
-            result.extend(sort_by_len_alphabet(scored_dict[score]))
-        return result
-
-    def __get_nearest_names(self, text: str) -> list[str]:
+        # TODO think about parallel loading for list of input words and dict[str, list[str]] as output
         object_name_list: list[str] = []
-        url = f'https://suppliers-api.wildberries.ru/content/v1/object/all?name={text}&top=100'
+        url = f'https://suppliers-api.wildberries.ru/content/v1/object/all?name={word}&top=100'
         json_code = self.get_authorized_request_json(url)
         for data in json_code['data']:
             if 'objectName' not in data:
@@ -159,7 +151,7 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
         for warehouse_id in warehouses_data:
             address = parsing_address(warehouses_data[warehouse_id]['address'])
             warehouses.append(
-                Warehouse(warehouses_data[warehouse_id]['name'], warehouse_id, HandlerType.MARKETPLACE, address))
+                Warehouse(warehouses_data[warehouse_id]['name'], int(warehouse_id), HandlerType.MARKETPLACE, address))
         return warehouses
 
     def get_warehouses(self) -> list[Warehouse]:
@@ -172,7 +164,6 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
             niche_list.append(
                 Niche(niche_name, self.niche_commission_resolver.get_commission_for_niche_mapped(niche_name),
                       self.niche_commission_resolver.get_return_percent_for(niche_name)))
-
         return niche_list
 
     def get_products_globals_ids(self, niche: str, products_count: int = -1) -> set[int]:
@@ -237,11 +228,11 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
         tasks = []
         products_global_ids_batches = split_to_batches(products_global_ids, self.THREAD_TASK_COUNT)
         for products_global_ids_batch in products_global_ids_batches:
-            tasks.append(
-                self.__load_all_product_niche(
-                    products_global_ids_batch
-                )
-            )
+            try:
+                loaded_batch = self.__load_all_product_niche(products_global_ids_batch)
+                tasks.append(loaded_batch)
+            except Exception:
+                continue
         execution_results = await asyncio.gather(*tasks)
         result: list[Product] = []
         for result_list in execution_results:
@@ -269,13 +260,16 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                            f'&nm={product_id}'
         async with aiohttp.ClientSession() if loop is None or connector is None \
                 else aiohttp.ClientSession(connector=connector, loop=loop) as client_session:
-            request_json = await self.get_async_request_json(cost_history_url, client_session)
-            product_history_units = self.__resolve_json_to_history_units(request_json)
-            request_json = await self.get_async_request_json(storage_url, client_session)
-            product_info = self.__resolve_json_to_product_info(request_json)
-            storage_dict = self.__resolve_json_to_storage_dict(request_json)
-            product_history_units.append(ProductHistoryUnit(product_info.price, datetime.utcnow(), storage_dict))
-
+            try:
+                request_json = await self.get_async_request_json(cost_history_url, client_session)
+                product_history_units = self.__resolve_json_to_history_units(request_json)
+                request_json = await self.get_async_request_json(storage_url, client_session)
+                product_info = self.__resolve_json_to_product_info(request_json)
+                storage_dict = self.__resolve_json_to_storage_dict(request_json)
+                product_history_units.append(ProductHistoryUnit(product_info.price, datetime.utcnow(), storage_dict))
+            except Exception:
+                await client_session.close()
+                return None
         await client_session.close()
         if product_info is not None:
             return Product(product_info.name, product_info.price, product_info.global_id, product_info.rating,
