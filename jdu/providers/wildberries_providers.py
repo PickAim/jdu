@@ -159,7 +159,7 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
         for warehouse_id in warehouses_data:
             address = parsing_address(warehouses_data[warehouse_id]['address'])
             warehouses.append(
-                Warehouse(warehouses_data[warehouse_id]['name'], warehouse_id, HandlerType.MARKETPLACE, address))
+                Warehouse(warehouses_data[warehouse_id]['name'], int(warehouse_id), HandlerType.MARKETPLACE, address))
         return warehouses
 
     def get_warehouses(self) -> list[Warehouse]:
@@ -237,11 +237,11 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
         tasks = []
         products_global_ids_batches = split_to_batches(products_global_ids, self.THREAD_TASK_COUNT)
         for products_global_ids_batch in products_global_ids_batches:
-            tasks.append(
-                self.__load_all_product_niche(
-                    products_global_ids_batch
-                )
-            )
+            try:
+                loaded_batch = self.__load_all_product_niche(products_global_ids_batch)
+                tasks.append(loaded_batch)
+            except Exception:
+                continue
         execution_results = await asyncio.gather(*tasks)
         result: list[Product] = []
         for result_list in execution_results:
@@ -269,13 +269,16 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
                            f'&nm={product_id}'
         async with aiohttp.ClientSession() if loop is None or connector is None \
                 else aiohttp.ClientSession(connector=connector, loop=loop) as client_session:
-            request_json = await self.get_async_request_json(cost_history_url, client_session)
-            product_history_units = self.__resolve_json_to_history_units(request_json)
-            request_json = await self.get_async_request_json(storage_url, client_session)
-            product_info = self.__resolve_json_to_product_info(request_json)
-            storage_dict = self.__resolve_json_to_storage_dict(request_json)
-            product_history_units.append(ProductHistoryUnit(product_info.price, datetime.utcnow(), storage_dict))
-
+            try:
+                request_json = await self.get_async_request_json(cost_history_url, client_session)
+                product_history_units = self.__resolve_json_to_history_units(request_json)
+                request_json = await self.get_async_request_json(storage_url, client_session)
+                product_info = self.__resolve_json_to_product_info(request_json)
+                storage_dict = self.__resolve_json_to_storage_dict(request_json)
+                product_history_units.append(ProductHistoryUnit(product_info.price, datetime.utcnow(), storage_dict))
+            except Exception:
+                await client_session.close()
+                return None
         await client_session.close()
         if product_info is not None:
             return Product(product_info.name, product_info.price, product_info.global_id, product_info.rating,
