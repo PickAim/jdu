@@ -171,7 +171,6 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
             niche_list.append(
                 Niche(niche_name, self.niche_commission_resolver.get_commission_for_niche_mapped(niche_name),
                       self.niche_commission_resolver.get_return_percent_for(niche_name)))
-
         return niche_list
 
     def get_products_globals_ids(self, niche: str, products_count: int = -1) -> set[int]:
