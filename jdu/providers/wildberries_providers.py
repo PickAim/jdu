@@ -54,13 +54,6 @@ class WildberriesUserMarketDataProviderImpl(WildberriesUserMarketDataProvider):
             object_name_list.append(data['objectName'])
         return object_name_list
 
-    # names: list[str] = self.__get_nearest_names(word)
-    # scored_dict: dict[float, list[str]] = score_object_names(word, names)
-    # result: list[str] = []
-    # for score in scored_dict.keys():
-    #     result.extend(sort_by_len_alphabet(scored_dict[score]))
-    # return result
-
     def get_user_products(self) -> list[int]:
         products_globals_ids: list[int] = []
         url_api = f'https://suppliers-api.wildberries.ru/public/api/v1/info?quantity=0'
