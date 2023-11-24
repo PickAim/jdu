@@ -254,29 +254,30 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
             raise e
 
     async def __get_product(self, product_id: int, loop=None, connector=None) -> Product | None:
-        cost_history_url: str = self.__get_product_history_url(product_id)
-        storage_url: str = f'https://card.wb.ru/cards/detail?' \
-                           f'dest=-1221148,-140294,-1751445,-364763' \
-                           f'&nm={product_id}'
-        async with aiohttp.ClientSession() if loop is None or connector is None \
-                else aiohttp.ClientSession(connector=connector, loop=loop) as client_session:
-            try:
+        try:
+            cost_history_url: str = self.__get_product_history_url(product_id)
+            storage_url: str = f'https://card.wb.ru/cards/detail?' \
+                               f'dest=-1221148,-140294,-1751445,-364763' \
+                               f'&nm={product_id}'
+            async with aiohttp.ClientSession() if loop is None or connector is None \
+                    else aiohttp.ClientSession(connector=connector, loop=loop) as client_session:
                 request_json = await self.get_async_request_json(cost_history_url, client_session)
                 product_history_units = self.__resolve_json_to_history_units(request_json)
                 request_json = await self.get_async_request_json(storage_url, client_session)
                 product_info = self.__resolve_json_to_product_info(request_json)
                 storage_dict = self.__resolve_json_to_storage_dict(request_json)
-                product_history_units.append(ProductHistoryUnit(product_info.price, datetime.utcnow(), storage_dict))
-            except Exception:
-                await client_session.close()
-                return None
-        await client_session.close()
-        if product_info is not None:
-            return Product(product_info.name, product_info.price, product_info.global_id, product_info.rating,
-                           product_info.brand, 'seller', 'niche_name', 'category_name',
-                           ProductHistory(product_history_units),
-                           width=0, height=0, depth=0)
-        return None
+                product_history_units.append(
+                    ProductHistoryUnit(product_info.price, datetime.utcnow(), storage_dict))
+            await client_session.close()
+            if product_info is not None:
+                return Product(product_info.name, product_info.price, product_info.global_id, product_info.rating,
+                               product_info.brand, 'seller', 'niche_name', 'category_name',
+                               ProductHistory(product_history_units),
+                               width=0, height=0, depth=0)
+            return None
+        except Exception:
+            await client_session.close()
+            return None
 
     def get_product_price_history(self, product_id: int) -> ProductHistory:
         cost_history_url: str = self.__get_product_history_url(product_id)
