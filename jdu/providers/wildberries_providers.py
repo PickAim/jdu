@@ -205,8 +205,7 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
     def get_products(self, niche_name: str, category_name: str, products_global_ids: Iterable[int]) -> list[Product]:
         base_products = self.get_base_products(products_global_ids)
         for product in base_products:
-            product.niche_name = niche_name
-            product.category_name = category_name
+            product.category_niche_list.append((category_name, niche_name))
         return base_products
 
     def get_base_products(self, products_global_ids: Iterable[int]) -> list[Product]:
@@ -272,8 +271,8 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
             await client_session.close()
             if product_info is not None:
                 return Product(product_info.name, product_info.price, product_info.global_id, product_info.rating,
-                               product_info.brand, 'seller', 'niche_name', 'category_name',
-                               ProductHistory(product_history_units),
+                               product_info.brand, 'seller', category_niche_list=[("category_name", "niche_name")],
+                               history=ProductHistory(product_history_units),
                                width=0, height=0, depth=0)
             return None
         except Exception:
