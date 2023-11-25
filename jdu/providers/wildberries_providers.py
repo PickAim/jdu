@@ -220,8 +220,9 @@ class WildberriesDataProviderWithoutKeyImpl(WildberriesDataProviderWithoutKey):
         )
         loop.run_until_complete(asyncio.sleep(0.25))
         loop.close()
-        self.LOGGER.info(f"End products loading. {len(products_global_ids)} "
-                         f"was loaded in {time.time() - start_time} seconds..")
+        self.LOGGER.info(f"End products loading. {len(result_products)} "
+                         f"was loaded in {time.time() - start_time} seconds. "
+                         f"{len(products_global_ids) - len(result_products)} products lost.")
         return result_products
 
     async def __async_product_batch_gathering(self, products_global_ids: list[int]) -> list[Product]:
