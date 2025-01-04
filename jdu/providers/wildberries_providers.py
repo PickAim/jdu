@@ -44,14 +44,16 @@ class WildberriesUserMarketDataProviderImpl(WildberriesUserMarketDataProvider):
         return warehouses
 
     def get_nearest_keywords(self, word: str) -> list[str]:
-        # TODO think about parallel loading for list of input words and dict[str, list[str]] as output
         object_name_list: list[str] = []
-        url = f'https://suppliers-api.wildberries.ru/content/v1/object/all?name={word}&top=100'
-        json_code = self.get_authorized_request_json(url)
-        for data in json_code['data']:
-            if 'objectName' not in data:
+        url = f'https://suggests.wb.ru/suggests/api/v7/hint?ab_testing=false&query={word}&gender=common&locale=ru&lang=ru'
+        json_code = self.get_request_json(url)
+        for data in json_code['suggests']:
+            if 'name' not in data:
                 continue
-            object_name_list.append(data['objectName'])
+            keyword = data['name']
+            if not any([c.isalpha() for c in keyword]):
+                continue
+            object_name_list.append(keyword)
         return object_name_list
 
     def get_user_products(self) -> list[int]:
